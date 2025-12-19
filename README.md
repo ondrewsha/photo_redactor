@@ -27,3 +27,17 @@ cp .env.example .env
 ```bash
 docker compose up -d postgres redis
 ```
+
+## Prompt Service (Step 2)
+
+Поднять сервис B локально через Docker:
+
+```bash
+docker compose up -d prompt_service
+```
+
+Эндпоинты:
+
+- `GET /health`
+- `GET /categories` — безопасный список стилей (без hidden prompt частей)
+- `POST /compose` — сборка промпта (enhance/creative) + скрытые префикс/суффикс
