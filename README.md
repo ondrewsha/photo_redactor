@@ -41,3 +41,17 @@ docker compose up -d prompt_service
 - `GET /health`
 - `GET /categories` — безопасный список стилей (без hidden prompt частей)
 - `POST /compose` — сборка промпта (enhance/creative) + скрытые префикс/суффикс
+
+## Generation Service (Step 3)
+
+Поднять сервис C локально через Docker:
+
+```bash
+docker compose up -d generation_service
+```
+
+Эндпоинты:
+
+- `POST /jobs` — создать задачу генерации (кладёт job в Redis-очередь)
+- `GET /jobs/{job_id}` — polling статуса (pending/processing/completed/failed)
+- `GET /media/{file}` — локальная раздача результата (dev-режим)

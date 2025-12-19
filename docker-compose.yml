@@ -47,6 +47,33 @@ services:
       - "${PROMPT_SERVICE_PORT:-8001}:8000"
     restart: unless-stopped
 
+  generation_service:
+    build:
+      context: .
+      dockerfile: services/generation_service/Dockerfile
+    environment:
+      GEN_SERVICE_DATABASE_URL: ${GEN_SERVICE_DATABASE_URL:-postgresql+asyncpg://nanovisual:nanovisual@postgres:5432/nanovisual}
+      GEN_SERVICE_REDIS_URL: ${GEN_SERVICE_REDIS_URL:-redis://redis:6379/0}
+      GEN_SERVICE_QUEUE_KEY: ${GEN_SERVICE_QUEUE_KEY:-nanovisual:queue:imggen}
+      GEN_SERVICE_MEDIA_ROOT: ${GEN_SERVICE_MEDIA_ROOT:-/data/media}
+      GEN_SERVICE_PUBLIC_BASE_URL: ${GEN_SERVICE_PUBLIC_BASE_URL:-}
+      GEN_SERVICE_IMAGE_PROVIDER: ${GEN_SERVICE_IMAGE_PROVIDER:-mock}
+      GEN_SERVICE_GEMINI_API_KEY: ${GEN_SERVICE_GEMINI_API_KEY:-}
+      GEN_SERVICE_GEMINI_BASE_URL: ${GEN_SERVICE_GEMINI_BASE_URL:-https://example.invalid}
+      GEN_SERVICE_GEMINI_MODEL: ${GEN_SERVICE_GEMINI_MODEL:-nano-banana}
+      GEN_SERVICE_HTTP_TIMEOUT_S: ${GEN_SERVICE_HTTP_TIMEOUT_S:-60}
+      GEN_SERVICE_INTERNAL_TOKEN: ${GEN_SERVICE_INTERNAL_TOKEN:-}
+      GEN_SERVICE_WORKER_ENABLED: ${GEN_SERVICE_WORKER_ENABLED:-true}
+    volumes:
+      - generation_media:/data/media
+    ports:
+      - "${GEN_SERVICE_PORT:-8002}:8000"
+    depends_on:
+      - postgres
+      - redis
+    restart: unless-stopped
+
 volumes:
   postgres_data:
   redis_data:
+  generation_media:
