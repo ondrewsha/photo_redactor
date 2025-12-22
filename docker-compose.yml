@@ -52,9 +52,9 @@ services:
       context: .
       dockerfile: services/generation_service/Dockerfile
     environment:
-      GEN_SERVICE_DATABASE_URL: ${GEN_SERVICE_DATABASE_URL:-postgresql+asyncpg://nanovisual:nanovisual@postgres:5432/nanovisual}
+      GEN_SERVICE_DATABASE_URL: "${GEN_SERVICE_DATABASE_URL:-postgresql+asyncpg://$POSTGRES_USER:$POSTGRES_PASSWORD@postgres:5432/$POSTGRES_DB}"
       GEN_SERVICE_REDIS_URL: ${GEN_SERVICE_REDIS_URL:-redis://redis:6379/0}
-      GEN_SERVICE_QUEUE_KEY: ${GEN_SERVICE_QUEUE_KEY:-nanovisual:queue:imggen}
+      GEN_SERVICE_QUEUE_KEY: "${GEN_SERVICE_QUEUE_KEY:-$POSTGRES_DB:$POSTGRES_USER:queue:imggen}"
       GEN_SERVICE_MEDIA_ROOT: ${GEN_SERVICE_MEDIA_ROOT:-/data/media}
       GEN_SERVICE_PUBLIC_BASE_URL: ${GEN_SERVICE_PUBLIC_BASE_URL:-}
       GEN_SERVICE_IMAGE_PROVIDER: ${GEN_SERVICE_IMAGE_PROVIDER:-mock}

@@ -67,6 +67,8 @@ Gateway добавляет `x-request-id` в ответы (удобно для �
 docker compose up -d generation_service
 ```
 
+По умолчанию `GEN_SERVICE_DATABASE_URL` собирается из `POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_PASSWORD` (можно переопределить явным `GEN_SERVICE_DATABASE_URL` в `.env`).
+
 Эндпоинты:
 
 - `POST /jobs` — создать задачу генерации (кладёт job в Redis-очередь)
