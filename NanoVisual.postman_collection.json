@@ -1,0 +1,295 @@
+{
+  "info": {
+    "_postman_id": "3f1f2f8b-7f0d-4a1a-a64a-9f0f5b0b7e5c",
+    "name": "NanoVisual API — Postman",
+    "description": "Коллекция запросов для NanoVisual (Gateway + внутренние сервисы).\n\nПеременные:\n- gateway_url — URL Gateway (по умолчанию http://localhost:8080)\n- prompt_service_url — URL Prompt Service (по умолчанию http://localhost:8001)\n- generation_service_url — URL Generation Service (по умолчанию http://localhost:8002)\n- internal_token — если включены internal-token проверки, сюда положи значение для заголовка X-NanoVisual-Internal-Token\n\nБыстрый сценарий через Gateway:\n1) Стили: GET /categories\n2) Старт генерации: POST /generate (сохранит job_id)\n3) Статус: GET /jobs/{{job_id}} (сохранит image_path когда готово)\n4) Скачать файл: GET {{image_path}}\n",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "gateway_url", "value": "http://localhost:8080" },
+    { "key": "prompt_service_url", "value": "http://localhost:8001" },
+    { "key": "generation_service_url", "value": "http://localhost:8002" },
+    { "key": "internal_token", "value": "" },
+    { "key": "style_id", "value": "cyberpunk" },
+    { "key": "user_input", "value": "Неоновый киберпанк-город ночью, дождь, отражения в лужах" },
+    { "key": "mode", "value": "enhance" },
+    { "key": "width", "value": "1024" },
+    { "key": "height", "value": "1024" },
+    { "key": "job_id", "value": "" },
+    { "key": "image_path", "value": "" },
+    { "key": "final_prompt", "value": "A cozy cabin in the snow at night, warm window lights, ultra detailed, cinematic" },
+    { "key": "final_prompt_json", "value": "\"A cozy cabin in the snow at night, warm window lights, ultra detailed, cinematic\"" }
+  ],
+  "item": [
+    {
+      "name": "Service A — Gateway (публичный API)",
+      "description": "Единая точка входа для фронтенда. Внутренние промпты не возвращаются клиенту.",
+      "item": [
+        {
+          "name": "Проверка здоровья — GET /health",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": "{{gateway_url}}/health"
+          }
+        },
+        {
+          "name": "Стили (публичный список) — GET /categories",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": "{{gateway_url}}/categories"
+          }
+        },
+        {
+          "name": "Старт генерации — POST /generate (enhance/creative)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const json = pm.response.json();",
+                  "if (json.job_id) pm.collectionVariables.set('job_id', json.job_id);",
+                  "if (json.enhanced_user_input) pm.collectionVariables.set('enhanced_user_input', json.enhanced_user_input);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"style_id\": \"{{style_id}}\",\n  \"user_input\": \"{{user_input}}\",\n  \"mode\": \"{{mode}}\",\n  \"width\": {{width}},\n  \"height\": {{height}}\n}\n",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{gateway_url}}/generate"
+          }
+        },
+        {
+          "name": "Статус задачи — GET /jobs/{{job_id}}",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const json = pm.response.json();",
+                  "if (json.status) pm.collectionVariables.set('job_status', json.status);",
+                  "const imageUrl = json?.result?.image_url;",
+                  "if (imageUrl) {",
+                  "  try {",
+                  "    if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {",
+                  "      const u = new URL(imageUrl);",
+                  "      pm.collectionVariables.set('image_path', u.pathname);",
+                  "    } else {",
+                  "      pm.collectionVariables.set('image_path', imageUrl);",
+                  "    }",
+                  "  } catch (e) {",
+                  "    pm.collectionVariables.set('image_path', imageUrl);",
+                  "  }",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": "{{gateway_url}}/jobs/{{job_id}}"
+          }
+        },
+        {
+          "name": "Скачать изображение — GET {{image_path}} (через Gateway)",
+          "request": {
+            "method": "GET",
+            "url": "{{gateway_url}}{{image_path}}"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Service B — Prompt Service (внутренний)",
+      "description": "Сервис скрытой инженерии (стили + улучшение текста). Обычно фронт ходит только в Gateway.",
+      "item": [
+        {
+          "name": "Проверка здоровья — GET /health",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": "{{prompt_service_url}}/health"
+          }
+        },
+        {
+          "name": "Стили (публичный список) — GET /categories",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": "{{prompt_service_url}}/categories"
+          }
+        },
+        {
+          "name": "Сборка промпта — POST /compose (enhance) → сохраняет final_prompt_json",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const json = pm.response.json();",
+                  "if (json.final_prompt) {",
+                  "  pm.collectionVariables.set('final_prompt', json.final_prompt);",
+                  "  pm.collectionVariables.set('final_prompt_json', JSON.stringify(json.final_prompt));",
+                  "}",
+                  "if (json.enhanced_user_input) pm.collectionVariables.set('enhanced_user_input', json.enhanced_user_input);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Accept", "value": "application/json" },
+              { "key": "X-NanoVisual-Internal-Token", "value": "{{internal_token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"style_id\": \"{{style_id}}\",\n  \"user_input\": \"{{user_input}}\",\n  \"mode\": \"enhance\"\n}\n",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{prompt_service_url}}/compose"
+          }
+        },
+        {
+          "name": "Сборка промпта — POST /compose (creative) → сохраняет final_prompt_json",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const json = pm.response.json();",
+                  "if (json.final_prompt) {",
+                  "  pm.collectionVariables.set('final_prompt', json.final_prompt);",
+                  "  pm.collectionVariables.set('final_prompt_json', JSON.stringify(json.final_prompt));",
+                  "}",
+                  "if (json.enhanced_user_input) pm.collectionVariables.set('enhanced_user_input', json.enhanced_user_input);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Accept", "value": "application/json" },
+              { "key": "X-NanoVisual-Internal-Token", "value": "{{internal_token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"style_id\": \"{{style_id}}\",\n  \"user_input\": \"dragon, neon, rooftop\",\n  \"mode\": \"creative\"\n}\n",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{prompt_service_url}}/compose"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Service C — Generation Service (внутренний)",
+      "description": "Очередь задач (Redis) + генерация изображения (Gemini/OpenAI или mock). Обычно фронт ходит только в Gateway.",
+      "item": [
+        {
+          "name": "Проверка здоровья — GET /health",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": "{{generation_service_url}}/health"
+          }
+        },
+        {
+          "name": "Создать задачу — POST /jobs (prompt из final_prompt_json) → сохраняет job_id",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const json = pm.response.json();",
+                  "if (json.job_id) pm.collectionVariables.set('job_id', json.job_id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Accept", "value": "application/json" },
+              { "key": "X-NanoVisual-Internal-Token", "value": "{{internal_token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"prompt\": {{final_prompt_json}},\n  \"width\": {{width}},\n  \"height\": {{height}}\n}\n",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{generation_service_url}}/jobs"
+          }
+        },
+        {
+          "name": "Статус задачи — GET /jobs/{{job_id}} → сохраняет image_path",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const json = pm.response.json();",
+                  "const imageUrl = json?.result?.image_url;",
+                  "if (imageUrl) {",
+                  "  try {",
+                  "    if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {",
+                  "      const u = new URL(imageUrl);",
+                  "      pm.collectionVariables.set('image_path', u.pathname);",
+                  "    } else {",
+                  "      pm.collectionVariables.set('image_path', imageUrl);",
+                  "    }",
+                  "  } catch (e) {",
+                  "    pm.collectionVariables.set('image_path', imageUrl);",
+                  "  }",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "X-NanoVisual-Internal-Token", "value": "{{internal_token}}" }
+            ],
+            "url": "{{generation_service_url}}/jobs/{{job_id}}"
+          }
+        },
+        {
+          "name": "Скачать изображение — GET {{image_path}} (напрямую)",
+          "request": {
+            "method": "GET",
+            "url": "{{generation_service_url}}{{image_path}}"
+          }
+        }
+      ]
+    }
+  ]
+}
