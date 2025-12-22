@@ -91,6 +91,8 @@ class GenerationWorker:
 def _user_facing_error(exc: Exception) -> str:
     if isinstance(exc, GeneratorConfigurationError):
         return "Сервис генерации не настроен. Попробуйте позже."
+    if isinstance(exc, TimeoutError):
+        return "Сервис генерации отвечает слишком долго. Попробуйте позже."
     if isinstance(exc, httpx.TimeoutException):
         return "Сервис генерации отвечает слишком долго. Попробуйте позже."
     if isinstance(exc, httpx.HTTPError):

@@ -10,8 +10,19 @@ from app.core.llm.errors import LLMConfigurationError, LLMUpstreamResponseError
 
 class OpenAILLMClient:
     def __init__(self, http: httpx.AsyncClient, settings: Settings) -> None:
-        self._http = http
         self._settings = settings
+        try:
+            from openai import AsyncOpenAI
+        except Exception as exc:  # noqa: BLE001
+            raise LLMConfigurationError(
+                "Не установлена библиотека openai. Добавьте зависимость `openai` и пересоберите prompt_service."
+            ) from exc
+
+        self._client = AsyncOpenAI(
+            api_key=settings.openai_api_key,
+            base_url=settings.openai_base_url,
+            http_client=http,
+        )
 
     async def enhance(self, text: str) -> str:
         system = (
@@ -40,34 +51,20 @@ class OpenAILLMClient:
                 "Не задан PROMPT_SERVICE_OPENAI_API_KEY (нужно для llm_provider=openai)"
             )
 
-        url = f"{self._settings.openai_base_url.rstrip('/')}/chat/completions"
-        headers = {
-            "Authorization": f"Bearer {self._settings.openai_api_key}",
-            "Content-Type": "application/json",
-        }
-        payload = {
-            "model": self._settings.openai_model,
-            "messages": [
-                {"role": "system", "content": system},
-                {"role": "user", "content": user},
-            ],
-            "temperature": 0.5,
-        }
-
-        resp = await self._http.post(url, headers=headers, json=payload)
-        resp.raise_for_status()
         try:
-            data = resp.json()
+            response = await self._client.chat.completions.create(
+                model=self._settings.openai_model,
+                messages=[
+                    {"role": "system", "content": system},
+                    {"role": "user", "content": user},
+                ],
+            )
         except Exception as exc:  # noqa: BLE001
-            raise LLMUpstreamResponseError("LLM returned non-JSON response") from exc
+            raise LLMUpstreamResponseError(f"OpenAI request failed: {exc}") from exc
 
         content: str | None = None
-        choices = data.get("choices")
-        if isinstance(choices, list) and choices:
-            message = choices[0].get("message")
-            if isinstance(message, dict):
-                content = message.get("content")
-
+        if response.choices:
+            content = response.choices[0].message.content
         if not content or not isinstance(content, str):
             raise LLMUpstreamResponseError("LLM response did not contain text content")
 

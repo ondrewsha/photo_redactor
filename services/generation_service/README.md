@@ -1,6 +1,10 @@
 # Service C — Generation Engine
 
-Очередь задач (Redis), адаптер к Gemini Nano Banana, сохранение метаданных (Postgres) и результата в хранилище.
+Очередь задач (Redis), адаптер к Gemini Nano Banana (SDK `google-genai`), сохранение метаданных (Postgres) и результата в хранилище.
+
+Модели из документации Nano Banana:
+- `gemini-2.5-flash-image`
+- `gemini-3-pro-image-preview`
 
 ## Output optimization (Step 5)
 

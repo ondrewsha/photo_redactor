@@ -1,8 +1,9 @@
 from __future__ import annotations
 
 import base64
-
-import httpx
+import asyncio
+import io
+from typing import Any
 
 from app.core.errors import GeneratorConfigurationError
 from app.core.image_generators.base import GeneratedImage
@@ -10,38 +11,69 @@ from app.core.settings import Settings
 
 
 class GeminiImageGenerator:
-    def __init__(self, *, http: httpx.AsyncClient, settings: Settings) -> None:
-        self._http = http
+    def __init__(self, *, settings: Settings) -> None:
         self._settings = settings
-
-    async def generate(self, *, prompt: str, width: int, height: int, seed: int | None) -> GeneratedImage:
-        if not self._settings.gemini_api_key or self._settings.gemini_base_url == "https://example.invalid":
+        try:
+            from google import genai
+        except Exception as exc:  # noqa: BLE001
             raise GeneratorConfigurationError(
-                "Set GEN_SERVICE_GEMINI_API_KEY and GEN_SERVICE_GEMINI_BASE_URL for image_provider=gemini"
+                "Не установлена библиотека google-genai. Добавьте зависимость `google-genai` "
+                "и пересоберите generation_service."
+            ) from exc
+
+        if not self._settings.gemini_api_key:
+            raise GeneratorConfigurationError(
+                "Set GEN_SERVICE_GEMINI_API_KEY for image_provider=gemini"
             )
 
-        url = f"{self._settings.gemini_base_url.rstrip('/')}/generate"
-        headers = {
-            "Authorization": f"Bearer {self._settings.gemini_api_key}",
-            "Content-Type": "application/json",
-        }
-        payload: dict[str, object] = {
-            "model": self._settings.gemini_model,
-            "prompt": prompt,
-            "width": width,
-            "height": height,
-            "seed": seed,
-        }
+        self._client = genai.Client(api_key=self._settings.gemini_api_key)
 
-        resp = await self._http.post(url, headers=headers, json=payload)
-        resp.raise_for_status()
-        data = resp.json()
+    async def generate(self, *, prompt: str, width: int, height: int, seed: int | None) -> GeneratedImage:
+        # Nano Banana models don't currently expose width/height/seed controls in SDK;
+        # we keep them in our API contract for future providers and post-processing.
+        _ = (width, height, seed)
 
-        image_b64 = data.get("image_base64")
-        mime_type = data.get("mime_type", "image/png")
-        if not isinstance(image_b64, str):
-            raise RuntimeError("Gemini response missing image_base64")
-        if not isinstance(mime_type, str) or not mime_type:
-            raise RuntimeError("Gemini response invalid mime_type")
+        return await asyncio.wait_for(
+            asyncio.to_thread(self._generate_sync, prompt),
+            timeout=self._settings.http_timeout_s,
+        )
 
-        return GeneratedImage(content=base64.b64decode(image_b64), mime_type=mime_type)
+    def _generate_sync(self, prompt: str) -> GeneratedImage:
+        response = self._client.models.generate_content(
+            model=self._settings.gemini_model,
+            contents=prompt,
+        )
+
+        parts: Any = getattr(response, "parts", None)
+        if not parts:
+            candidates = getattr(response, "candidates", None)
+            if candidates:
+                content = getattr(candidates[0], "content", None)
+                parts = getattr(content, "parts", None)
+
+        for part in parts or []:
+            inline_data = getattr(part, "inline_data", None)
+            if not inline_data:
+                continue
+            data = getattr(inline_data, "data", None)
+            mime_type = getattr(inline_data, "mime_type", None) or "image/png"
+            content = _coerce_image_bytes(data, part)
+            return GeneratedImage(content=content, mime_type=str(mime_type))
+
+        raise RuntimeError("Gemini response missing inline image data")
+
+
+def _coerce_image_bytes(data: object, part: object) -> bytes:
+    if isinstance(data, (bytes, bytearray, memoryview)):
+        return bytes(data)
+    if isinstance(data, str):
+        return base64.b64decode(data)
+
+    as_image = getattr(part, "as_image", None)
+    if callable(as_image):
+        image = as_image()
+        buf = io.BytesIO()
+        image.save(buf, format="PNG")
+        return buf.getvalue()
+
+    raise RuntimeError("Gemini inline_data.data is missing or unsupported")

@@ -6,7 +6,6 @@ from contextlib import asynccontextmanager, suppress
 from pathlib import Path
 from typing import AsyncIterator
 
-import httpx
 import redis.asyncio as redis
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
@@ -42,11 +41,11 @@ async def _close_redis(client: redis.Redis) -> None:
         await _maybe_await(disconnect())
 
 
-def _build_image_generator(settings: Settings, http: httpx.AsyncClient) -> ImageGenerator:
+def _build_image_generator(settings: Settings) -> ImageGenerator:
     if settings.image_provider == "mock":
         return MockImageGenerator()
     if settings.image_provider == "gemini":
-        return GeminiImageGenerator(http=http, settings=settings)
+        return GeminiImageGenerator(settings=settings)
     raise RuntimeError(f"Unsupported image provider: {settings.image_provider}")
 
 
@@ -54,9 +53,6 @@ def _build_image_generator(settings: Settings, http: httpx.AsyncClient) -> Image
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     settings = Settings()
     app.state.settings = settings
-
-    http = httpx.AsyncClient(timeout=settings.http_timeout_s)
-    app.state.http = http
 
     engine: AsyncEngine = create_async_engine(settings.database_url, pool_pre_ping=True)
     sessionmaker = async_sessionmaker(engine, expire_on_commit=False)
@@ -79,7 +75,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     if not any(getattr(r, "path", None) == "/media" for r in app.router.routes):
         app.mount("/media", StaticFiles(directory=str(media_root)), name="media")
 
-    generator = _build_image_generator(settings=settings, http=http)
+    generator = _build_image_generator(settings=settings)
     app.state.generator = generator
 
     worker_task: asyncio.Task[None] | None = None
@@ -103,7 +99,6 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
                 await worker_task
         await _close_redis(redis_client)
         await engine.dispose()
-        await http.aclose()
 
 
 def create_app() -> FastAPI:

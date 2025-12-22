@@ -18,8 +18,7 @@ class Settings(BaseSettings):
 
     image_provider: Literal["mock", "gemini"] = "mock"
     gemini_api_key: str | None = Field(default=None, repr=False)
-    gemini_base_url: str = "https://example.invalid"
-    gemini_model: str = "nano-banana"
+    gemini_model: str = "gemini-2.5-flash-image"
 
     http_timeout_s: float = 60.0
 
