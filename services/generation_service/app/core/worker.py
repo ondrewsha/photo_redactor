@@ -169,7 +169,16 @@ def _user_facing_error(exc: Exception) -> str:
         if api_connection_error_type is not None and isinstance(exc, api_connection_error_type):
             return "Не удалось подключиться к OpenAI. Проверь сеть или укажи GEN_SERVICE_OPENAI_PROXY_URL."
         if bad_request_error_type is not None and isinstance(exc, bad_request_error_type):
-            return "Некорректный запрос к OpenAI Images API. Проверь размер/параметры и попробуй снова."
+            msg = getattr(exc, "message", "") or str(exc)
+            code = getattr(exc, "code", None)
+            body = getattr(exc, "body", None)
+            details_parts = [f"message={msg!r}"]
+            if code is not None:
+                details_parts.append(f"code={code!r}")
+            if body is not None:
+                details_parts.append(f"body={body!r}")
+            details = "; ".join(details_parts)
+            return f"Некорректный запрос к OpenAI Images API. Подробности: {details}"
 
         return "Ошибка OpenAI Images API. Попробуй позже."
 

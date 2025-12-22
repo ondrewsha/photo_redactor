@@ -143,7 +143,6 @@ class OpenAIImageGenerator:
             "n": 1,
             "size": size,
             "response_format": "b64_json",
-            "output_format": self._settings.openai_output_format,
             "quality": self._settings.openai_quality,
             **kwargs,
         }
