@@ -1,6 +1,6 @@
 import { useCallback, useMemo, useRef, useState } from "react";
 
-import { generateImage, generateImageWithPhoto, getJobStatus, resolveAssetUrl } from "../../api/nanovisual";
+import { generateImage, generateImageWithPhotos, getJobStatus, resolveAssetUrl } from "../../api/nanovisual";
 import { getErrorMessage } from "../../lib/errors";
 
 export type GenerationPhase =
@@ -32,7 +32,7 @@ export type GenerateParams = {
   userInput: string;
   width: number;
   height: number;
-  photo: File | null;
+  photos: File[];
 };
 
 function delay(ms: number, signal: AbortSignal): Promise<void> {
@@ -87,8 +87,8 @@ export function useGeneration() {
         width: params.width,
         height: params.height,
       };
-      const started = params.photo
-        ? await generateImageWithPhoto(payload, params.photo, controller.signal)
+      const started = params.photos.length
+        ? await generateImageWithPhotos(payload, params.photos, controller.signal)
         : await generateImage(payload, controller.signal);
 
       setState((prev) => ({

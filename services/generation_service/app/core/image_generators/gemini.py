@@ -101,28 +101,31 @@ class GeminiImageGenerator:
         width: int,
         height: int,
         seed: int | None,
-        source_image: bytes | None = None,
+        source_images: list[bytes] | None = None,
     ) -> GeneratedImage:
         _ = (width, height, seed)
 
         return await asyncio.wait_for(
-            asyncio.to_thread(self._generate_sync, prompt, source_image),
+            asyncio.to_thread(self._generate_sync, prompt, source_images),
             timeout=self._settings.http_timeout_s,
         )
 
-    def _generate_sync(self, prompt: str, source_image: bytes | None) -> GeneratedImage:
+    def _generate_sync(self, prompt: str, source_images: list[bytes] | None) -> GeneratedImage:
         contents: Any = prompt
-        if source_image:
+        if source_images:
             from google.genai import types
 
             contents = [
                 types.Content(
                     role="user",
                     parts=[
-                        types.Part.from_bytes(
-                            data=source_image,
-                            mime_type=_detect_mime(source_image),
-                        ),
+                        *[
+                            types.Part.from_bytes(
+                                data=img,
+                                mime_type=_detect_mime(img),
+                            )
+                            for img in source_images
+                        ],
                         types.Part.from_text(text=prompt),
                     ],
                 )

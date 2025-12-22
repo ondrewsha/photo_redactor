@@ -60,21 +60,29 @@ class GenerationWorker:
 
                 job = await get_job(db, job_id)
 
-                source_image: bytes | None = None
                 input_path = Path(self._settings.media_root) / "inputs" / str(job_id)
-                try:
-                    source_image = await asyncio.to_thread(input_path.read_bytes)
-                except FileNotFoundError:
-                    source_image = None
-                except Exception:
-                    source_image = None
+
+                def _read_source_images() -> list[bytes] | None:
+                    try:
+                        if input_path.is_file():
+                            return [input_path.read_bytes()]
+                        if input_path.is_dir():
+                            files = sorted([p for p in input_path.iterdir() if p.is_file()], key=lambda p: p.name)
+                            if not files:
+                                return None
+                            return [p.read_bytes() for p in files]
+                        return None
+                    except Exception:
+                        return None
+
+                source_images = await asyncio.to_thread(_read_source_images)
 
                 generated = await self._generator.generate(
                     prompt=job.prompt,
                     width=job.width,
                     height=job.height,
                     seed=job.seed,
-                    source_image=source_image,
+                    source_images=source_images,
                 )
                 await mark_processing(db, job_id, progress=85)
 

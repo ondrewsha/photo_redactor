@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import { cn } from "../lib/cn";
 import { useCategories } from "./hooks/useCategories";
@@ -11,8 +11,12 @@ import { StylesLibraryModal } from "./components/StylesLibraryModal";
 type SizePreset = { label: string; width: number; height: number };
 
 const sizePresets: SizePreset[] = [
-  { label: "1:1 • 1024×1024", width: 1024, height: 1024 },
+  { label: "Большой • 1024×1024", width: 1024, height: 1024 },
+  { label: "Средний • 512×512", width: 512, height: 512 },
+  { label: "Маленький • 256×256", width: 256, height: 256 },
 ];
+
+const MAX_PHOTOS = 4;
 
 export function App() {
   const categories = useCategories();
@@ -22,7 +26,7 @@ export function App() {
   const [prompt, setPrompt] = useState("");
   const [sizePreset, setSizePreset] = useState<SizePreset>(sizePresets[0]!);
   const [libraryOpen, setLibraryOpen] = useState(false);
-  const [photo, setPhoto] = useState<File | null>(null);
+  const [photos, setPhotos] = useState<File[]>([]);
   const photoInputRef = useRef<HTMLInputElement | null>(null);
 
   const helperText = useMemo(() => {
@@ -63,10 +67,20 @@ export function App() {
     return selectedStyleIds.map((id) => styleNameById.get(id) ?? id);
   }, [selectedStyleIds, styleNameById]);
 
+  const photoUrls = useMemo(() => {
+    return photos.map((file) => URL.createObjectURL(file));
+  }, [photos]);
+
+  useEffect(() => {
+    return () => {
+      for (const url of photoUrls) URL.revokeObjectURL(url);
+    };
+  }, [photoUrls]);
+
   const resetAll = () => {
     gen.reset();
     setPrompt("");
-    setPhoto(null);
+    setPhotos([]);
     if (photoInputRef.current) photoInputRef.current.value = "";
   };
 
@@ -79,7 +93,7 @@ export function App() {
       userInput: text,
       width: sizePreset.width,
       height: sizePreset.height,
-      photo,
+      photos,
     });
   };
 
@@ -223,18 +237,30 @@ export function App() {
 
                   <div>
                     <div className="text-xs font-semibold text-zinc-300">Фото (не обязательно)</div>
+
                     <div className="mt-2 flex flex-wrap items-center gap-2">
                       <input
                         ref={photoInputRef}
                         type="file"
                         accept="image/*"
+                        multiple
                         className="hidden"
                         onChange={(e) => {
-                          const file = e.target.files?.[0] ?? null;
-                          setPhoto(file);
+                          const files = Array.from(e.target.files ?? []);
+                          if (!files.length) return;
+                          setPhotos((prev) => {
+                            const next = prev.slice();
+                            for (const file of files) {
+                              if (next.length >= MAX_PHOTOS) break;
+                              next.push(file);
+                            }
+                            return next;
+                          });
+                          e.currentTarget.value = "";
                         }}
                         disabled={disabled}
                       />
+
                       <button
                         type="button"
                         onClick={() => photoInputRef.current?.click()}
@@ -242,15 +268,17 @@ export function App() {
                           "rounded-2xl border px-3 py-2 text-left text-xs",
                           "border-zinc-800 bg-zinc-950/20 text-zinc-200 hover:border-zinc-700",
                         )}
-                        disabled={disabled}
+                        disabled={disabled || photos.length >= MAX_PHOTOS}
+                        title={photos.length >= MAX_PHOTOS ? `Можно выбрать не больше ${MAX_PHOTOS} фото` : undefined}
                       >
-                        {photo ? "Заменить фото" : "Загрузить фото"}
+                        {photos.length ? "Добавить фото" : "Загрузить фото"}
                       </button>
-                      {photo ? (
+
+                      {photos.length ? (
                         <button
                           type="button"
                           onClick={() => {
-                            setPhoto(null);
+                            setPhotos([]);
                             if (photoInputRef.current) photoInputRef.current.value = "";
                           }}
                           className={cn(
@@ -259,13 +287,54 @@ export function App() {
                           )}
                           disabled={disabled}
                         >
-                          Убрать
+                          Убрать все
                         </button>
                       ) : null}
-                      {photo ? (
-                        <div className="text-[11px] text-zinc-500">{photo.name}</div>
-                      ) : null}
+
+                      <div className="text-[11px] text-zinc-500">
+                        {photos.length ? `Выбрано: ${photos.length} из ${MAX_PHOTOS}` : `Можно добавить до ${MAX_PHOTOS} фото`}
+                      </div>
                     </div>
+
+                    {photos.length ? (
+                      <div className="mt-3 grid grid-cols-2 gap-2">
+                        {photoUrls.map((url, idx) => (
+                          <div
+                            key={`${idx}:${url}`}
+                            className="relative overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-950/30"
+                          >
+                            <img src={url} alt="" className="h-28 w-full object-cover" />
+                            <button
+                              type="button"
+                              onClick={() => setPhotos((prev) => prev.filter((_, i) => i !== idx))}
+                              className={cn(
+                                "absolute right-2 top-2 inline-flex h-8 w-8 items-center justify-center rounded-full border",
+                                "border-zinc-800 bg-zinc-950/60 text-zinc-200 hover:border-zinc-700 hover:text-zinc-50",
+                              )}
+                              aria-label="Убрать фото"
+                              title="Убрать фото"
+                              disabled={disabled}
+                            >
+                              <svg
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                xmlns="http://www.w3.org/2000/svg"
+                                className="h-4 w-4"
+                                aria-hidden
+                              >
+                                <path
+                                  d="M7 7l10 10M17 7L7 17"
+                                  stroke="currentColor"
+                                  strokeWidth="1.8"
+                                  strokeLinecap="round"
+                                />
+                              </svg>
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    ) : null}
+
                     <div className="mt-2 text-[11px] text-zinc-500">
                       Если загрузить фото, я сделаю новую версию на его основе.
                     </div>

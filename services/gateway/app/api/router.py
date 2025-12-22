@@ -107,7 +107,7 @@ async def generate(
 async def generate_with_image(
     request: Request,
     user_input: str = Form(...),
-    image: UploadFile = File(...),
+    image: list[UploadFile] = File(...),
     style_ids: list[str] | None = Form(None),
     width: int = Form(1024),
     height: int = Form(1024),
@@ -128,14 +128,20 @@ async def generate_with_image(
     composed.raise_for_status()
     composed_data = ComposePromptResponse.model_validate(composed.json())
 
-    image_bytes = await image.read()
-    files = {
-        "image": (
-            image.filename or "image",
-            image_bytes,
-            image.content_type or "application/octet-stream",
+    images = image[:4]
+    files: list[tuple[str, tuple[str, bytes, str]]] = []
+    for idx, img in enumerate(images):
+        image_bytes = await img.read()
+        files.append(
+            (
+                "image",
+                (
+                    img.filename or f"image_{idx}",
+                    image_bytes,
+                    img.content_type or "application/octet-stream",
+                ),
+            )
         )
-    }
     data = {"prompt": composed_data.final_prompt, "width": str(width), "height": str(height)}
     job = await http.post(
         f"{settings.generation_service_url.rstrip('/')}/jobs/image",

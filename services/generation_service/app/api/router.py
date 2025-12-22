@@ -64,7 +64,7 @@ async def create_generation_job_with_image(
     prompt: str = Form(...),
     width: int = Form(1024),
     height: int = Form(1024),
-    image: UploadFile = File(...),
+    image: list[UploadFile] = File(...),
     db: AsyncSession = Depends(get_db_session),
     redis_client: redis.Redis = Depends(get_redis),
     settings: Settings = Depends(get_settings),
@@ -77,11 +77,12 @@ async def create_generation_job_with_image(
         seed=None,
     )
 
-    inputs_dir = Path(settings.media_root) / "inputs"
+    images = image[:4]
+    inputs_dir = Path(settings.media_root) / "inputs" / str(job.id)
     inputs_dir.mkdir(parents=True, exist_ok=True)
-    input_path = inputs_dir / str(job.id)
-    content = await image.read()
-    await asyncio.to_thread(input_path.write_bytes, content)
+    for idx, img in enumerate(images):
+        content = await img.read()
+        await asyncio.to_thread((inputs_dir / f"{idx}").write_bytes, content)
 
     try:
         await redis_client.rpush(settings.queue_key, str(job.id))

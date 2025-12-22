@@ -59,7 +59,11 @@ def _trim_prompt(prompt: str, *, max_len: int) -> str:
     return cut.strip() or value[:max_len].strip()
 
 
-def _prepare_image_for_dalle2_edit(source_image: bytes) -> tuple[bytes, _OpenAISize]:
+def _prepare_images_for_dalle2_edit(
+    source_images: list[bytes],
+    *,
+    requested_side: int,
+) -> tuple[bytes, _OpenAISize]:
     try:
         from PIL import Image, ImageOps
     except Exception as exc:  # noqa: BLE001
@@ -67,27 +71,55 @@ def _prepare_image_for_dalle2_edit(source_image: bytes) -> tuple[bytes, _OpenAIS
             "Не установлена библиотека pillow. Добавьте зависимость `pillow` и пересоберите generation_service."
         ) from exc
 
-    img = Image.open(io.BytesIO(source_image))
-    img = ImageOps.exif_transpose(img)
-    img = img.convert("RGBA")
+    def _combine_to_square_png(images: list[bytes], *, side: int) -> bytes:
+        opened: list[Image.Image] = []
+        for raw in images:
+            try:
+                im = Image.open(io.BytesIO(raw))
+                im = ImageOps.exif_transpose(im)
+                opened.append(im.convert("RGBA"))
+            except Exception:
+                continue
 
-    width, height = img.size
-    if width != height:
-        side = max(width, height)
-        canvas = Image.new("RGBA", (side, side), (0, 0, 0, 0))
-        canvas.paste(img, ((side - width) // 2, (side - height) // 2))
-        img = canvas
+        if not opened:
+            raise RuntimeError("Не удалось прочитать фото")
+
+        if len(opened) == 1:
+            canvas = Image.new("RGBA", (side, side), (0, 0, 0, 0))
+            fitted = ImageOps.contain(opened[0], (side, side), Image.LANCZOS)
+            canvas.paste(fitted, ((side - fitted.width) // 2, (side - fitted.height) // 2), fitted)
+        else:
+            rows, cols = (1, 2) if len(opened) == 2 else (2, 2)
+            cell_w, cell_h = side // cols, side // rows
+            canvas = Image.new("RGBA", (side, side), (0, 0, 0, 0))
+            for idx, im in enumerate(opened[: rows * cols]):
+                r, c = divmod(idx, cols)
+                fitted = ImageOps.contain(im, (cell_w, cell_h), Image.LANCZOS)
+                x = c * cell_w + (cell_w - fitted.width) // 2
+                y = r * cell_h + (cell_h - fitted.height) // 2
+                canvas.paste(fitted, (x, y), fitted)
+
+        buf = io.BytesIO()
+        canvas.save(buf, format="PNG", optimize=True)
+        return buf.getvalue()
+
+    side = 1024
+    if requested_side in (256, 512, 1024):
+        side = requested_side
+
+    candidates: list[int] = [side]
+    if side == 1024:
+        candidates += [512, 256]
+    elif side == 512:
+        candidates += [256]
 
     last_bytes: bytes | None = None
-    for side in (1024, 512, 256):
-        resized = img.resize((side, side), Image.LANCZOS)
-        buf = io.BytesIO()
-        resized.save(buf, format="PNG", optimize=True)
-        data = buf.getvalue()
+    for cand in candidates:
+        data = _combine_to_square_png(source_images, side=cand)
         last_bytes = data
         if len(data) <= _DALLE2_MAX_IMAGE_BYTES:
-            size: _OpenAISize = f"{side}x{side}"  # type: ignore[assignment]
-            return data, size
+            size_out: _OpenAISize = f"{cand}x{cand}"  # type: ignore[assignment]
+            return data, size_out
 
     assert last_bytes is not None
     return last_bytes, "256x256"
@@ -255,17 +287,19 @@ class OpenAIImageGenerator:
         width: int,
         height: int,
         seed: int | None,
-        source_image: bytes | None = None,
+        source_images: list[bytes] | None = None,
     ) -> GeneratedImage:
         _ = seed
-        if source_image:
-            return await self._edit(prompt=prompt, width=width, height=height, source_image=source_image)
+        if source_images:
+            return await self._edit(prompt=prompt, width=width, height=height, source_images=source_images)
         return await self._generate(prompt=prompt, width=width, height=height)
 
     async def _generate(self, *, prompt: str, width: int, height: int) -> GeneratedImage:
         model = self._settings.openai_model
         if _is_dalle2(model):
             prompt = _trim_prompt(prompt, max_len=_DALLE2_MAX_PROMPT_LEN)
+            if width != height or width not in (256, 512, 1024):
+                raise UnsupportedImageSizeError(width=width, height=height)
         size = _map_size(width, height)
 
         kwargs: dict[str, object] = {}
@@ -317,17 +351,20 @@ class OpenAIImageGenerator:
 
         return await self._response_to_image(response)
 
-    async def _edit(self, *, prompt: str, width: int, height: int, source_image: bytes) -> GeneratedImage:
+    async def _edit(self, *, prompt: str, width: int, height: int, source_images: list[bytes]) -> GeneratedImage:
         model = self._settings.openai_model
         if _is_dalle2(model):
             prompt = _trim_prompt(prompt, max_len=_DALLE2_MAX_PROMPT_LEN)
-            prepared, size = _prepare_image_for_dalle2_edit(source_image)
+            if width != height or width not in (256, 512, 1024):
+                raise UnsupportedImageSizeError(width=width, height=height)
+            prepared, size = _prepare_images_for_dalle2_edit(source_images, requested_side=width)
             image_file = io.BytesIO(prepared)
             image_file.name = "input.png"
         else:
             size = _map_size_edit(width, height)
-            mime = _detect_mime(source_image)
-            image_file = io.BytesIO(source_image)
+            raw = source_images[0]
+            mime = _detect_mime(raw)
+            image_file = io.BytesIO(raw)
             image_file.name = f"input.{_file_ext_from_mime(mime)}"
 
         base_kwargs: dict[str, object] = {

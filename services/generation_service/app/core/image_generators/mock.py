@@ -34,9 +34,10 @@ class MockImageGenerator:
         width: int,
         height: int,
         seed: int | None,
-        source_image: bytes | None = None,
+        source_images: list[bytes] | None = None,
     ) -> GeneratedImage:
-        key = f"{seed}:{prompt}".encode("utf-8", errors="ignore") + (source_image or b"")
+        images_blob = b"".join(source_images or [])
+        key = f"{seed}:{width}x{height}:{prompt}".encode("utf-8", errors="ignore") + images_blob
         digest = hashlib.sha256(key).digest()
         rgba = (digest[0], digest[1], digest[2], 255)
         content = _solid_rgba_png(width=width, height=height, rgba=rgba)

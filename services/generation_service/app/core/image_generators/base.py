@@ -18,5 +18,5 @@ class ImageGenerator(Protocol):
         width: int,
         height: int,
         seed: int | None,
-        source_image: bytes | None = None,
+        source_images: list[bytes] | None = None,
     ) -> GeneratedImage: ...
