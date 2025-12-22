@@ -6,17 +6,19 @@ export type StyleCategoryPublic = {
 
 export type PromptMode = "enhance" | "creative";
 
-export type ComposePromptRequest = {
+export type GenerateImageRequest = {
   style_id: string;
   user_input: string;
   mode: PromptMode;
+  width: number;
+  height: number;
+  seed: number | null;
 };
 
-export type ComposePromptResponse = {
-  style_id: string;
-  mode: PromptMode;
+export type GenerateImageResponse = {
+  job_id: string;
+  status: JobStatus;
   enhanced_user_input: string;
-  final_prompt: string;
 };
 
 export type JobStatus = "pending" | "processing" | "completed" | "failed";

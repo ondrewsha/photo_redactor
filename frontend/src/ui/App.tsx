@@ -79,20 +79,11 @@ export function App() {
             <div className="hidden items-center gap-2 lg:flex">
               <a
                 className="text-sm text-zinc-400 hover:text-zinc-200"
-                href="http://localhost:8001/health"
+                href="http://localhost:8000/health"
                 target="_blank"
                 rel="noreferrer"
               >
-                Prompt
-              </a>
-              <span className="text-zinc-700">•</span>
-              <a
-                className="text-sm text-zinc-400 hover:text-zinc-200"
-                href="http://localhost:8002/health"
-                target="_blank"
-                rel="noreferrer"
-              >
-                Gen
+                Gateway
               </a>
             </div>
           </div>

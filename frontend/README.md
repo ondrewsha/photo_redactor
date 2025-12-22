@@ -7,7 +7,7 @@
 0) Подними бэкенд (если ещё не запущен):
 
 ```bash
-docker compose up -d postgres redis prompt_service generation_service
+docker compose up -d postgres redis prompt_service generation_service gateway
 ```
 
 1) Скопируй env (нужно для Vite proxy):
@@ -25,5 +25,4 @@ npm run dev
 
 По умолчанию фронт работает на `http://localhost:5173` и проксирует:
 
-- `/api/prompt/*` → Prompt Service (`http://localhost:8001`)
-- `/api/gen/*` → Generation Service (`http://localhost:8002`)
+- `/api/*` → API Gateway (`http://localhost:8000`)

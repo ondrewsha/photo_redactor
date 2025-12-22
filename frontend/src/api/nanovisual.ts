@@ -1,43 +1,29 @@
 import { requestJson } from "./http";
 import type {
-  ComposePromptRequest,
-  ComposePromptResponse,
-  CreateJobRequest,
-  CreateJobResponse,
+  GenerateImageRequest,
+  GenerateImageResponse,
   JobStatusResponse,
   StyleCategoryPublic,
 } from "../types/nanovisual";
 
-const PROMPT_API = "/api/prompt";
-const GEN_API = "/api/gen";
+const API = "/api";
 
-export function resolveGenAssetUrl(imageUrl: string): string {
-  if (imageUrl.startsWith("/media/")) return `${GEN_API}${imageUrl}`;
+export function resolveAssetUrl(imageUrl: string): string {
+  if (imageUrl.startsWith("/media/")) return `${API}${imageUrl}`;
   return imageUrl;
 }
 
 export async function listCategories(
   signal?: AbortSignal,
 ): Promise<StyleCategoryPublic[]> {
-  return requestJson<StyleCategoryPublic[]>(`${PROMPT_API}/categories`, { signal });
+  return requestJson<StyleCategoryPublic[]>(`${API}/categories`, { signal });
 }
 
-export async function composePrompt(
-  payload: ComposePromptRequest,
+export async function generateImage(
+  payload: GenerateImageRequest,
   signal?: AbortSignal,
-): Promise<ComposePromptResponse> {
-  return requestJson<ComposePromptResponse>(`${PROMPT_API}/compose`, {
-    method: "POST",
-    body: JSON.stringify(payload),
-    signal,
-  });
-}
-
-export async function createJob(
-  payload: CreateJobRequest,
-  signal?: AbortSignal,
-): Promise<CreateJobResponse> {
-  return requestJson<CreateJobResponse>(`${GEN_API}/jobs`, {
+): Promise<GenerateImageResponse> {
+  return requestJson<GenerateImageResponse>(`${API}/generate`, {
     method: "POST",
     body: JSON.stringify(payload),
     signal,
@@ -48,5 +34,5 @@ export async function getJobStatus(
   jobId: string,
   signal?: AbortSignal,
 ): Promise<JobStatusResponse> {
-  return requestJson<JobStatusResponse>(`${GEN_API}/jobs/${jobId}`, { signal });
+  return requestJson<JobStatusResponse>(`${API}/jobs/${jobId}`, { signal });
 }

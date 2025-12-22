@@ -42,6 +42,21 @@ docker compose up -d prompt_service
 - `GET /categories` — безопасный список стилей (без hidden prompt частей)
 - `POST /compose` — сборка промпта (enhance/creative) + скрытые префикс/суффикс
 
+## API Gateway (Service A)
+
+Поднять gateway локально через Docker:
+
+```bash
+docker compose up -d gateway
+```
+
+Эндпоинты (единая точка входа для фронта):
+
+- `GET /categories`
+- `POST /generate` — скрывает финальный промпт от клиента
+- `GET /jobs/{job_id}`
+- `GET /media/{file}`
+
 ## Generation Service (Step 3)
 
 Поднять сервис C локально через Docker:
@@ -59,6 +74,7 @@ docker compose up -d generation_service
 ## Frontend (Step 4)
 
 ```bash
+docker compose up -d gateway
 cd frontend
 cp .env.example .env
 npm install

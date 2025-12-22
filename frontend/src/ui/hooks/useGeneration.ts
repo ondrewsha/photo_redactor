@@ -1,6 +1,6 @@
 import { useCallback, useMemo, useRef, useState } from "react";
 
-import { composePrompt, createJob, getJobStatus, resolveGenAssetUrl } from "../../api/nanovisual";
+import { generateImage, getJobStatus, resolveAssetUrl } from "../../api/nanovisual";
 import { getErrorMessage } from "../../lib/errors";
 import type { PromptMode } from "../../types/nanovisual";
 
@@ -86,18 +86,11 @@ export function useGeneration() {
     });
 
     try {
-      const composed = await composePrompt(
-        { style_id: params.styleId, user_input: params.userInput, mode: params.mode },
-        controller.signal,
-      );
-      setState((prev) => ({
-        ...prev,
-        enhancedText: composed.enhanced_user_input,
-      }));
-
-      const job = await createJob(
+      const started = await generateImage(
         {
-          prompt: composed.final_prompt,
+          style_id: params.styleId,
+          user_input: params.userInput,
+          mode: params.mode,
           width: params.width,
           height: params.height,
           seed: params.seed,
@@ -108,11 +101,12 @@ export function useGeneration() {
       setState((prev) => ({
         ...prev,
         phase: "polling",
-        jobId: job.job_id,
+        jobId: started.job_id,
+        enhancedText: started.enhanced_user_input,
       }));
 
       while (!controller.signal.aborted) {
-        const status = await getJobStatus(job.job_id, controller.signal);
+        const status = await getJobStatus(started.job_id, controller.signal);
         setState((prev) => ({
           ...prev,
           progress: status.progress ?? prev.progress,
@@ -123,7 +117,7 @@ export function useGeneration() {
             ...prev,
             phase: "completed",
             progress: 100,
-            imageUrl: resolveGenAssetUrl(status.result!.image_url),
+            imageUrl: resolveAssetUrl(status.result!.image_url),
             error: null,
           }));
           return;

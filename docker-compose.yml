@@ -73,6 +73,23 @@ services:
       - redis
     restart: unless-stopped
 
+  gateway:
+    build:
+      context: .
+      dockerfile: services/gateway/Dockerfile
+    environment:
+      GATEWAY_PROMPT_SERVICE_URL: ${GATEWAY_PROMPT_SERVICE_URL:-http://prompt_service:8000}
+      GATEWAY_GENERATION_SERVICE_URL: ${GATEWAY_GENERATION_SERVICE_URL:-http://generation_service:8000}
+      GATEWAY_INTERNAL_TOKEN: ${GATEWAY_INTERNAL_TOKEN:-}
+      GATEWAY_CORS_ALLOW_ORIGINS: ${GATEWAY_CORS_ALLOW_ORIGINS:-http://localhost:5173}
+      GATEWAY_HTTP_TIMEOUT_S: ${GATEWAY_HTTP_TIMEOUT_S:-30}
+    ports:
+      - "${GATEWAY_PORT:-8000}:8000"
+    depends_on:
+      - prompt_service
+      - generation_service
+    restart: unless-stopped
+
 volumes:
   postgres_data:
   redis_data:
