@@ -97,4 +97,23 @@ def _user_facing_error(exc: Exception) -> str:
         return "Сервис генерации отвечает слишком долго. Попробуйте позже."
     if isinstance(exc, httpx.HTTPError):
         return "Сервис генерации временно недоступен. Попробуйте позже."
+    client_error_type = None
+    try:
+        from google.genai.errors import ClientError as _ClientError
+
+        client_error_type = _ClientError
+    except Exception:
+        client_error_type = None
+    if client_error_type is not None and isinstance(exc, client_error_type):
+        msg = getattr(exc, "message", "") or str(exc)
+        low = msg.lower()
+        if "api_key_invalid" in low or "api key not valid" in low:
+            return "Неверный Gemini API key. Проверь GEN_SERVICE_GEMINI_API_KEY."
+        if "model_not_found" in low or "model not found" in low:
+            return "Неверная модель Gemini. Проверь GEN_SERVICE_GEMINI_MODEL."
+        if "quota" in low or "billing" in low or "limit:" in low:
+            return "У Gemini нет доступной квоты (или не подключён биллинг). Проверь лимиты/план или используй GEN_SERVICE_IMAGE_PROVIDER=mock."
+        if "unsupported" in low or "not supported" in low:
+            return "Gemini недоступен в вашем регионе. Попробуйте прокси/VPN."
+        return "Ошибка Gemini API. Попробуйте позже."
     return "Не удалось сгенерировать изображение. Попробуйте позже."

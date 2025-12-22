@@ -4,6 +4,7 @@ from nanovisual_shared.schemas import ComposePromptRequest, ComposePromptRespons
 
 from app.core.errors import StyleNotFoundError
 from app.core.llm.base import LLMClient
+from app.core.llm.errors import LLMConfigurationError, LLMUpstreamResponseError
 from app.core.styles_registry import StyleRegistry
 
 
@@ -23,11 +24,14 @@ class PromptComposer:
         except StyleNotFoundError:
             raise
 
-        if payload.mode == PromptMode.enhance:
-            enhanced = await self._llm.enhance(payload.user_input)
-        elif payload.mode == PromptMode.creative:
-            enhanced = await self._llm.creative(payload.user_input)
-        else:
+        try:
+            if payload.mode == PromptMode.enhance:
+                enhanced = await self._llm.enhance(payload.user_input)
+            elif payload.mode == PromptMode.creative:
+                enhanced = await self._llm.creative(payload.user_input)
+            else:
+                enhanced = payload.user_input
+        except (LLMConfigurationError, LLMUpstreamResponseError):
             enhanced = payload.user_input
 
         final_prompt = _join_prompt_parts(style.hidden_prefix, enhanced, style.hidden_suffix)

@@ -3,13 +3,43 @@ from __future__ import annotations
 import base64
 import asyncio
 import io
+import logging
+import socket
 from typing import Any
+from urllib.parse import urlparse
 
 import httpx
 
 from app.core.errors import GeneratorConfigurationError
 from app.core.image_generators.base import GeneratedImage
 from app.core.settings import Settings
+
+logger = logging.getLogger(__name__)
+
+
+def _redact_proxy_url(proxy_url: str) -> str:
+    parsed = urlparse(proxy_url)
+    if parsed.username or parsed.password:
+        host = parsed.hostname or ""
+        if parsed.port is not None:
+            host = f"{host}:{parsed.port}"
+        return parsed._replace(netloc=host).geturl()
+    return proxy_url
+
+
+def _is_proxy_reachable(proxy_url: str, *, timeout_s: float = 1.5) -> bool:
+    parsed = urlparse(proxy_url)
+    host = parsed.hostname
+    if not host:
+        return False
+    port = parsed.port
+    if port is None:
+        port = 443 if parsed.scheme == "https" else 80
+    try:
+        with socket.create_connection((host, port), timeout=timeout_s):
+            return True
+    except OSError:
+        return False
 
 
 class GeminiImageGenerator:
@@ -29,9 +59,20 @@ class GeminiImageGenerator:
                 "Set GEN_SERVICE_GEMINI_API_KEY for image_provider=gemini"
             )
 
+        proxy = self._settings.gemini_proxy_url or None
+        if proxy and not _is_proxy_reachable(proxy):
+            logger.warning("Gemini proxy is not reachable, disabling proxy: %s", _redact_proxy_url(proxy))
+            proxy = None
+
+        timeout = httpx.Timeout(
+            connect=min(5.0, self._settings.http_timeout_s),
+            read=self._settings.http_timeout_s,
+            write=self._settings.http_timeout_s,
+            pool=self._settings.http_timeout_s,
+        )
         self._http_client = httpx.Client(
-            timeout=self._settings.http_timeout_s,
-            proxy=self._settings.gemini_proxy_url or None,
+            timeout=timeout,
+            proxy=proxy,
         )
         http_options = types.HttpOptions(httpx_client=self._http_client)
 
@@ -44,8 +85,6 @@ class GeminiImageGenerator:
         self._http_client.close()
 
     async def generate(self, *, prompt: str, width: int, height: int, seed: int | None) -> GeneratedImage:
-        # Nano Banana models don't currently expose width/height/seed controls in SDK;
-        # we keep them in our API contract for future providers and post-processing.
         _ = (width, height, seed)
 
         return await asyncio.wait_for(

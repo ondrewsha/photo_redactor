@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Literal
 
-from pydantic import Field
+from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -22,6 +22,16 @@ class Settings(BaseSettings):
     gemini_proxy_url: str | None = Field(default=None, repr=False)
 
     http_timeout_s: float = 60.0
+
+    @field_validator("gemini_model", "gemini_proxy_url", mode="before")
+    @classmethod
+    def _strip_inline_comment(cls, value: object) -> object:
+        if value is None:
+            return None
+        text = str(value).strip()
+        if "#" in text:
+            text = text.split("#", 1)[0].strip()
+        return text or None
 
     internal_token: str | None = Field(default=None, repr=False)
 

@@ -22,6 +22,8 @@ class OpenAILLMClient:
             api_key=settings.openai_api_key,
             base_url=settings.openai_base_url,
             http_client=http,
+            max_retries=0,
+            timeout=settings.http_timeout_s,
         )
 
     async def enhance(self, text: str) -> str:
