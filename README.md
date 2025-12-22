@@ -55,3 +55,12 @@ docker compose up -d generation_service
 - `POST /jobs` — создать задачу генерации (кладёт job в Redis-очередь)
 - `GET /jobs/{job_id}` — polling статуса (pending/processing/completed/failed)
 - `GET /media/{file}` — локальная раздача результата (dev-режим)
+
+## Frontend (Step 4)
+
+```bash
+cd frontend
+cp .env.example .env
+npm install
+npm run dev
+```
