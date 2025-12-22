@@ -7,7 +7,7 @@ import httpx
 import redis.asyncio as redis
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
-from app.core.errors import GeneratorConfigurationError
+from app.core.errors import GeneratorConfigurationError, UnsupportedImageSizeError
 from app.core.image_optimization import OptimizationSettings, optimize_image
 from app.core.image_generators.base import ImageGenerator
 from app.core.jobs_repository import mark_completed, mark_failed, mark_processing
@@ -91,12 +91,88 @@ class GenerationWorker:
 def _user_facing_error(exc: Exception) -> str:
     if isinstance(exc, GeneratorConfigurationError):
         return "Сервис генерации не настроен. Попробуйте позже."
+    if isinstance(exc, UnsupportedImageSizeError):
+        return (
+            f"Неподдерживаемый размер {exc.width}x{exc.height}. "
+            "Разрешено: 1024x1024, 1536x1024, 1024x1536, 1792x1024, 1024x1792, 512x512, 256x256."
+        )
     if isinstance(exc, TimeoutError):
         return "Сервис генерации отвечает слишком долго. Попробуйте позже."
     if isinstance(exc, httpx.TimeoutException):
         return "Сервис генерации отвечает слишком долго. Попробуйте позже."
     if isinstance(exc, httpx.HTTPError):
         return "Сервис генерации временно недоступен. Попробуйте позже."
+
+    openai_error_type = None
+    auth_error_type = None
+    permission_error_type = None
+    not_found_error_type = None
+    bad_request_error_type = None
+    rate_limit_error_type = None
+    api_connection_error_type = None
+    api_timeout_error_type = None
+    try:
+        from openai import (
+            APIConnectionError as _APIConnectionError,
+            APITimeoutError as _APITimeoutError,
+            AuthenticationError as _AuthenticationError,
+            BadRequestError as _BadRequestError,
+            NotFoundError as _NotFoundError,
+            OpenAIError as _OpenAIError,
+            PermissionDeniedError as _PermissionDeniedError,
+            RateLimitError as _RateLimitError,
+        )
+
+        openai_error_type = _OpenAIError
+        auth_error_type = _AuthenticationError
+        permission_error_type = _PermissionDeniedError
+        not_found_error_type = _NotFoundError
+        bad_request_error_type = _BadRequestError
+        rate_limit_error_type = _RateLimitError
+        api_connection_error_type = _APIConnectionError
+        api_timeout_error_type = _APITimeoutError
+    except Exception:
+        openai_error_type = None
+
+    if openai_error_type is not None and isinstance(exc, openai_error_type):
+        msg = getattr(exc, "message", "") or str(exc)
+        code = getattr(exc, "code", None)
+        body = getattr(exc, "body", None)
+        if isinstance(body, dict):
+            err = body.get("error")
+            if isinstance(err, dict):
+                code_val = err.get("code")
+                if isinstance(code_val, str) and code_val:
+                    code = code_val
+                msg_val = err.get("message")
+                if isinstance(msg_val, str) and msg_val:
+                    msg = msg_val
+
+        low = msg.lower()
+        if isinstance(code, str) and code:
+            low = f"{code.lower()} {low}"
+
+        if auth_error_type is not None and isinstance(exc, auth_error_type):
+            return "Неверный OpenAI API key. Проверь GEN_SERVICE_OPENAI_API_KEY."
+        if "unsupported_country_region_territory" in low or "unsupported country" in low:
+            return "OpenAI недоступен в вашем регионе. Попробуй прокси/VPN или укажи GEN_SERVICE_OPENAI_PROXY_URL."
+        if "insufficient_quota" in low or "quota" in low or "billing" in low:
+            return "У OpenAI нет доступной квоты (или не подключён биллинг). Проверь лимиты/план."
+        if permission_error_type is not None and isinstance(exc, permission_error_type):
+            return "Нет доступа к OpenAI Images API/модели. Проверь GEN_SERVICE_OPENAI_MODEL и права ключа."
+        if not_found_error_type is not None and isinstance(exc, not_found_error_type):
+            return "Модель OpenAI не найдена. Проверь GEN_SERVICE_OPENAI_MODEL."
+        if rate_limit_error_type is not None and isinstance(exc, rate_limit_error_type):
+            return "Превышен лимит OpenAI. Попробуй позже."
+        if api_timeout_error_type is not None and isinstance(exc, api_timeout_error_type):
+            return "OpenAI отвечает слишком долго. Попробуй позже."
+        if api_connection_error_type is not None and isinstance(exc, api_connection_error_type):
+            return "Не удалось подключиться к OpenAI. Проверь сеть или укажи GEN_SERVICE_OPENAI_PROXY_URL."
+        if bad_request_error_type is not None and isinstance(exc, bad_request_error_type):
+            return "Некорректный запрос к OpenAI Images API. Проверь размер/параметры и попробуй снова."
+
+        return "Ошибка OpenAI Images API. Попробуй позже."
+
     client_error_type = None
     try:
         from google.genai.errors import ClientError as _ClientError

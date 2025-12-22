@@ -17,6 +17,7 @@ from app.core.errors import GeneratorConfigurationError, JobNotFoundError, Queue
 from app.core.image_generators.base import ImageGenerator
 from app.core.image_generators.gemini import GeminiImageGenerator
 from app.core.image_generators.mock import MockImageGenerator
+from app.core.image_generators.openai_images import OpenAIImageGenerator
 from app.core.settings import Settings
 from app.core.storage.local import LocalStorage
 from app.core.worker import GenerationWorker
@@ -46,6 +47,8 @@ def _build_image_generator(settings: Settings) -> ImageGenerator:
         return MockImageGenerator()
     if settings.image_provider == "gemini":
         return GeminiImageGenerator(settings=settings)
+    if settings.image_provider == "openai":
+        return OpenAIImageGenerator(settings=settings)
     raise RuntimeError(f"Unsupported image provider: {settings.image_provider}")
 
 

@@ -21,3 +21,10 @@ class GeneratorConfigurationError(RuntimeError):
 
 class QueueUnavailableError(RuntimeError):
     pass
+
+
+class UnsupportedImageSizeError(ValueError):
+    def __init__(self, *, width: int, height: int) -> None:
+        super().__init__(f"Unsupported image size: {width}x{height}")
+        self.width = width
+        self.height = height

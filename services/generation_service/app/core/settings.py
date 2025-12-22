@@ -16,16 +16,35 @@ class Settings(BaseSettings):
     media_root: str = "/data/media"
     public_base_url: str = ""
 
-    image_provider: Literal["mock", "gemini"] = "mock"
+    image_provider: Literal["mock", "gemini", "openai"] = "mock"
+
     gemini_api_key: str | None = Field(default=None, repr=False)
     gemini_model: str = "gemini-2.5-flash-image"
     gemini_proxy_url: str | None = Field(default=None, repr=False)
+
+    openai_api_key: str | None = Field(default=None, repr=False)
+    openai_base_url: str = "https://api.openai.com/v1"
+    openai_model: str = "gpt-image-1"
+    openai_proxy_url: str | None = Field(default=None, repr=False)
+    openai_output_format: Literal["png", "jpeg", "webp"] = "png"
+    openai_quality: Literal["standard", "hd", "low", "medium", "high", "auto"] = "auto"
+    openai_style: Literal["vivid", "natural"] | None = None
 
     http_timeout_s: float = 60.0
 
     @field_validator("gemini_model", "gemini_proxy_url", mode="before")
     @classmethod
     def _strip_inline_comment(cls, value: object) -> object:
+        if value is None:
+            return None
+        text = str(value).strip()
+        if "#" in text:
+            text = text.split("#", 1)[0].strip()
+        return text or None
+
+    @field_validator("openai_model", "openai_base_url", "openai_proxy_url", "openai_style", mode="before")
+    @classmethod
+    def _strip_inline_comment_openai(cls, value: object) -> object:
         if value is None:
             return None
         text = str(value).strip()

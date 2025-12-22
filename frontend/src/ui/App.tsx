@@ -13,9 +13,9 @@ import { StyleCardSkeleton } from "./components/Skeletons";
 type SizePreset = { label: string; width: number; height: number };
 
 const sizePresets: SizePreset[] = [
-  { label: "1:1 • 1024", width: 1024, height: 1024 },
-  { label: "4:5 • 896×1120", width: 896, height: 1120 },
-  { label: "16:9 • 1280×720", width: 1280, height: 720 },
+  { label: "1:1 • 1024×1024", width: 1024, height: 1024 },
+  { label: "9:16 • 1024×1792", width: 1024, height: 1792 },
+  { label: "16:9 • 1792×1024", width: 1792, height: 1024 },
 ];
 
 export function App() {
