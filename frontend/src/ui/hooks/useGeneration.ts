@@ -61,7 +61,7 @@ export function useGeneration() {
     setState((prev) => ({
       ...prev,
       phase: prev.phase === "idle" ? "idle" : "failed",
-      error: prev.phase === "idle" ? null : "Cancelled",
+      error: prev.phase === "idle" ? null : "Отменено",
     }));
   }, []);
 

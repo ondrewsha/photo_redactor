@@ -4,12 +4,13 @@ from typing import Annotated
 from uuid import UUID
 
 import redis.asyncio as redis
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from nanovisual_shared.schemas import CreateJobRequest, CreateJobResponse, HealthResponse, JobStatusResponse
 
 from app.api.deps import get_db_session, get_redis, get_settings, require_internal_token
+from app.core.errors import QueueUnavailableError
 from app.core.jobs_repository import create_job, get_job_status_response, mark_failed
 from app.core.settings import Settings
 
@@ -42,8 +43,12 @@ async def create_generation_job(
     try:
         await redis_client.rpush(settings.queue_key, str(job.id))
     except Exception as exc:  # noqa: BLE001 - convert infra failure to API error
-        await mark_failed(db=db, job_id=job.id, error_message=f"Queue push failed: {exc}")
-        raise HTTPException(status_code=503, detail="Queue unavailable") from exc
+        await mark_failed(
+            db=db,
+            job_id=job.id,
+            error_message="Очередь генерации временно недоступна. Попробуйте позже.",
+        )
+        raise QueueUnavailableError("Queue unavailable") from exc
 
     return CreateJobResponse(job_id=job.id, status=job.status)
 

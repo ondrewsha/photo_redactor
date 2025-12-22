@@ -14,7 +14,7 @@ from fastapi.staticfiles import StaticFiles
 from sqlalchemy.ext.asyncio import AsyncEngine, async_sessionmaker, create_async_engine
 
 from app.api.router import router
-from app.core.errors import JobNotFoundError, UnauthorizedError
+from app.core.errors import GeneratorConfigurationError, JobNotFoundError, QueueUnavailableError, UnauthorizedError
 from app.core.image_generators.base import ImageGenerator
 from app.core.image_generators.gemini import GeminiImageGenerator
 from app.core.image_generators.mock import MockImageGenerator
@@ -127,6 +127,26 @@ def create_app() -> FastAPI:
             content={
                 "code": "unauthorized",
                 "message": exc.message,
+            },
+        )
+
+    @app.exception_handler(QueueUnavailableError)
+    async def handle_queue_unavailable(_: Request, __: QueueUnavailableError) -> JSONResponse:
+        return JSONResponse(
+            status_code=503,
+            content={
+                "code": "queue_unavailable",
+                "message": "Очередь генерации временно недоступна. Попробуйте позже.",
+            },
+        )
+
+    @app.exception_handler(GeneratorConfigurationError)
+    async def handle_generator_not_configured(_: Request, __: GeneratorConfigurationError) -> JSONResponse:
+        return JSONResponse(
+            status_code=503,
+            content={
+                "code": "generator_not_configured",
+                "message": "Сервис генерации не настроен.",
             },
         )
 

@@ -14,6 +14,7 @@ class Settings(BaseSettings):
 
     cors_allow_origins: str = "http://localhost:5173"
     http_timeout_s: float = 30.0
+    debug_errors: bool = False
 
     @property
     def cors_allow_origins_list(self) -> list[str]:

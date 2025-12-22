@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from pydantic import Field
 
-from nanovisual_shared.schemas import BaseSchema, PromptMode
+from nanovisual_shared.schemas import BaseSchema, JobStatus, PromptMode
 
 
 class GenerateImageRequest(BaseSchema):
@@ -16,5 +16,5 @@ class GenerateImageRequest(BaseSchema):
 
 class GenerateImageResponse(BaseSchema):
     job_id: str
-    status: str
+    status: JobStatus
     enhanced_user_input: str

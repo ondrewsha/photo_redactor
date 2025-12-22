@@ -57,6 +57,8 @@ docker compose up -d gateway
 - `GET /jobs/{job_id}`
 - `GET /media/{file}`
 
+Gateway добавляет `x-request-id` в ответы (удобно для трассировки). Для подробных `details` в ошибках включи `GATEWAY_DEBUG_ERRORS=true`.
+
 ## Generation Service (Step 3)
 
 Поднять сервис C локально через Docker:
@@ -70,6 +72,14 @@ docker compose up -d generation_service
 - `POST /jobs` — создать задачу генерации (кладёт job в Redis-очередь)
 - `GET /jobs/{job_id}` — polling статуса (pending/processing/completed/failed)
 - `GET /media/{file}` — локальная раздача результата (dev-режим)
+
+### Оптимизация изображений (Step 5)
+
+По умолчанию сервис сохраняет результат как `webp` и ограничивает длинную сторону до `1280` (настраивается через env):
+
+- `GEN_SERVICE_OUTPUT_FORMAT` = `webp|png|jpeg`
+- `GEN_SERVICE_OUTPUT_QUALITY` = `1..100`
+- `GEN_SERVICE_OUTPUT_MAX_SIDE` = `0` (выкл) или число пикселей
 
 ## Frontend (Step 4)
 

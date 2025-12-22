@@ -5,7 +5,7 @@ import re
 import httpx
 
 from app.core.settings import Settings
-from app.core.llm.errors import LLMConfigurationError
+from app.core.llm.errors import LLMConfigurationError, LLMUpstreamResponseError
 
 
 class OpenAILLMClient:
@@ -37,7 +37,7 @@ class OpenAILLMClient:
     async def _generate(self, system: str, user: str) -> str:
         if not self._settings.openai_api_key:
             raise LLMConfigurationError(
-                "PROMPT_SERVICE_OPENAI_API_KEY is required for llm_provider=openai"
+                "Не задан PROMPT_SERVICE_OPENAI_API_KEY (нужно для llm_provider=openai)"
             )
 
         url = f"{self._settings.openai_base_url.rstrip('/')}/chat/completions"
@@ -56,7 +56,10 @@ class OpenAILLMClient:
 
         resp = await self._http.post(url, headers=headers, json=payload)
         resp.raise_for_status()
-        data = resp.json()
+        try:
+            data = resp.json()
+        except Exception as exc:  # noqa: BLE001
+            raise LLMUpstreamResponseError("LLM returned non-JSON response") from exc
 
         content: str | None = None
         choices = data.get("choices")
@@ -66,6 +69,6 @@ class OpenAILLMClient:
                 content = message.get("content")
 
         if not content or not isinstance(content, str):
-            raise RuntimeError("OpenAI response did not contain text content")
+            raise LLMUpstreamResponseError("LLM response did not contain text content")
 
         return re.sub(r"\s+", " ", content).strip()

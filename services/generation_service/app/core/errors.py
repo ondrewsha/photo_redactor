@@ -17,3 +17,7 @@ class UnauthorizedError(Exception):
 
 class GeneratorConfigurationError(RuntimeError):
     pass
+
+
+class QueueUnavailableError(RuntimeError):
+    pass

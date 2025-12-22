@@ -9,7 +9,7 @@ from fastapi.responses import JSONResponse
 
 from app.api.router import router
 from app.core.errors import StyleNotFoundError, UnauthorizedError
-from app.core.llm.errors import LLMConfigurationError
+from app.core.llm.errors import LLMConfigurationError, LLMUpstreamResponseError
 from app.core.settings import Settings
 
 
@@ -55,7 +55,7 @@ def create_app() -> FastAPI:
             status_code=502,
             content={
                 "code": "upstream_error",
-                "message": "LLM provider request failed",
+                "message": "AI сервис временно недоступен. Попробуйте позже.",
                 "details": {"error": str(exc)},
             },
         )
@@ -67,6 +67,17 @@ def create_app() -> FastAPI:
             content={
                 "code": "llm_not_configured",
                 "message": str(exc),
+            },
+        )
+
+    @app.exception_handler(LLMUpstreamResponseError)
+    async def handle_llm_bad_response(_: Request, exc: LLMUpstreamResponseError) -> JSONResponse:
+        return JSONResponse(
+            status_code=502,
+            content={
+                "code": "llm_upstream_error",
+                "message": "AI сервис вернул некорректный ответ. Попробуйте позже.",
+                "details": {"error": str(exc)},
             },
         )
 
