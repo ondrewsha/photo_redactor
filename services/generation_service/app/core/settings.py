@@ -27,7 +27,7 @@ class Settings(BaseSettings):
     openai_model: str = "gpt-image-1"
     openai_proxy_url: str | None = Field(default=None, repr=False)
     openai_output_format: Literal["png", "jpeg", "webp"] = "png"
-    openai_quality: Literal["standard", "hd", "low", "medium", "high", "auto"] = "auto"
+    openai_quality: Literal["standard", "hd", "low", "medium", "high", "auto"] = "standard"
     openai_style: Literal["vivid", "natural"] | None = None
 
     http_timeout_s: float = 60.0
