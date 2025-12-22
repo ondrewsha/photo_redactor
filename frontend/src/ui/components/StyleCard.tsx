@@ -52,7 +52,7 @@ export function StyleCard(props: {
         <div className="flex w-full items-end justify-between gap-4">
           <div>
             <div className="text-base font-semibold leading-tight">{props.style.display_name}</div>
-            <div className="mt-1 text-xs text-zinc-200/80">Preset</div>
+            <div className="mt-1 text-xs text-zinc-200/80">Стиль</div>
           </div>
 
           <div

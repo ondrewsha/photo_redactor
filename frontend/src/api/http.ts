@@ -15,7 +15,8 @@ export async function requestJson<T>(
   options: RequestInit = {},
 ): Promise<T> {
   const headers = new Headers(options.headers ?? {});
-  if (options.body != null && !headers.has("content-type")) {
+  const isFormData = typeof FormData !== "undefined" && options.body instanceof FormData;
+  if (options.body != null && !headers.has("content-type") && !isFormData) {
     headers.set("content-type", "application/json");
   }
   const response = await fetch(url, {

@@ -27,8 +27,16 @@ def _solid_rgba_png(width: int, height: int, rgba: tuple[int, int, int, int]) ->
 
 
 class MockImageGenerator:
-    async def generate(self, *, prompt: str, width: int, height: int, seed: int | None) -> GeneratedImage:
-        key = f"{seed}:{prompt}".encode("utf-8", errors="ignore")
+    async def generate(
+        self,
+        *,
+        prompt: str,
+        width: int,
+        height: int,
+        seed: int | None,
+        source_image: bytes | None = None,
+    ) -> GeneratedImage:
+        key = f"{seed}:{prompt}".encode("utf-8", errors="ignore") + (source_image or b"")
         digest = hashlib.sha256(key).digest()
         rgba = (digest[0], digest[1], digest[2], 255)
         content = _solid_rgba_png(width=width, height=height, rgba=rgba)

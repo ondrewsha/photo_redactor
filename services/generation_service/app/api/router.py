@@ -1,10 +1,12 @@
 from __future__ import annotations
 
+import asyncio
 from typing import Annotated
+from pathlib import Path
 from uuid import UUID
 
 import redis.asyncio as redis
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, File, Form, UploadFile
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from nanovisual_shared.schemas import CreateJobRequest, CreateJobResponse, HealthResponse, JobStatusResponse
@@ -40,6 +42,47 @@ async def create_generation_job(
         height=payload.height,
         seed=payload.seed,
     )
+    try:
+        await redis_client.rpush(settings.queue_key, str(job.id))
+    except Exception as exc:  # noqa: BLE001 - convert infra failure to API error
+        await mark_failed(
+            db=db,
+            job_id=job.id,
+            error_message="Очередь генерации временно недоступна. Попробуйте позже.",
+        )
+        raise QueueUnavailableError("Queue unavailable") from exc
+
+    return CreateJobResponse(job_id=job.id, status=job.status)
+
+
+@router.post(
+    "/jobs/image",
+    response_model=CreateJobResponse,
+    dependencies=[Depends(require_internal_token)],
+)
+async def create_generation_job_with_image(
+    prompt: str = Form(...),
+    width: int = Form(1024),
+    height: int = Form(1024),
+    image: UploadFile = File(...),
+    db: AsyncSession = Depends(get_db_session),
+    redis_client: redis.Redis = Depends(get_redis),
+    settings: Settings = Depends(get_settings),
+) -> CreateJobResponse:
+    job = await create_job(
+        db=db,
+        prompt=prompt,
+        width=width,
+        height=height,
+        seed=None,
+    )
+
+    inputs_dir = Path(settings.media_root) / "inputs"
+    inputs_dir.mkdir(parents=True, exist_ok=True)
+    input_path = inputs_dir / str(job.id)
+    content = await image.read()
+    await asyncio.to_thread(input_path.write_bytes, content)
+
     try:
         await redis_client.rpush(settings.queue_key, str(job.id))
     except Exception as exc:  # noqa: BLE001 - convert infra failure to API error

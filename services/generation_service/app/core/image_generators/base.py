@@ -11,4 +11,12 @@ class GeneratedImage:
 
 
 class ImageGenerator(Protocol):
-    async def generate(self, *, prompt: str, width: int, height: int, seed: int | None) -> GeneratedImage: ...
+    async def generate(
+        self,
+        *,
+        prompt: str,
+        width: int,
+        height: int,
+        seed: int | None,
+        source_image: bytes | None = None,
+    ) -> GeneratedImage: ...

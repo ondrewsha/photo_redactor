@@ -11,6 +11,12 @@ export class HttpError extends Error {
 }
 
 export function getErrorMessage(error: unknown): string {
-  if (error instanceof Error) return error.message;
-  return "Unknown error";
+  if (error instanceof DOMException && error.name === "AbortError") return "Отменено";
+  if (error instanceof Error) {
+    const msg = error.message || "";
+    if (msg === "Failed to fetch") return "Нет связи с сервером";
+    if (msg.toLowerCase().includes("networkerror")) return "Нет связи с сервером";
+    return msg;
+  }
+  return "Неизвестная ошибка";
 }

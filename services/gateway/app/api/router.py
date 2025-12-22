@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import Annotated
 
 import httpx
-from fastapi import APIRouter, Depends, Request
+from fastapi import APIRouter, Depends, File, Form, Request, UploadFile
 from fastapi.responses import Response, StreamingResponse
 
 from nanovisual_shared.schemas import (
@@ -14,6 +14,7 @@ from nanovisual_shared.schemas import (
     HealthResponse,
     JobStatusResponse,
     StyleCategoryPublic,
+    PromptMode,
 )
 
 from app.api.schemas import GenerateImageRequest, GenerateImageResponse
@@ -71,13 +72,14 @@ async def generate(
     settings: Annotated[Settings, Depends(get_settings)],
     http: Annotated[httpx.AsyncClient, Depends(get_http)],
 ) -> GenerateImageResponse:
+    style_ids = payload.style_ids or ["none"]
     composed = await http.post(
         f"{settings.prompt_service_url.rstrip('/')}/compose",
         headers=_forward_headers(request, settings),
         json=ComposePromptRequest(
-            style_id=payload.style_id,
+            style_ids=style_ids,
             user_input=payload.user_input,
-            mode=payload.mode,
+            mode=PromptMode.enhance,
         ).model_dump(mode="json"),
     )
     composed.raise_for_status()
@@ -90,7 +92,6 @@ async def generate(
             prompt=composed_data.final_prompt,
             width=payload.width,
             height=payload.height,
-            seed=payload.seed,
         ).model_dump(mode="json"),
     )
     job.raise_for_status()
@@ -99,8 +100,53 @@ async def generate(
     return GenerateImageResponse(
         job_id=str(job_data.job_id),
         status=job_data.status,
-        enhanced_user_input=composed_data.enhanced_user_input,
     )
+
+
+@router.post("/generate/image", response_model=GenerateImageResponse)
+async def generate_with_image(
+    request: Request,
+    user_input: str = Form(...),
+    image: UploadFile = File(...),
+    style_ids: list[str] | None = Form(None),
+    width: int = Form(1024),
+    height: int = Form(1024),
+    settings: Settings = Depends(get_settings),
+    http: httpx.AsyncClient = Depends(get_http),
+) -> GenerateImageResponse:
+    cleaned_style_ids = [s.strip() for s in (style_ids or []) if isinstance(s, str) and s.strip()] or ["none"]
+
+    composed = await http.post(
+        f"{settings.prompt_service_url.rstrip('/')}/compose",
+        headers=_forward_headers(request, settings),
+        json=ComposePromptRequest(
+            style_ids=cleaned_style_ids,
+            user_input=user_input,
+            mode=PromptMode.enhance,
+        ).model_dump(mode="json"),
+    )
+    composed.raise_for_status()
+    composed_data = ComposePromptResponse.model_validate(composed.json())
+
+    image_bytes = await image.read()
+    files = {
+        "image": (
+            image.filename or "image",
+            image_bytes,
+            image.content_type or "application/octet-stream",
+        )
+    }
+    data = {"prompt": composed_data.final_prompt, "width": str(width), "height": str(height)}
+    job = await http.post(
+        f"{settings.generation_service_url.rstrip('/')}/jobs/image",
+        headers=_forward_headers(request, settings),
+        data=data,
+        files=files,
+    )
+    job.raise_for_status()
+    job_data: CreateJobResponse = CreateJobResponse.model_validate(job.json())
+
+    return GenerateImageResponse(job_id=str(job_data.job_id), status=job_data.status)
 
 
 @router.get("/jobs/{job_id}", response_model=JobStatusResponse)

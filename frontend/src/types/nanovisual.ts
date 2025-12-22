@@ -4,21 +4,16 @@ export type StyleCategoryPublic = {
   preview_image: string;
 };
 
-export type PromptMode = "enhance" | "creative";
-
 export type GenerateImageRequest = {
-  style_id: string;
+  style_ids: string[];
   user_input: string;
-  mode: PromptMode;
   width: number;
   height: number;
-  seed: number | null;
 };
 
 export type GenerateImageResponse = {
   job_id: string;
   status: JobStatus;
-  enhanced_user_input: string;
 };
 
 export type JobStatus = "pending" | "processing" | "completed" | "failed";
@@ -27,7 +22,6 @@ export type CreateJobRequest = {
   prompt: string;
   width: number;
   height: number;
-  seed: number | null;
 };
 
 export type CreateJobResponse = {

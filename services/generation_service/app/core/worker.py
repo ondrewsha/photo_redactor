@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import asyncio
+import logging
+from pathlib import Path
 from uuid import UUID
 
 import httpx
@@ -13,6 +15,8 @@ from app.core.image_generators.base import ImageGenerator
 from app.core.jobs_repository import mark_completed, mark_failed, mark_processing
 from app.core.settings import Settings
 from app.core.storage.base import Storage
+
+logger = logging.getLogger(__name__)
 
 
 class GenerationWorker:
@@ -56,11 +60,21 @@ class GenerationWorker:
 
                 job = await get_job(db, job_id)
 
+                source_image: bytes | None = None
+                input_path = Path(self._settings.media_root) / "inputs" / str(job_id)
+                try:
+                    source_image = await asyncio.to_thread(input_path.read_bytes)
+                except FileNotFoundError:
+                    source_image = None
+                except Exception:
+                    source_image = None
+
                 generated = await self._generator.generate(
                     prompt=job.prompt,
                     width=job.width,
                     height=job.height,
                     seed=job.seed,
+                    source_image=source_image,
                 )
                 await mark_processing(db, job_id, progress=85)
 
@@ -81,6 +95,7 @@ class GenerationWorker:
                 )
                 await mark_completed(db, job_id=job_id, file_name=file_name, mime_type=generated.mime_type)
             except Exception as exc:  # noqa: BLE001
+                logger.exception("Задача генерации завершилась ошибкой (job_id=%s)", job_id)
                 user_message = _user_facing_error(exc)
                 try:
                     await mark_failed(db, job_id=job_id, error_message=user_message)
@@ -90,10 +105,10 @@ class GenerationWorker:
 
 def _user_facing_error(exc: Exception) -> str:
     if isinstance(exc, GeneratorConfigurationError):
-        return "Сервис генерации не настроен. Попробуйте позже."
+        return "Сервис генерации сейчас не настроен. Попробуйте позже."
     if isinstance(exc, UnsupportedImageSizeError):
         return (
-            f"Неподдерживаемый размер {exc.width}x{exc.height}. "
+            f"Размер {exc.width}x{exc.height} пока не поддерживается. "
             "Разрешено: 1024x1024, 1536x1024, 1024x1536, 1792x1024, 1024x1792, 512x512, 256x256."
         )
     if isinstance(exc, TimeoutError):
@@ -153,34 +168,25 @@ def _user_facing_error(exc: Exception) -> str:
             low = f"{code.lower()} {low}"
 
         if auth_error_type is not None and isinstance(exc, auth_error_type):
-            return "Неверный OpenAI API key. Проверь GEN_SERVICE_OPENAI_API_KEY."
+            return "Сервис изображений OpenAI сейчас недоступен."
         if "unsupported_country_region_territory" in low or "unsupported country" in low:
-            return "OpenAI недоступен в вашем регионе. Попробуй прокси/VPN или укажи GEN_SERVICE_OPENAI_PROXY_URL."
+            return "Сервис изображений OpenAI недоступен в вашем регионе."
         if "insufficient_quota" in low or "quota" in low or "billing" in low:
-            return "У OpenAI нет доступной квоты (или не подключён биллинг). Проверь лимиты/план."
+            return "Сервис изображений OpenAI временно недоступен из‑за ограничений учётной записи."
         if permission_error_type is not None and isinstance(exc, permission_error_type):
-            return "Нет доступа к OpenAI Images API/модели. Проверь GEN_SERVICE_OPENAI_MODEL и права ключа."
+            return "Нет доступа к сервису изображений OpenAI."
         if not_found_error_type is not None and isinstance(exc, not_found_error_type):
-            return "Модель OpenAI не найдена. Проверь GEN_SERVICE_OPENAI_MODEL."
+            return "Выбранная модель OpenAI не найдена."
         if rate_limit_error_type is not None and isinstance(exc, rate_limit_error_type):
-            return "Превышен лимит OpenAI. Попробуй позже."
+            return "Слишком много запросов. Попробуйте позже."
         if api_timeout_error_type is not None and isinstance(exc, api_timeout_error_type):
-            return "OpenAI отвечает слишком долго. Попробуй позже."
+            return "OpenAI отвечает слишком долго. Попробуйте позже."
         if api_connection_error_type is not None and isinstance(exc, api_connection_error_type):
-            return "Не удалось подключиться к OpenAI. Проверь сеть или укажи GEN_SERVICE_OPENAI_PROXY_URL."
+            return "Не удалось подключиться к OpenAI. Попробуйте позже."
         if bad_request_error_type is not None and isinstance(exc, bad_request_error_type):
-            msg = getattr(exc, "message", "") or str(exc)
-            code = getattr(exc, "code", None)
-            body = getattr(exc, "body", None)
-            details_parts = [f"message={msg!r}"]
-            if code is not None:
-                details_parts.append(f"code={code!r}")
-            if body is not None:
-                details_parts.append(f"body={body!r}")
-            details = "; ".join(details_parts)
-            return f"Некорректный запрос к OpenAI Images API. Подробности: {details}"
+            return "Не удалось создать изображение из‑за настроек запроса. Попробуйте другой стиль или размер."
 
-        return "Ошибка OpenAI Images API. Попробуй позже."
+        return "Ошибка сервиса изображений OpenAI. Попробуйте позже."
 
     client_error_type = None
     try:
@@ -193,12 +199,12 @@ def _user_facing_error(exc: Exception) -> str:
         msg = getattr(exc, "message", "") or str(exc)
         low = msg.lower()
         if "api_key_invalid" in low or "api key not valid" in low:
-            return "Неверный Gemini API key. Проверь GEN_SERVICE_GEMINI_API_KEY."
+            return "Сервис Gemini сейчас недоступен."
         if "model_not_found" in low or "model not found" in low:
-            return "Неверная модель Gemini. Проверь GEN_SERVICE_GEMINI_MODEL."
+            return "Выбранная модель Gemini не найдена."
         if "quota" in low or "billing" in low or "limit:" in low:
-            return "У Gemini нет доступной квоты (или не подключён биллинг). Проверь лимиты/план или используй GEN_SERVICE_IMAGE_PROVIDER=mock."
+            return "Сервис Gemini временно недоступен из‑за ограничений учётной записи."
         if "unsupported" in low or "not supported" in low:
-            return "Gemini недоступен в вашем регионе. Попробуйте прокси/VPN."
-        return "Ошибка Gemini API. Попробуйте позже."
+            return "Сервис Gemini недоступен в вашем регионе."
+        return "Ошибка сервиса Gemini. Попробуйте позже."
     return "Не удалось сгенерировать изображение. Попробуйте позже."

@@ -1,8 +1,7 @@
 import { useCallback, useMemo, useRef, useState } from "react";
 
-import { generateImage, getJobStatus, resolveAssetUrl } from "../../api/nanovisual";
+import { generateImage, generateImageWithPhoto, getJobStatus, resolveAssetUrl } from "../../api/nanovisual";
 import { getErrorMessage } from "../../lib/errors";
-import type { PromptMode } from "../../types/nanovisual";
 
 export type GenerationPhase =
   | "idle"
@@ -16,7 +15,6 @@ export type GenerationState = {
   phase: GenerationPhase;
   progress: number;
   jobId: string | null;
-  enhancedText: string | null;
   imageUrl: string | null;
   error: string | null;
 };
@@ -25,18 +23,16 @@ const initialState: GenerationState = {
   phase: "idle",
   progress: 0,
   jobId: null,
-  enhancedText: null,
   imageUrl: null,
   error: null,
 };
 
 export type GenerateParams = {
-  styleId: string;
+  styleIds: string[];
   userInput: string;
-  mode: PromptMode;
   width: number;
   height: number;
-  seed: number | null;
+  photo: File | null;
 };
 
 function delay(ms: number, signal: AbortSignal): Promise<void> {
@@ -80,29 +76,25 @@ export function useGeneration() {
       phase: "composing",
       progress: 0,
       jobId: null,
-      enhancedText: null,
       imageUrl: null,
       error: null,
     });
 
     try {
-      const started = await generateImage(
-        {
-          style_id: params.styleId,
-          user_input: params.userInput,
-          mode: params.mode,
-          width: params.width,
-          height: params.height,
-          seed: params.seed,
-        },
-        controller.signal,
-      );
+      const payload = {
+        style_ids: params.styleIds,
+        user_input: params.userInput,
+        width: params.width,
+        height: params.height,
+      };
+      const started = params.photo
+        ? await generateImageWithPhoto(payload, params.photo, controller.signal)
+        : await generateImage(payload, controller.signal);
 
       setState((prev) => ({
         ...prev,
         phase: "polling",
         jobId: started.job_id,
-        enhancedText: started.enhanced_user_input,
       }));
 
       while (!controller.signal.aborted) {
@@ -128,7 +120,7 @@ export function useGeneration() {
             ...prev,
             phase: "failed",
             progress: 100,
-            error: status.error_message || "Generation failed",
+            error: status.error_message || "Не получилось создать изображение",
           }));
           return;
         }

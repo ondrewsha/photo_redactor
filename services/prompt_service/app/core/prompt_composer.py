@@ -19,25 +19,28 @@ class PromptComposer:
         self._llm = llm
 
     async def compose(self, payload: ComposePromptRequest) -> ComposePromptResponse:
+        style_ids = payload.style_ids
+        if not style_ids and payload.style_id:
+            style_ids = [payload.style_id]
+        if not style_ids:
+            style_ids = ["none"]
+
         try:
-            style = self._registry.get(payload.style_id)
+            styles = [self._registry.get(style_id) for style_id in style_ids]
         except StyleNotFoundError:
             raise
 
         try:
-            if payload.mode == PromptMode.enhance:
-                enhanced = await self._llm.enhance(payload.user_input)
-            elif payload.mode == PromptMode.creative:
-                enhanced = await self._llm.creative(payload.user_input)
-            else:
-                enhanced = payload.user_input
+            enhanced = await self._llm.enhance(payload.user_input)
         except (LLMConfigurationError, LLMUpstreamResponseError):
             enhanced = payload.user_input
 
-        final_prompt = _join_prompt_parts(style.hidden_prefix, enhanced, style.hidden_suffix)
+        prefixes = [s.hidden_prefix for s in styles if s.hidden_prefix and s.hidden_prefix.strip()]
+        suffixes = [s.hidden_suffix for s in styles if s.hidden_suffix and s.hidden_suffix.strip()]
+        final_prompt = _join_prompt_parts(*prefixes, enhanced, *suffixes)
         return ComposePromptResponse(
-            style_id=payload.style_id,
-            mode=payload.mode,
+            style_ids=[s.id for s in styles],
+            mode=PromptMode.enhance,
             enhanced_user_input=enhanced,
             final_prompt=final_prompt,
         )

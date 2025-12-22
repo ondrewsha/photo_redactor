@@ -30,6 +30,25 @@ export async function generateImage(
   });
 }
 
+export async function generateImageWithPhoto(
+  payload: GenerateImageRequest,
+  photo: File,
+  signal?: AbortSignal,
+): Promise<GenerateImageResponse> {
+  const form = new FormData();
+  for (const id of payload.style_ids) form.append("style_ids", id);
+  form.append("user_input", payload.user_input);
+  form.append("width", String(payload.width));
+  form.append("height", String(payload.height));
+  form.append("image", photo);
+
+  return requestJson<GenerateImageResponse>(`${API}/generate/image`, {
+    method: "POST",
+    body: form,
+    signal,
+  });
+}
+
 export async function getJobStatus(
   jobId: string,
   signal?: AbortSignal,

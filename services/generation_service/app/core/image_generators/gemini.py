@@ -17,6 +17,16 @@ from app.core.settings import Settings
 logger = logging.getLogger(__name__)
 
 
+def _detect_mime(data: bytes) -> str:
+    if data.startswith(b"\x89PNG\r\n\x1a\n"):
+        return "image/png"
+    if data.startswith(b"\xff\xd8"):
+        return "image/jpeg"
+    if len(data) >= 12 and data[:4] == b"RIFF" and data[8:12] == b"WEBP":
+        return "image/webp"
+    return "application/octet-stream"
+
+
 def _redact_proxy_url(proxy_url: str) -> str:
     parsed = urlparse(proxy_url)
     if parsed.username or parsed.password:
@@ -84,18 +94,43 @@ class GeminiImageGenerator:
     def close(self) -> None:
         self._http_client.close()
 
-    async def generate(self, *, prompt: str, width: int, height: int, seed: int | None) -> GeneratedImage:
+    async def generate(
+        self,
+        *,
+        prompt: str,
+        width: int,
+        height: int,
+        seed: int | None,
+        source_image: bytes | None = None,
+    ) -> GeneratedImage:
         _ = (width, height, seed)
 
         return await asyncio.wait_for(
-            asyncio.to_thread(self._generate_sync, prompt),
+            asyncio.to_thread(self._generate_sync, prompt, source_image),
             timeout=self._settings.http_timeout_s,
         )
 
-    def _generate_sync(self, prompt: str) -> GeneratedImage:
+    def _generate_sync(self, prompt: str, source_image: bytes | None) -> GeneratedImage:
+        contents: Any = prompt
+        if source_image:
+            from google.genai import types
+
+            contents = [
+                types.Content(
+                    role="user",
+                    parts=[
+                        types.Part.from_bytes(
+                            data=source_image,
+                            mime_type=_detect_mime(source_image),
+                        ),
+                        types.Part.from_text(text=prompt),
+                    ],
+                )
+            ]
+
         response = self._client.models.generate_content(
             model=self._settings.gemini_model,
-            contents=prompt,
+            contents=contents,
         )
 
         parts: Any = getattr(response, "parts", None)

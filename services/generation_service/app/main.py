@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import inspect
+import mimetypes
 from contextlib import asynccontextmanager, suppress
 from pathlib import Path
 from typing import AsyncIterator
@@ -56,6 +57,8 @@ def _build_image_generator(settings: Settings) -> ImageGenerator:
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     settings = Settings()
     app.state.settings = settings
+
+    mimetypes.add_type("image/webp", ".webp")
 
     engine: AsyncEngine = create_async_engine(settings.database_url, pool_pre_ping=True)
     sessionmaker = async_sessionmaker(engine, expire_on_commit=False)
@@ -116,7 +119,7 @@ def create_app() -> FastAPI:
             status_code=404,
             content={
                 "code": "job_not_found",
-                "message": f"Unknown job_id: {exc.job_id}",
+                "message": "Задача не найдена.",
                 "details": {"job_id": str(exc.job_id)},
             },
         )
