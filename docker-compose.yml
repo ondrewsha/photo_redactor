@@ -89,7 +89,7 @@ services:
       GATEWAY_HTTP_TIMEOUT_S: ${GATEWAY_HTTP_TIMEOUT_S:-30}
       GATEWAY_DEBUG_ERRORS: ${GATEWAY_DEBUG_ERRORS:-false}
     ports:
-      - "${GATEWAY_PORT:-8000}:8000"
+      - "${GATEWAY_PORT:-8080}:8000"
     depends_on:
       - prompt_service
       - generation_service

@@ -79,7 +79,7 @@ export function App() {
             <div className="hidden items-center gap-2 lg:flex">
               <a
                 className="text-sm text-zinc-400 hover:text-zinc-200"
-                href="http://localhost:8000/health"
+                href="/api/health"
                 target="_blank"
                 rel="noreferrer"
               >

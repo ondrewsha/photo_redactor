@@ -25,4 +25,4 @@ npm run dev
 
 По умолчанию фронт работает на `http://localhost:5173` и проксирует:
 
-- `/api/*` → API Gateway (`http://localhost:8000`)
+- `/api/*` → API Gateway (`http://localhost:8080`)

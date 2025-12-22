@@ -3,7 +3,7 @@ import { defineConfig, loadEnv } from "vite";
 
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), "");
-  const gatewayTarget = env.VITE_GATEWAY_URL || "http://localhost:8000";
+  const gatewayTarget = env.VITE_GATEWAY_URL || "http://localhost:8080";
 
   return {
     plugins: [react()],
