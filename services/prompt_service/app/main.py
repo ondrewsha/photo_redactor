@@ -17,7 +17,10 @@ from app.core.settings import Settings
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     settings = Settings()
     app.state.settings = settings
-    app.state.http = httpx.AsyncClient(timeout=settings.http_timeout_s)
+    app.state.http = httpx.AsyncClient(
+        timeout=settings.http_timeout_s,
+        proxy=settings.openai_proxy_url or None,
+    )
     try:
         yield
     finally:

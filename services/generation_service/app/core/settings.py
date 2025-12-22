@@ -19,6 +19,7 @@ class Settings(BaseSettings):
     image_provider: Literal["mock", "gemini"] = "mock"
     gemini_api_key: str | None = Field(default=None, repr=False)
     gemini_model: str = "gemini-2.5-flash-image"
+    gemini_proxy_url: str | None = Field(default=None, repr=False)
 
     http_timeout_s: float = 60.0
 

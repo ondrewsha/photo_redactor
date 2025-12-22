@@ -5,6 +5,8 @@ import asyncio
 import io
 from typing import Any
 
+import httpx
+
 from app.core.errors import GeneratorConfigurationError
 from app.core.image_generators.base import GeneratedImage
 from app.core.settings import Settings
@@ -15,6 +17,7 @@ class GeminiImageGenerator:
         self._settings = settings
         try:
             from google import genai
+            from google.genai import types
         except Exception as exc:  # noqa: BLE001
             raise GeneratorConfigurationError(
                 "Не установлена библиотека google-genai. Добавьте зависимость `google-genai` "
@@ -26,7 +29,19 @@ class GeminiImageGenerator:
                 "Set GEN_SERVICE_GEMINI_API_KEY for image_provider=gemini"
             )
 
-        self._client = genai.Client(api_key=self._settings.gemini_api_key)
+        self._http_client = httpx.Client(
+            timeout=self._settings.http_timeout_s,
+            proxy=self._settings.gemini_proxy_url or None,
+        )
+        http_options = types.HttpOptions(httpx_client=self._http_client)
+
+        self._client = genai.Client(
+            api_key=self._settings.gemini_api_key,
+            http_options=http_options,
+        )
+
+    def close(self) -> None:
+        self._http_client.close()
 
     async def generate(self, *, prompt: str, width: int, height: int, seed: int | None) -> GeneratedImage:
         # Nano Banana models don't currently expose width/height/seed controls in SDK;

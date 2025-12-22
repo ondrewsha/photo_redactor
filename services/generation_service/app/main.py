@@ -97,6 +97,9 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
             worker_task.cancel()
             with suppress(asyncio.CancelledError):
                 await worker_task
+        close_generator = getattr(generator, "close", None)
+        if callable(close_generator):
+            await _maybe_await(close_generator())
         await _close_redis(redis_client)
         await engine.dispose()
 
