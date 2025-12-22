@@ -33,8 +33,7 @@ class StyleTemplate:
     id: str
     display_name: str
     preview_image: str
-    hidden_prefix: str
-    hidden_suffix: str
+    description: str
 
     def public(self) -> StyleCategoryPublic:
         return StyleCategoryPublic(
@@ -56,139 +55,115 @@ class StyleRegistry:
                 id="none",
                 display_name="Без стиля",
                 preview_image=_preview_svg("Без стиля", c1="#334155", c2="#0f172a"),
-                hidden_prefix="",
-                hidden_suffix="",
+                description="",
             ),
             StyleTemplate(
                 id="cyberpunk",
                 display_name="Киберпанк",
                 preview_image=_preview_svg("Киберпанк", c1="#a21caf", c2="#06b6d4"),
-                hidden_prefix=(
-                    "Киберпанк. Ночной город. Неоновые вывески. Дождь и отражения. "
-                    "Киношный кадр."
-                ),
-                hidden_suffix=(
-                    "Контрастный свет. Туман в воздухе. Много деталей."
-                ),
+                description="Ночной город, неон, дождь и отражения, контрастный свет, лёгкий туман, много мелких деталей.",
             ),
             StyleTemplate(
                 id="oil_paint",
                 display_name="Масло",
                 preview_image=_preview_svg("Масло", c1="#f59e0b", c2="#fb7185"),
-                hidden_prefix="Картина маслом на холсте. Выразительные мазки. Классическая живопись.",
-                hidden_suffix="Тёплые тона. Фактура краски. Много деталей.",
+                description="Картина маслом на холсте: выразительные мазки, тёплые тона, заметная фактура краски, высокая детализация.",
             ),
             StyleTemplate(
                 id="photoreal",
                 display_name="Фотореализм",
                 preview_image=_preview_svg("Фотореализм", c1="#10b981", c2="#38bdf8"),
-                hidden_prefix="Фотореалистичное изображение. Натуральный свет. Реалистичные материалы.",
-                hidden_suffix="Высокая детализация. Естественные цвета. Небольшая глубина резкости.",
+                description="Как реальное фото: натуральный свет, реалистичные материалы, естественные цвета, высокая детализация, лёгкое размытие фона.",
             ),
             StyleTemplate(
                 id="watercolor",
                 display_name="Акварель",
                 preview_image=_preview_svg("Акварель", c1="#38bdf8", c2="#a78bfa"),
-                hidden_prefix="Акварельная иллюстрация. Мягкие размывы. Бумажная фактура.",
-                hidden_suffix="Пастельная палитра. Лёгкие контуры. Воздушность.",
+                description="Акварель: мягкие размывы, бумажная фактура, пастельные цвета, лёгкие контуры, ощущение воздуха.",
             ),
             StyleTemplate(
                 id="anime",
                 display_name="Аниме",
                 preview_image=_preview_svg("Аниме", c1="#fb7185", c2="#6366f1"),
-                hidden_prefix="Иллюстрация в стиле аниме. Чёткие линии. Выразительные персонажи.",
-                hidden_suffix="Яркие тени. Динамичный свет. Чистые цвета.",
+                description="Аниме: чёткие линии, выразительные персонажи, чистые цвета, динамичный свет и тени.",
             ),
             StyleTemplate(
                 id="pencil_sketch",
                 display_name="Карандашный рисунок",
                 preview_image=_preview_svg("Карандаш", c1="#94a3b8", c2="#0f172a"),
-                hidden_prefix="Карандашный рисунок. Чёрно‑белая графика. Бумажная фактура.",
-                hidden_suffix="Тонкие штрихи. Лёгкие тени. Чистые линии.",
+                description="Карандаш: чёрно‑белая графика, бумажная фактура, тонкие штрихи, лёгкие тени, аккуратные линии.",
             ),
             StyleTemplate(
                 id="comic",
                 display_name="Комикс",
                 preview_image=_preview_svg("Комикс", c1="#f97316", c2="#ef4444"),
-                hidden_prefix="Комикс. Чёткие контуры. Выразительная сцена.",
-                hidden_suffix="Контраст. Динамика. Полутоновые точки.",
+                description="Комикс: чёткие контуры, контраст, динамика, полутоновые точки (растр), выразительная сцена.",
             ),
             StyleTemplate(
                 id="pixel_art",
                 display_name="Пиксельная графика",
                 preview_image=_preview_svg("Пиксели", c1="#22c55e", c2="#0ea5e9"),
-                hidden_prefix="Пиксельная графика. Ограниченная палитра. Крупные пиксели.",
-                hidden_suffix="Ретро‑настроение. Простые формы. Чёткие края.",
+                description="Пиксельная графика: крупные пиксели, ограниченная палитра, простые формы, ретро‑настроение, чёткие края.",
             ),
             StyleTemplate(
                 id="isometric",
                 display_name="Изометрия",
                 preview_image=_preview_svg("Изометрия", c1="#06b6d4", c2="#22c55e"),
-                hidden_prefix="Изометрическая иллюстрация. Вид под углом. Чистые формы.",
-                hidden_suffix="Аккуратные детали. Ровные линии. Мягкие тени.",
+                description="Изометрия: вид под углом, аккуратные формы, ровные линии, мягкие тени, понятная геометрия.",
             ),
             StyleTemplate(
                 id="minimal",
                 display_name="Минимализм",
                 preview_image=_preview_svg("Минимализм", c1="#e2e8f0", c2="#64748b"),
-                hidden_prefix="Минималистичная иллюстрация. Много воздуха. Простые формы.",
-                hidden_suffix="Чистый фон. Лаконичные линии. Спокойные цвета.",
+                description="Минимализм: много воздуха, простые формы, чистый фон, спокойные цвета, минимум деталей.",
             ),
             StyleTemplate(
                 id="line_art",
                 display_name="Линейный рисунок",
                 preview_image=_preview_svg("Линии", c1="#d4d4d8", c2="#18181b"),
-                hidden_prefix="Линейный рисунок. Тонкие линии. Без лишних деталей.",
-                hidden_suffix="Чистый контур. Аккуратность. Белый фон.",
+                description="Линейный рисунок: тонкие линии, чистый контур, белый фон, минимум деталей, аккуратность.",
             ),
             StyleTemplate(
                 id="noir",
                 display_name="Чёрно‑белый нуар",
                 preview_image=_preview_svg("Нуар", c1="#111827", c2="#6b7280"),
-                hidden_prefix="Чёрно‑белый кадр. Жёсткий контраст. Атмосфера нуара.",
-                hidden_suffix="Глубокие тени. Свет из окна. Дымка.",
+                description="Нуар: чёрно‑белая сцена, жёсткий контраст, глубокие тени, свет из окна, лёгкая дымка.",
             ),
             StyleTemplate(
                 id="retro_poster",
                 display_name="Ретро‑плакат",
                 preview_image=_preview_svg("Ретро", c1="#f59e0b", c2="#06b6d4"),
-                hidden_prefix="Ретро‑плакат. Яркие цвета. Большие формы.",
-                hidden_suffix="Лёгкая зернистость. Градиенты. Сияние.",
+                description="Ретро‑плакат: яркие цвета, крупные формы, лёгкая зернистость, мягкие градиенты, лёгкое сияние.",
             ),
             StyleTemplate(
                 id="storybook",
                 display_name="Детская книга",
                 preview_image=_preview_svg("Детская книга", c1="#60a5fa", c2="#fbbf24"),
-                hidden_prefix="Иллюстрация для детской книги. Добрый и мягкий стиль.",
-                hidden_suffix="Тёплые цвета. Простые формы. Уютное настроение.",
+                description="Детская книга: добрый и мягкий рисунок, тёплые цвета, простые формы, уютное настроение.",
             ),
             StyleTemplate(
                 id="clay",
                 display_name="Пластилин",
                 preview_image=_preview_svg("Пластилин", c1="#a78bfa", c2="#fb7185"),
-                hidden_prefix="Пластилиновая фигурка. Ручная лепка. Объёмные формы.",
-                hidden_suffix="Мягкие тени. Матовая фактура. Тёплый свет.",
+                description="Пластилин: ручная лепка, объёмные формы, матовая фактура, тёплый свет, мягкие тени.",
             ),
             StyleTemplate(
                 id="fantasy",
                 display_name="Сказочная иллюстрация",
                 preview_image=_preview_svg("Сказка", c1="#22c55e", c2="#a78bfa"),
-                hidden_prefix="Сказочная иллюстрация. Волшебная атмосфера. Мягкое свечение.",
-                hidden_suffix="Красивый свет. Много деталей. Лёгкая дымка.",
+                description="Сказочная иллюстрация: волшебная атмосфера, мягкое свечение, красивый свет, много деталей, лёгкая дымка.",
             ),
             StyleTemplate(
                 id="steampunk",
                 display_name="Паровые механизмы",
                 preview_image=_preview_svg("Механизмы", c1="#a16207", c2="#92400e"),
-                hidden_prefix="Мир паровых механизмов. Шестерёнки, латунь, медь.",
-                hidden_suffix="Тёплый свет. Детализация. Атмосфера мастерской.",
+                description="Паровые механизмы: шестерёнки, латунь и медь, атмосфера мастерской, тёплый свет, высокая детализация.",
             ),
             StyleTemplate(
                 id="flat_illustration",
                 display_name="Плоская иллюстрация",
                 preview_image=_preview_svg("Плоско", c1="#38bdf8", c2="#f97316"),
-                hidden_prefix="Плоская иллюстрация. Простые формы. Чистые цвета.",
-                hidden_suffix="Минимум деталей. Аккуратные контуры. Понятные силуэты.",
+                description="Плоская иллюстрация: простые формы, чистые цвета, минимум деталей, аккуратные контуры, понятные силуэты.",
             ),
         ]
         return cls(templates=templates)

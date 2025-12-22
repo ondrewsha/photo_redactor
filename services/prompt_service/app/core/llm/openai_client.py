@@ -26,26 +26,47 @@ class OpenAILLMClient:
             timeout=settings.http_timeout_s,
         )
 
-    async def enhance(self, text: str) -> str:
+    async def enhance(self, text: str, *, style_context: str | None = None) -> str:
         system = (
-            "You are a prompt enhancer for image generation. "
-            "Take the user's text and improve it with concrete visual details "
-            "(subject, environment, lighting, composition, textures, depth). "
-            "Keep the original intent, avoid naming art styles (they are applied separately), "
-            "do not add safety disclaimers, output in the same language as the input, "
-            "and output ONLY the improved text."
+            "Ты помогаешь составить короткое описание для генерации изображения.\n"
+            "На входе: текст пользователя и (иногда) выбранные стили с описанием.\n"
+            "Задача: сохранить смысл пользователя, добавить конкретики (что, где, свет, цвет, материалы, настроение, ракурс) "
+            "и аккуратно вплести стиль в текст.\n"
+            "Правила:\n"
+            "- Пиши на том же языке, что и пользователь.\n"
+            "- Не используй профессиональный жаргон.\n"
+            "- Не пиши служебные слова вроде «промпт», «стиль:», «модель», «система».\n"
+            "- Не выводи список стилей отдельными строками — используй его как подсказку и вплетай в текст.\n"
+            "- Не добавляй предупреждения и пояснения.\n"
+            "- Сделай текст коротким: до 600 символов.\n"
+            "Ответ: только готовое описание."
         )
-        return await self._generate(system=system, user=text)
+        user = self._format_user(text, style_context=style_context)
+        return await self._generate(system=system, user=user)
 
-    async def creative(self, keywords: str) -> str:
+    async def creative(self, keywords: str, *, style_context: str | None = None) -> str:
         system = (
-            "You turn 2-3 keywords into a strong image idea. "
-            "Create a short, vivid scene description suitable for an image model. "
-            "Do not mention cameras unless the user asked, do not add safety disclaimers, "
-            "avoid naming art styles (they are applied separately), output in the same language as the input, "
-            "and output ONLY the scene description."
+            "Ты придумываешь короткую идею картинки по 2–3 словам пользователя.\n"
+            "Если есть выбранные стили с описанием — вплети их в результат.\n"
+            "Правила:\n"
+            "- Пиши на том же языке, что и пользователь.\n"
+            "- Добавь конкретики (что происходит, где, свет, цвет, настроение), но без лишних слов.\n"
+            "- Не используй профессиональный жаргон.\n"
+            "- Не пиши служебные слова вроде «промпт», «стиль:», «модель», «система».\n"
+            "- Не выводи список стилей отдельными строками — используй его как подсказку и вплетай в текст.\n"
+            "- Не добавляй предупреждения и пояснения.\n"
+            "- Сделай текст коротким: до 600 символов.\n"
+            "Ответ: только готовое описание."
         )
-        return await self._generate(system=system, user=keywords)
+        user = self._format_user(keywords, style_context=style_context)
+        return await self._generate(system=system, user=user)
+
+    @staticmethod
+    def _format_user(text: str, *, style_context: str | None) -> str:
+        cleaned = text.strip()
+        if not style_context or not style_context.strip():
+            return cleaned
+        return f"Текст пользователя: {cleaned}\n\nВыбранные стили:\n{style_context.strip()}"
 
     async def _generate(self, system: str, user: str) -> str:
         if not self._settings.openai_api_key:

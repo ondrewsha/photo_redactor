@@ -30,14 +30,23 @@ class PromptComposer:
         except StyleNotFoundError:
             raise
 
+        style_context_lines: list[str] = []
+        for style in styles:
+            if style.description and style.description.strip():
+                style_context_lines.append(f"{style.display_name} — {style.description.strip()}")
+        style_context = "\n".join(style_context_lines) if style_context_lines else None
+
+        used_llm = True
         try:
-            enhanced = await self._llm.enhance(payload.user_input)
+            enhanced = await self._llm.enhance(payload.user_input, style_context=style_context)
         except (LLMConfigurationError, LLMUpstreamResponseError):
+            used_llm = False
             enhanced = payload.user_input
 
-        prefixes = [s.hidden_prefix for s in styles if s.hidden_prefix and s.hidden_prefix.strip()]
-        suffixes = [s.hidden_suffix for s in styles if s.hidden_suffix and s.hidden_suffix.strip()]
-        final_prompt = _join_prompt_parts(*prefixes, enhanced, *suffixes)
+        final_prompt = enhanced
+        if style_context and not used_llm:
+            final_prompt = _join_prompt_parts(enhanced, style_context)
+
         return ComposePromptResponse(
             style_ids=[s.id for s in styles],
             mode=PromptMode.enhance,

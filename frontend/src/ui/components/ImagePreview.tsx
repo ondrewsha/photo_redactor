@@ -11,15 +11,21 @@ export function ImagePreview(props: {
   onCancel?: () => void;
 }) {
   const canDownload = props.phase === "completed" && Boolean(props.imageUrl);
+  const subtitle =
+    props.phase === "idle"
+      ? "Опиши, что хочешь увидеть"
+      : props.phase === "completed"
+        ? "Готово. Можно скачать."
+        : props.phase === "failed"
+          ? "Не получилось. Попробуй ещё раз."
+          : "Создаю изображение…";
   return (
     <div className="rounded-3xl border border-zinc-800 bg-zinc-900/30 shadow-soft">
       <div className="p-4 sm:p-6">
         <div className="flex items-start justify-between gap-4">
           <div>
             <div className="text-sm font-semibold">Результат</div>
-            <div className="mt-1 text-xs text-zinc-400">
-              {props.phase === "idle" ? "Опиши, что хочешь увидеть" : "Создаю изображение…"}
-            </div>
+            <div className="mt-1 text-xs text-zinc-400">{subtitle}</div>
           </div>
 
           {props.phase !== "idle" ? (
