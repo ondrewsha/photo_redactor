@@ -140,6 +140,7 @@ class OpenAIImageGenerator:
         call_kwargs: dict[str, object] = {
             "model": self._settings.openai_model,
             "prompt": prompt,
+            "n": 1,
             "size": size,
             "response_format": "b64_json",
             "output_format": self._settings.openai_output_format,
@@ -155,6 +156,7 @@ class OpenAIImageGenerator:
             response = await self._client.images.generate(
                 model=self._settings.openai_model,
                 prompt=prompt,
+                n = 1,
                 size=size,
                 response_format="b64_json",
             )
