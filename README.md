@@ -11,7 +11,7 @@ services/
   prompt_service/             # Service B: Prompt & AI Intelligence (FastAPI)
   generation_service/         # Service C: Generation Engine (FastAPI + очередь)
 shared/                       # Общие Pydantic-схемы (Pydantic v2)
-frontend/                     # React/Vite/Tailwind (будет добавлено на шаге 4)
+frontend/                     # React/Vite/Tailwind
 ```
 
 ## Быстрый старт (инфраструктура)
@@ -40,7 +40,7 @@ docker compose up -d prompt_service
 
 - `GET /health`
 - `GET /categories` — безопасный список стилей (без hidden prompt частей)
-- `POST /compose` — сборка промпта (enhance/creative) + скрытые префикс/суффикс
+- `POST /compose` — улучшение текста + аккуратное «вплетение» выбранных стилей (внутренний эндпоинт, фронту финальный промпт не нужен)
 
 ## API Gateway (Service A)
 

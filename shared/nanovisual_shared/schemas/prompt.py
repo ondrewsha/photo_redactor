@@ -9,7 +9,6 @@ from .common import BaseSchema
 
 class PromptMode(str, Enum):
     enhance = "enhance"
-    creative = "creative"
 
 
 class ComposePromptRequest(BaseSchema):
@@ -38,5 +37,4 @@ class ComposePromptRequest(BaseSchema):
 class ComposePromptResponse(BaseSchema):
     style_ids: list[str]
     mode: PromptMode
-    enhanced_user_input: str
     final_prompt: str

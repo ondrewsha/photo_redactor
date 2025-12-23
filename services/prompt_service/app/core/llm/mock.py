@@ -13,13 +13,3 @@ class MockLLMClient:
                     return f"{cleaned}. {style_cleaned}".strip()
                 return style_cleaned
         return cleaned
-
-    async def creative(self, keywords: str, *, style_context: str | None = None) -> str:
-        cleaned = re.sub(r"\s+", " ", keywords).strip()
-        if style_context and style_context.strip():
-            style_cleaned = re.sub(r"\s+", " ", style_context).strip()
-            if style_cleaned:
-                if cleaned:
-                    return f"{cleaned}. {style_cleaned}".strip()
-                return style_cleaned
-        return cleaned

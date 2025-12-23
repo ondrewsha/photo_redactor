@@ -50,6 +50,5 @@ class PromptComposer:
         return ComposePromptResponse(
             style_ids=[s.id for s in styles],
             mode=PromptMode.enhance,
-            enhanced_user_input=enhanced,
             final_prompt=final_prompt,
         )

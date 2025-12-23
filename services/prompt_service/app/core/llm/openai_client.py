@@ -28,37 +28,20 @@ class OpenAILLMClient:
 
     async def enhance(self, text: str, *, style_context: str | None = None) -> str:
         system = (
-            "Ты помогаешь составить короткое описание для генерации изображения.\n"
-            "На входе: текст пользователя и (иногда) выбранные стили с описанием.\n"
-            "Задача: сохранить смысл пользователя, добавить конкретики (что, где, свет, цвет, материалы, настроение, ракурс) "
-            "и аккуратно вплести стиль в текст.\n"
-            "Правила:\n"
-            "- Пиши на том же языке, что и пользователь.\n"
-            "- Не используй профессиональный жаргон.\n"
-            "- Не пиши служебные слова вроде «промпт», «стиль:», «модель», «система».\n"
-            "- Не выводи список стилей отдельными строками — используй его как подсказку и вплетай в текст.\n"
-            "- Не добавляй предупреждения и пояснения.\n"
-            "- Сделай текст коротким: до 600 символов.\n"
-            "Ответ: только готовое описание."
+            "You are an expert prompt engineer for image generation.\n"
+            "Input: user's request + optional style hints (names + descriptions).\n"
+            "Task: produce ONE professional prompt suitable for AI image generation model.\n"
+            "Rules:\n"
+            "- Output in English.\n"
+            "- Translate the user's request and style hints to English if needed.\n"
+            "- Keep it concise but rich in visual detail (subject, scene, environment, lighting, mood, composition).\n"
+            "- Blend the style hints naturally into the prompt (do NOT print them as a separate list).\n"
+            "- No explanations, no disclaimers, no quotes.\n"
+            "- Prefer a single line (comma-separated is fine).\n"
+            "- Keep under 900 characters.\n"
+            "Output: only the final prompt text."
         )
         user = self._format_user(text, style_context=style_context)
-        return await self._generate(system=system, user=user)
-
-    async def creative(self, keywords: str, *, style_context: str | None = None) -> str:
-        system = (
-            "Ты придумываешь короткую идею картинки по 2–3 словам пользователя.\n"
-            "Если есть выбранные стили с описанием — вплети их в результат.\n"
-            "Правила:\n"
-            "- Пиши на том же языке, что и пользователь.\n"
-            "- Добавь конкретики (что происходит, где, свет, цвет, настроение), но без лишних слов.\n"
-            "- Не используй профессиональный жаргон.\n"
-            "- Не пиши служебные слова вроде «промпт», «стиль:», «модель», «система».\n"
-            "- Не выводи список стилей отдельными строками — используй его как подсказку и вплетай в текст.\n"
-            "- Не добавляй предупреждения и пояснения.\n"
-            "- Сделай текст коротким: до 600 символов.\n"
-            "Ответ: только готовое описание."
-        )
-        user = self._format_user(keywords, style_context=style_context)
         return await self._generate(system=system, user=user)
 
     @staticmethod
@@ -66,7 +49,7 @@ class OpenAILLMClient:
         cleaned = text.strip()
         if not style_context or not style_context.strip():
             return cleaned
-        return f"Текст пользователя: {cleaned}\n\nВыбранные стили:\n{style_context.strip()}"
+        return f"User request: {cleaned}\n\nStyle hints (use as guidance, do not list):\n{style_context.strip()}"
 
     async def _generate(self, system: str, user: str) -> str:
         if not self._settings.openai_api_key:
