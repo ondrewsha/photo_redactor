@@ -1,5 +1,6 @@
 export type StyleCategoryPublic = {
   id: string;
+  category: string;
   display_name: string;
   preview_image: string;
 };
