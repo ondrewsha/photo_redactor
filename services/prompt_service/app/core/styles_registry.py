@@ -83,6 +83,15 @@ _ICONS: dict[str, str] = {
 <path d="M-78 56 L-26 -10 L0 20 L18 -2 L78 56 Z"/>
 <path d="M-26 -10 L-10 10 M18 -2 L32 16"/>
 """.strip(),
+    "tag": """
+<path d="M-76 -18 L-18 -76 H44 L76 -44 V18 L18 76 H-44 L-76 44 Z"/>
+<circle cx="34" cy="-44" r="9"/>
+""".strip(),
+    "box": """
+<path d="M-70 -12 L0 -54 L70 -12 L0 30 Z"/>
+<path d="M-70 -12 V44 L0 86 L70 44 V-12"/>
+<path d="M0 30 V86"/>
+""".strip(),
 }
 
 
@@ -227,6 +236,7 @@ class StyleRegistry:
         cat_retro = "Ретро и СССР"
         cat_worlds = "Фантастика и миры"
         cat_nature = "Природа и настроение"
+        cat_market = "Карточки для маркетплейсов"
         cat_design = "Дизайн и графика"
 
         templates = [
@@ -1025,6 +1035,116 @@ class StyleRegistry:
                 bg="#0b1220",
                 accent="#60a5fa",
                 icon="camera",
+                pattern="grid",
+            ),
+            _style(
+                id="market_white",
+                category=cat_market,
+                name="Карточка — белый фон",
+                preview_text="Белый фон",
+                description="Карточка товара: белый фон, товар по центру, мягкая тень, чистый и аккуратный вид, без текста.",
+                bg="#0b1220",
+                accent="#e5e7eb",
+                icon="box",
+                pattern="grid",
+            ),
+            _style(
+                id="market_pastel",
+                category=cat_market,
+                name="Карточка — пастельный фон",
+                preview_text="Пастель",
+                description="Карточка товара: пастельный фон, товар по центру, мягкий свет, немного декоративных форм, без текста.",
+                bg="#0b1220",
+                accent="#fda4af",
+                icon="box",
+                pattern="confetti",
+            ),
+            _style(
+                id="market_premium",
+                category=cat_market,
+                name="Карточка — премиум",
+                preview_text="Премиум",
+                description="Карточка товара: тёмный фон, мягкая подсветка, эффектный объём, дорогой вид, аккуратная тень, без текста.",
+                bg="#0a0a0a",
+                accent="#fbbf24",
+                icon="box",
+                pattern="grid",
+            ),
+            _style(
+                id="market_set",
+                category=cat_market,
+                name="Карточка — набор",
+                preview_text="Набор",
+                description="Карточка товара: набор из нескольких предметов в кадре, аккуратная раскладка, понятная композиция, без текста.",
+                bg="#0b1220",
+                accent="#60a5fa",
+                icon="gift",
+                pattern="grid",
+            ),
+            _style(
+                id="market_details",
+                category=cat_market,
+                name="Карточка — детали",
+                preview_text="Детали",
+                description="Карточка товара: крупные планы и детали материала, чистый фон, хороший свет, видно качество, без текста.",
+                bg="#0b1020",
+                accent="#22c55e",
+                icon="camera",
+                pattern="grid",
+            ),
+            _style(
+                id="market_lifestyle",
+                category=cat_market,
+                name="Карточка — в жизни",
+                preview_text="В жизни",
+                description="Карточка товара: показать товар в использовании, уютная сцена, естественный свет, аккуратный фон, без текста.",
+                bg="#1b1a16",
+                accent="#fbbf24",
+                icon="camera",
+                pattern="dots",
+            ),
+            _style(
+                id="market_infographics",
+                category=cat_market,
+                name="Карточка — с иконками",
+                preview_text="Иконки",
+                description="Карточка товара: место под подписи, простые иконки‑пиктограммы, чистый фон, без читаемого текста.",
+                bg="#0b1220",
+                accent="#38bdf8",
+                icon="tag",
+                pattern="grid",
+            ),
+            _style(
+                id="market_sale",
+                category=cat_market,
+                name="Карточка — акция",
+                preview_text="Акция",
+                description="Карточка товара: яркие акценты, метки‑наклейки, ощущение скидки, чистая композиция, без читаемого текста.",
+                bg="#0b1220",
+                accent="#f97316",
+                icon="tag",
+                pattern="confetti",
+            ),
+            _style(
+                id="market_comparison",
+                category=cat_market,
+                name="Карточка — сравнение",
+                preview_text="Сравнение",
+                description="Карточка товара: два варианта рядом, аккуратное сравнение, место под подписи, без читаемого текста.",
+                bg="#0b1220",
+                accent="#a78bfa",
+                icon="postcard",
+                pattern="grid",
+            ),
+            _style(
+                id="market_dimensions",
+                category=cat_market,
+                name="Карточка — размеры",
+                preview_text="Размеры",
+                description="Карточка товара: показать размер и форму, место под стрелки и подписи, чистый фон, без читаемого текста.",
+                bg="#0b1220",
+                accent="#e5e7eb",
+                icon="postcard",
                 pattern="grid",
             ),
             _style(
