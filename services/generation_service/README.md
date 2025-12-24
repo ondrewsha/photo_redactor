@@ -11,6 +11,14 @@
 - `gemini-2.5-flash-image`
 - `gemini-3-pro-image-preview`
 
+Imagen модели (text-to-image):
+- `imagen-4.0-generate-001`
+- `imagen-4.0-ultra-generate-001`
+- `imagen-4.0-fast-generate-001`
+
+Примечание: модели `imagen-*` принимают только текстовый prompt (без исходных изображений).
+Примечание: Imagen может требовать включённый биллинг (ошибка `Imagen API is only accessible to billed users`).
+
 OpenAI модель по умолчанию: `gpt-image-1` (`GEN_SERVICE_OPENAI_MODEL`).
 
 ## Proxy

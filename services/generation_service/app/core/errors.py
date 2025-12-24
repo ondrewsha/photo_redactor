@@ -28,3 +28,9 @@ class UnsupportedImageSizeError(ValueError):
         super().__init__(f"Unsupported image size: {width}x{height}")
         self.width = width
         self.height = height
+
+
+class UnsupportedSourceImagesError(ValueError):
+    def __init__(self, *, model: str) -> None:
+        super().__init__(f"Source images are not supported for model: {model}")
+        self.model = model

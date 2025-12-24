@@ -10,11 +10,40 @@ from urllib.parse import urlparse
 
 import httpx
 
-from app.core.errors import GeneratorConfigurationError
+from app.core.errors import GeneratorConfigurationError, UnsupportedSourceImagesError
 from app.core.image_generators.base import GeneratedImage
 from app.core.settings import Settings
 
 logger = logging.getLogger(__name__)
+
+_IMAGEN_ASPECT_RATIOS: dict[str, float] = {
+    "1:1": 1.0,
+    "4:3": 4 / 3,
+    "3:4": 3 / 4,
+    "16:9": 16 / 9,
+    "9:16": 9 / 16,
+}
+
+
+def _is_imagen_model(model: str) -> bool:
+    value = model.strip().lower()
+    if value.startswith("models/"):
+        value = value.removeprefix("models/")
+    return value.startswith("imagen-")
+
+
+def _is_imagen_fast_model(model: str) -> bool:
+    value = model.strip().lower()
+    if value.startswith("models/"):
+        value = value.removeprefix("models/")
+    return value.startswith("imagen-") and "-fast-" in value
+
+
+def _pick_imagen_aspect_ratio(width: int, height: int) -> str:
+    if width <= 0 or height <= 0:
+        return "1:1"
+    ratio = width / height
+    return min(_IMAGEN_ASPECT_RATIOS.items(), key=lambda kv: abs(kv[1] - ratio))[0]
 
 
 def _detect_mime(data: bytes) -> str:
@@ -103,14 +132,28 @@ class GeminiImageGenerator:
         seed: int | None,
         source_images: list[bytes] | None = None,
     ) -> GeneratedImage:
-        _ = (width, height, seed)
-
         return await asyncio.wait_for(
-            asyncio.to_thread(self._generate_sync, prompt, source_images),
+            asyncio.to_thread(self._generate_sync, prompt, width, height, seed, source_images),
             timeout=self._settings.http_timeout_s,
         )
 
-    def _generate_sync(self, prompt: str, source_images: list[bytes] | None) -> GeneratedImage:
+    def _generate_sync(
+        self,
+        prompt: str,
+        width: int,
+        height: int,
+        seed: int | None,
+        source_images: list[bytes] | None,
+    ) -> GeneratedImage:
+        if _is_imagen_model(self._settings.gemini_model):
+            return self._generate_imagen_sync(
+                prompt=prompt,
+                width=width,
+                height=height,
+                seed=seed,
+                source_images=source_images,
+            )
+
         contents: Any = prompt
         if source_images:
             from google.genai import types
@@ -154,6 +197,62 @@ class GeminiImageGenerator:
 
         raise RuntimeError("Gemini response missing inline image data")
 
+    def _generate_imagen_sync(
+        self,
+        *,
+        prompt: str,
+        width: int,
+        height: int,
+        seed: int | None,
+        source_images: list[bytes] | None,
+    ) -> GeneratedImage:
+        if source_images:
+            raise UnsupportedSourceImagesError(model=self._settings.gemini_model)
+
+        from google.genai import types
+
+        config_kwargs: dict[str, Any] = {"number_of_images": 1}
+
+        fields = getattr(types.GenerateImagesConfig, "model_fields", None)
+        if isinstance(fields, dict):
+            if seed is not None and "seed" in fields:
+                config_kwargs["seed"] = seed
+            if "aspect_ratio" in fields:
+                config_kwargs["aspect_ratio"] = _pick_imagen_aspect_ratio(width, height)
+            if "image_size" in fields and not _is_imagen_fast_model(self._settings.gemini_model):
+                if max(width, height) >= 1400:
+                    config_kwargs["image_size"] = "2K"
+
+        config = types.GenerateImagesConfig(**config_kwargs)
+
+        response = self._client.models.generate_images(
+            model=self._settings.gemini_model,
+            prompt=prompt,
+            config=config,
+        )
+
+        generated_images = getattr(response, "generated_images", None)
+        if not generated_images:
+            generated_images = getattr(response, "generatedImages", None)
+        if not generated_images:
+            raise RuntimeError("Imagen response missing generated_images")
+
+        first = generated_images[0]
+        image = getattr(first, "image", None) or first
+        data = getattr(image, "image_bytes", None)
+        if data is None:
+            data = getattr(image, "imageBytes", None)
+        mime_type = getattr(image, "mime_type", None)
+        if mime_type is None:
+            mime_type = getattr(image, "mimeType", None)
+
+        content = _coerce_image_bytes(data, image)
+        if not mime_type:
+            mime_type = _detect_mime(content)
+        if mime_type == "application/octet-stream":
+            mime_type = "image/png"
+        return GeneratedImage(content=content, mime_type=str(mime_type))
+
 
 def _coerce_image_bytes(data: object, part: object) -> bytes:
     if isinstance(data, (bytes, bytearray, memoryview)):
@@ -168,4 +267,4 @@ def _coerce_image_bytes(data: object, part: object) -> bytes:
         image.save(buf, format="PNG")
         return buf.getvalue()
 
-    raise RuntimeError("Gemini inline_data.data is missing or unsupported")
+    raise RuntimeError("Image bytes are missing or unsupported")

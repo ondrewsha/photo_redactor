@@ -9,7 +9,7 @@ import httpx
 import redis.asyncio as redis
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
-from app.core.errors import GeneratorConfigurationError, UnsupportedImageSizeError
+from app.core.errors import GeneratorConfigurationError, UnsupportedImageSizeError, UnsupportedSourceImagesError
 from app.core.image_optimization import OptimizationSettings, optimize_image
 from app.core.image_generators.base import ImageGenerator
 from app.core.jobs_repository import mark_completed, mark_failed, mark_processing
@@ -119,6 +119,11 @@ def _user_facing_error(exc: Exception) -> str:
             f"Размер {exc.width}x{exc.height} пока не поддерживается. "
             "Разрешено: 1024x1024, 1536x1024, 1024x1536, 1792x1024, 1024x1792, 512x512, 256x256."
         )
+    if isinstance(exc, UnsupportedSourceImagesError):
+        return (
+            "Выбранная модель поддерживает только генерацию по тексту. "
+            "Уберите исходные изображения или выберите модель Gemini (например, gemini-2.5-flash-image)."
+        )
     if isinstance(exc, TimeoutError):
         return "Сервис генерации отвечает слишком долго. Попробуйте позже."
     if isinstance(exc, httpx.TimeoutException):
@@ -210,7 +215,12 @@ def _user_facing_error(exc: Exception) -> str:
             return "Сервис Gemini сейчас недоступен."
         if "model_not_found" in low or "model not found" in low:
             return "Выбранная модель Gemini не найдена."
-        if "quota" in low or "billing" in low or "limit:" in low:
+        if "imagen api is only accessible to billed users" in low or "billed users" in low:
+            return (
+                "Imagen доступен только для аккаунтов с включённым биллингом. "
+                "Подключите оплату для Gemini API или выберите другую модель."
+            )
+        if "quota" in low or "billing" in low or "billed" in low or "limit:" in low:
             return "Сервис Gemini временно недоступен из‑за ограничений учётной записи."
         if "unsupported" in low or "not supported" in low:
             return "Сервис Gemini недоступен в вашем регионе."
