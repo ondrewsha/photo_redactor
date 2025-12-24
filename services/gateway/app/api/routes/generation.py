@@ -34,7 +34,7 @@ async def _get_or_create_wallet_for_update(db: AsyncSession, *, user_id: uuid.UU
 
 
 async def _reserve_generation(db: AsyncSession, *, user_id: uuid.UUID) -> uuid.UUID:
-    async with db.begin():
+    try:
         wallet = await _get_or_create_wallet_for_update(db, user_id=user_id)
         if wallet.balance <= 0:
             raise HTTPException(
@@ -45,8 +45,15 @@ async def _reserve_generation(db: AsyncSession, *, user_id: uuid.UUID) -> uuid.U
         db.add(WalletTransaction(user_id=user_id, delta=-1, kind="generation", reference=None, comment="Генерация"))
         reservation = UserJobReservation(user_id=user_id, job_id=None, status="reserved")
         db.add(reservation)
-    await db.refresh(reservation)
-    return reservation.id
+        await db.commit()
+        await db.refresh(reservation)
+        return reservation.id
+    except HTTPException:
+        await db.rollback()
+        raise
+    except Exception:  # noqa: BLE001
+        await db.rollback()
+        raise
 
 
 async def _link_job_to_reservation(
@@ -55,11 +62,15 @@ async def _link_job_to_reservation(
     reservation_id: uuid.UUID,
     job_id: uuid.UUID,
 ) -> None:
-    async with db.begin():
+    try:
         res = await db.execute(select(UserJobReservation).where(UserJobReservation.id == reservation_id).with_for_update())
         reservation = res.scalar_one()
         reservation.job_id = job_id
         reservation.status = "active"
+        await db.commit()
+    except Exception:  # noqa: BLE001
+        await db.rollback()
+        raise
 
 
 async def _refund_reservation(
@@ -69,17 +80,31 @@ async def _refund_reservation(
     reservation_id: uuid.UUID,
     comment: str,
 ) -> None:
-    async with db.begin():
+    try:
         res = await db.execute(select(UserJobReservation).where(UserJobReservation.id == reservation_id).with_for_update())
         reservation = res.scalar_one_or_none()
         if reservation is None:
+            await db.commit()
             return
         if reservation.status == "refunded":
+            await db.commit()
             return
         wallet = await _get_or_create_wallet_for_update(db, user_id=user_id)
         wallet.balance += 1
         reservation.status = "refunded"
-        db.add(WalletTransaction(user_id=user_id, delta=1, kind="refund", reference=str(reservation.job_id) if reservation.job_id else None, comment=comment))
+        db.add(
+            WalletTransaction(
+                user_id=user_id,
+                delta=1,
+                kind="refund",
+                reference=str(reservation.job_id) if reservation.job_id else None,
+                comment=comment,
+            )
+        )
+        await db.commit()
+    except Exception:  # noqa: BLE001
+        await db.rollback()
+        raise
 
 
 @router.post("/generate", response_model=GenerateImageResponse)
@@ -215,11 +240,15 @@ async def job_status(
     if data.status.value == "failed" and reservation.status != "refunded":
         await _refund_reservation(db, user_id=user.id, reservation_id=reservation.id, comment="Возврат: генерация завершилась с ошибкой")
     elif data.status.value == "completed" and reservation.status != "finalized":
-        async with db.begin():
+        try:
             res2 = await db.execute(select(UserJobReservation).where(UserJobReservation.id == reservation.id).with_for_update())
             locked = res2.scalar_one_or_none()
             if locked is not None and locked.status not in {"finalized", "refunded"}:
                 locked.status = "finalized"
+            await db.commit()
+        except Exception:  # noqa: BLE001
+            await db.rollback()
+            raise
 
     return data
 

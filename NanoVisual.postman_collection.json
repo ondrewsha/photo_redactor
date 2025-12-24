@@ -36,7 +36,8 @@
         "exec": [
           "const method = (pm.request.method || '').toUpperCase();",
           "if (['GET', 'HEAD', 'OPTIONS'].includes(method)) return;",
-          "const csrf = pm.cookies.get('nv_csrf');",
+          "let csrf = pm.cookies.get('nv_csrf');",
+          "if (!csrf) csrf = pm.collectionVariables.get('csrf_token');",
           "if (!csrf) return;",
           "pm.collectionVariables.set('csrf_token', csrf);",
           "pm.request.headers.upsert({ key: 'x-csrf-token', value: csrf });"
@@ -66,7 +67,15 @@
                 "type": "text/javascript",
                 "exec": [
                   "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
-                  "const csrf = pm.cookies.get('nv_csrf');",
+                  "const setCookies = pm.response.headers.all().filter(h => (h.key || '').toLowerCase() === 'set-cookie').map(h => h.value || '');",
+                  "let csrf = null;",
+                  "for (const sc of setCookies) {",
+                  "  if (sc.toLowerCase().startsWith('nv_csrf=')) {",
+                  "    csrf = sc.split(';', 1)[0].split('=', 2)[1];",
+                  "    break;",
+                  "  }",
+                  "}",
+                  "if (!csrf) csrf = pm.cookies.get('nv_csrf');",
                   "if (csrf) pm.collectionVariables.set('csrf_token', csrf);"
                 ]
               }
@@ -95,7 +104,15 @@
                 "type": "text/javascript",
                 "exec": [
                   "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
-                  "const csrf = pm.cookies.get('nv_csrf');",
+                  "const setCookies = pm.response.headers.all().filter(h => (h.key || '').toLowerCase() === 'set-cookie').map(h => h.value || '');",
+                  "let csrf = null;",
+                  "for (const sc of setCookies) {",
+                  "  if (sc.toLowerCase().startsWith('nv_csrf=')) {",
+                  "    csrf = sc.split(';', 1)[0].split('=', 2)[1];",
+                  "    break;",
+                  "  }",
+                  "}",
+                  "if (!csrf) csrf = pm.cookies.get('nv_csrf');",
                   "if (csrf) pm.collectionVariables.set('csrf_token', csrf);"
                 ]
               }
