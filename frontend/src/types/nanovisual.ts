@@ -44,3 +44,49 @@ export type JobStatusResponse = {
   result: JobResult | null;
   error_message: string | null;
 };
+
+export type MessageResponse = {
+  message: string;
+};
+
+export type AuthMeResponse = {
+  email: string;
+  email_verified: boolean;
+  balance: number;
+};
+
+export type RegisterRequest = {
+  email: string;
+  password: string;
+};
+
+export type LoginRequest = {
+  email: string;
+  password: string;
+};
+
+export type ChangePasswordRequest = {
+  current_password: string;
+  new_password: string;
+};
+
+export type BillingQuoteResponse = {
+  count: number;
+  currency: string;
+  unit_price_rub: number;
+  total_price_rub: number;
+  suggestions: number[];
+};
+
+export type CreatePaymentRequest = {
+  generation_count: number;
+};
+
+export type CreatePaymentResponse = {
+  payment_id: string;
+  status: string;
+  confirmation_url: string | null;
+  generation_count: number;
+  amount_rub: number;
+  currency: string;
+};

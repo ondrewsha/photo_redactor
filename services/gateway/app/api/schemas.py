@@ -5,6 +5,31 @@ from pydantic import Field, model_validator
 from nanovisual_shared.schemas import BaseSchema, JobStatus
 
 
+class MessageResponse(BaseSchema):
+    message: str = Field(..., min_length=1)
+
+
+class AuthMeResponse(BaseSchema):
+    email: str
+    email_verified: bool
+    balance: int = Field(..., ge=0)
+
+
+class RegisterRequest(BaseSchema):
+    email: str = Field(..., min_length=3, max_length=320)
+    password: str = Field(..., min_length=8, max_length=200)
+
+
+class LoginRequest(BaseSchema):
+    email: str = Field(..., min_length=3, max_length=320)
+    password: str = Field(..., min_length=1, max_length=200)
+
+
+class ChangePasswordRequest(BaseSchema):
+    current_password: str = Field(..., min_length=1, max_length=200)
+    new_password: str = Field(..., min_length=8, max_length=200)
+
+
 class GenerateImageRequest(BaseSchema):
     style_ids: list[str] = Field(default_factory=list, description="One or more style ids.")
     # Backward-compatible field (deprecated): use style_ids instead.
@@ -32,3 +57,24 @@ class GenerateImageRequest(BaseSchema):
 class GenerateImageResponse(BaseSchema):
     job_id: str
     status: JobStatus
+
+
+class BillingQuoteResponse(BaseSchema):
+    count: int = Field(..., ge=1, le=1000)
+    currency: str = Field("RUB", min_length=1, max_length=10)
+    unit_price_rub: int = Field(..., ge=0)
+    total_price_rub: int = Field(..., ge=0)
+    suggestions: list[int] = Field(default_factory=list)
+
+
+class CreatePaymentRequest(BaseSchema):
+    generation_count: int = Field(..., ge=1, le=1000)
+
+
+class CreatePaymentResponse(BaseSchema):
+    payment_id: str
+    status: str
+    confirmation_url: str | None = None
+    generation_count: int = Field(..., ge=1)
+    amount_rub: int = Field(..., ge=0)
+    currency: str = Field("RUB", min_length=1, max_length=10)

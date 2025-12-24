@@ -33,6 +33,8 @@ export type GenerateParams = {
   width: number;
   height: number;
   photos: File[];
+  onStarted?: () => void;
+  onFinished?: () => void;
 };
 
 function delay(ms: number, signal: AbortSignal): Promise<void> {
@@ -91,6 +93,8 @@ export function useGeneration() {
         ? await generateImageWithPhotos(payload, params.photos, controller.signal)
         : await generateImage(payload, controller.signal);
 
+      params.onStarted?.();
+
       setState((prev) => ({
         ...prev,
         phase: "polling",
@@ -112,6 +116,7 @@ export function useGeneration() {
             imageUrl: resolveAssetUrl(status.result!.image_url),
             error: null,
           }));
+          params.onFinished?.();
           return;
         }
 
@@ -122,6 +127,7 @@ export function useGeneration() {
             progress: 100,
             error: status.error_message || "Не получилось создать изображение",
           }));
+          params.onFinished?.();
           return;
         }
 
@@ -140,6 +146,7 @@ export function useGeneration() {
         phase: "failed",
         error: getErrorMessage(error),
       }));
+      params.onFinished?.();
     }
   }, []);
 

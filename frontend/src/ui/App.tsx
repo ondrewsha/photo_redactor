@@ -4,8 +4,11 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { cn } from "../lib/cn";
 import { useCategories } from "./hooks/useCategories";
 import { useGeneration } from "./hooks/useGeneration";
+import { useMe } from "./hooks/useMe";
+import { AuthModal } from "./components/AuthModal";
 import { ImagePreview } from "./components/ImagePreview";
 import { PromptInput } from "./components/PromptInput";
+import { ProfileModal } from "./components/ProfileModal";
 import { StylesLibraryModal } from "./components/StylesLibraryModal";
 
 type SizePreset = { label: string; width: number; height: number };
@@ -21,17 +24,25 @@ const MAX_PHOTOS = 4;
 export function App() {
   const categories = useCategories();
   const gen = useGeneration();
+  const me = useMe();
 
   const [selectedStyleIds, setSelectedStyleIds] = useState<string[]>(["none"]);
   const [prompt, setPrompt] = useState("");
   const [sizePreset, setSizePreset] = useState<SizePreset>(sizePresets[0]!);
   const [libraryOpen, setLibraryOpen] = useState(false);
+  const [authOpen, setAuthOpen] = useState(false);
+  const [profileOpen, setProfileOpen] = useState(false);
+  const [notice, setNotice] = useState<{ kind: "ok" | "bad"; text: string } | null>(null);
   const [photos, setPhotos] = useState<File[]>([]);
   const photoInputRef = useRef<HTMLInputElement | null>(null);
 
   const helperText = useMemo(() => {
+    if (me.state.status === "loading" || me.state.status === "idle") return "Проверяю аккаунт…";
+    if (me.state.status === "unauthenticated") return "Войди или зарегистрируйся, чтобы создавать картинки.";
+    if (me.state.status === "success" && !me.state.data.email_verified) return "Подтверди почту — без этого нельзя генерировать.";
+    if (me.state.status === "success" && me.state.data.balance <= 0) return "Закончились генерации. Купи пакет, чтобы продолжить.";
     return "Опиши простыми словами, что должно быть на картинке.";
-  }, []);
+  }, [me.state]);
 
   const disabled = gen.state.phase === "composing" || gen.state.phase === "queued" || gen.state.phase === "polling";
 
@@ -84,16 +95,50 @@ export function App() {
     if (photoInputRef.current) photoInputRef.current.value = "";
   };
 
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const verify = params.get("verify");
+    const pay = params.get("pay");
+    const google = params.get("google");
+    const trial = params.get("trial");
+
+    if (verify === "ok") setNotice({ kind: "ok", text: trial === "1" ? "Почта подтверждена. Бонус: 3 генерации." : "Почта подтверждена." });
+    if (verify === "bad") setNotice({ kind: "bad", text: "Не получилось подтвердить почту. Попробуй ещё раз." });
+    if (pay === "ok") setNotice({ kind: "ok", text: "Оплата прошла. Генерации добавлены." });
+    if (google === "ok") setNotice({ kind: "ok", text: trial === "1" ? "Вход через Google выполнен. Бонус: 3 генерации." : "Вход через Google выполнен." });
+    if (google === "bad") setNotice({ kind: "bad", text: "Не получилось войти через Google." });
+
+    if (verify || pay || google || trial) {
+      params.delete("verify");
+      params.delete("pay");
+      params.delete("google");
+      params.delete("trial");
+      const q = params.toString();
+      window.history.replaceState(null, "", q ? `?${q}` : window.location.pathname);
+      void me.reload();
+    }
+  }, [me.reload]);
+
   const onSubmit = async () => {
     const styleIds = selectedStyleIds.length ? selectedStyleIds : ["none"];
     const text = prompt.trim();
     if (!text) return;
+    if (me.state.status === "unauthenticated" || me.state.data == null) {
+      setAuthOpen(true);
+      return;
+    }
+    if (!me.state.data.email_verified || me.state.data.balance <= 0) {
+      setProfileOpen(true);
+      return;
+    }
     await gen.generate({
       styleIds,
       userInput: text,
       width: sizePreset.width,
       height: sizePreset.height,
       photos,
+      onStarted: () => void me.reload(),
+      onFinished: () => void me.reload(),
     });
   };
 
@@ -113,7 +158,56 @@ export function App() {
                 Выбери стиль и опиши картинку — остальное сделаю я.
               </div>
             </div>
+
+            <div className="flex items-center gap-3">
+              {me.state.status === "success" ? (
+                <button
+                  type="button"
+                  onClick={() => setProfileOpen(true)}
+                  className={cn(
+                    "rounded-full border px-4 py-2 text-xs font-semibold",
+                    "border-zinc-800 bg-zinc-950/20 text-zinc-200 hover:border-zinc-700",
+                  )}
+                  title="Открыть профиль"
+                >
+                  Осталось: {me.state.data.balance}
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setAuthOpen(true)}
+                  className={cn(
+                    "rounded-full border px-4 py-2 text-xs font-semibold",
+                    "border-zinc-800 bg-zinc-950/20 text-zinc-200 hover:border-zinc-700",
+                  )}
+                >
+                  Войти
+                </button>
+              )}
+            </div>
           </div>
+
+          {notice ? (
+            <div
+              className={cn(
+                "mt-4 rounded-2xl border p-4 text-sm",
+                notice.kind === "ok"
+                  ? "border-emerald-700/40 bg-emerald-500/10 text-emerald-50"
+                  : "border-red-800/40 bg-red-500/10 text-red-100",
+              )}
+            >
+              <div className="flex items-start justify-between gap-3">
+                <div>{notice.text}</div>
+                <button
+                  type="button"
+                  onClick={() => setNotice(null)}
+                  className="text-xs text-zinc-200/80 hover:text-zinc-50"
+                >
+                  Закрыть
+                </button>
+              </div>
+            </div>
+          ) : null}
 
           <div className="mt-6 grid gap-6 lg:grid-cols-[1fr_360px] lg:items-start">
             <main className="space-y-6">
@@ -361,6 +455,21 @@ export function App() {
           selectedStyleIds={selectedStyleIds}
           onToggleStyle={toggleStyle}
         />
+
+        <AuthModal
+          open={authOpen}
+          onClose={() => setAuthOpen(false)}
+          onAuthed={() => void me.reload()}
+        />
+
+        {me.state.status === "success" ? (
+          <ProfileModal
+            open={profileOpen}
+            onClose={() => setProfileOpen(false)}
+            me={me.state.data}
+            onReloadMe={() => void me.reload()}
+          />
+        ) : null}
       </div>
     </div>
   );

@@ -2,7 +2,7 @@
   "info": {
     "_postman_id": "3f1f2f8b-7f0d-4a1a-a64a-9f0f5b0b7e5c",
     "name": "NanoVisual — коллекция Postman",
-    "description": "Коллекция запросов для NanoVisual (шлюз + внутренние сервисы).\n\nПеременные:\n- gateway_url — адрес шлюза (по умолчанию http://localhost:8080)\n- prompt_service_url — адрес сервиса текста (по умолчанию http://localhost:8001)\n- generation_service_url — адрес сервиса картинок (по умолчанию http://localhost:8002)\n- internal_token — если включены внутренние проверки, сюда положи значение для заголовка X-NanoVisual-Internal-Token\n\nБыстрый сценарий через шлюз:\n1) Стили: GET /categories\n2) Старт генерации: POST /generate (без фото) или POST /generate/image (с фото)\n3) Статус: GET /jobs/{{job_id}} (сохранит image_path когда готово)\n4) Скачать файл: GET {{image_path}}\n",
+    "description": "Коллекция запросов для NanoVisual (шлюз + внутренние сервисы).\n\nПеременные:\n- gateway_url — адрес шлюза (по умолчанию http://localhost:8080)\n- prompt_service_url — адрес сервиса текста (по умолчанию http://localhost:8001)\n- generation_service_url — адрес сервиса картинок (по умолчанию http://localhost:8002)\n- internal_token — если включены внутренние проверки, сюда положи значение для заголовка X-NanoVisual-Internal-Token\n- email / password — учётные данные для входа\n- csrf_token — токен для заголовка x-csrf-token (обновляется автоматически из cookie nv_csrf)\n\nСценарий через шлюз (с авторизацией):\n1) Регистрация: POST /auth/register\n2) Подтверждение почты: перейди по ссылке из письма\n3) Проверка профиля: GET /auth/me (должно быть email_verified=true и balance>0)\n4) Старт генерации: POST /generate (без фото) или POST /generate/image (с фото)\n5) Статус: GET /jobs/{{job_id}} (сохранит image_path когда готово)\n6) Скачать файл: GET {{image_path}}\n\nПокупка генераций (mock по умолчанию):\n1) Цена: GET /billing/quote?count=...\n2) Создать платёж: POST /billing/pay (сохранит payment_id)\n3) Подтвердить mock: GET /billing/mock/confirm?payment_id={{payment_id}}\n",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
@@ -16,9 +16,32 @@
     { "key": "height", "value": "1024" },
     { "key": "job_id", "value": "" },
     { "key": "image_path", "value": "" },
+    { "key": "csrf_token", "value": "" },
+    { "key": "email", "value": "user@example.com" },
+    { "key": "password", "value": "ChangeMe123!" },
+    { "key": "new_password", "value": "ChangeMe456!" },
+    { "key": "generation_count", "value": "10" },
+    { "key": "payment_id", "value": "" },
+    { "key": "payment_confirmation_url", "value": "" },
     {
       "key": "final_prompt_json",
       "value": "\"Уютный домик в снегу ночью, тёплый свет в окнах, много деталей, киношный свет\""
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "const method = (pm.request.method || '').toUpperCase();",
+          "if (['GET', 'HEAD', 'OPTIONS'].includes(method)) return;",
+          "const csrf = pm.cookies.get('nv_csrf');",
+          "if (!csrf) return;",
+          "pm.collectionVariables.set('csrf_token', csrf);",
+          "pm.request.headers.upsert({ key: 'x-csrf-token', value: csrf });"
+        ]
+      }
     }
   ],
   "item": [
@@ -35,11 +58,155 @@
           }
         },
         {
+          "name": "Регистрация — POST /auth/register",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const csrf = pm.cookies.get('nv_csrf');",
+                  "if (csrf) pm.collectionVariables.set('csrf_token', csrf);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{email}}\",\n  \"password\": \"{{password}}\"\n}\n",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{gateway_url}}/auth/register"
+          }
+        },
+        {
+          "name": "Вход — POST /auth/login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const csrf = pm.cookies.get('nv_csrf');",
+                  "if (csrf) pm.collectionVariables.set('csrf_token', csrf);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{email}}\",\n  \"password\": \"{{password}}\"\n}\n",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{gateway_url}}/auth/login"
+          }
+        },
+        {
+          "name": "Профиль — GET /auth/me",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": "{{gateway_url}}/auth/me"
+          }
+        },
+        {
+          "name": "Отправить письмо ещё раз — POST /auth/resend-verification",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": "{{gateway_url}}/auth/resend-verification"
+          }
+        },
+        {
+          "name": "Сменить пароль — POST /auth/change-password",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"current_password\": \"{{password}}\",\n  \"new_password\": \"{{new_password}}\"\n}\n",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{gateway_url}}/auth/change-password"
+          }
+        },
+        {
+          "name": "Выход — POST /auth/logout",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": "{{gateway_url}}/auth/logout"
+          }
+        },
+        {
           "name": "Стили (публичный список) — GET /categories",
           "request": {
             "method": "GET",
             "header": [{ "key": "Accept", "value": "application/json" }],
             "url": "{{gateway_url}}/categories"
+          }
+        },
+        {
+          "name": "Цена пакета — GET /billing/quote?count={{generation_count}}",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": "{{gateway_url}}/billing/quote?count={{generation_count}}"
+          }
+        },
+        {
+          "name": "Создать платёж — POST /billing/pay",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const json = pm.response.json();",
+                  "if (json.payment_id) pm.collectionVariables.set('payment_id', json.payment_id);",
+                  "if (json.confirmation_url) pm.collectionVariables.set('payment_confirmation_url', json.confirmation_url);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"generation_count\": {{generation_count}}\n}\n",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{gateway_url}}/billing/pay"
+          }
+        },
+        {
+          "name": "Подтвердить платёж (mock) — GET /billing/mock/confirm?payment_id={{payment_id}}",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": "{{gateway_url}}/billing/mock/confirm?payment_id={{payment_id}}"
           }
         },
         {

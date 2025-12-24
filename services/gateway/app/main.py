@@ -1,16 +1,40 @@
 from __future__ import annotations
 
 from contextlib import asynccontextmanager
+import inspect
 from uuid import uuid4
 from typing import AsyncIterator
 
 import httpx
+import redis.asyncio as redis
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from sqlalchemy.ext.asyncio import AsyncEngine, async_sessionmaker, create_async_engine
 
 from app.api.router import router
+from app.core.cookies import set_device_cookie
+from app.core.security import DEVICE_COOKIE, new_token
 from app.core.settings import Settings
+
+
+async def _maybe_await(value: object) -> None:
+    if inspect.isawaitable(value):
+        await value  # type: ignore[no-any-return]
+
+
+async def _close_redis(client: redis.Redis) -> None:
+    close = getattr(client, "aclose", None)
+    if callable(close):
+        await _maybe_await(close())
+        return
+    close = getattr(client, "close", None)
+    if callable(close):
+        await _maybe_await(close())
+    pool = getattr(client, "connection_pool", None)
+    disconnect = getattr(pool, "disconnect", None) if pool is not None else None
+    if callable(disconnect):
+        await _maybe_await(disconnect())
 
 
 @asynccontextmanager
@@ -18,10 +42,24 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     settings = Settings()
     app.state.settings = settings
     app.state.http = httpx.AsyncClient(timeout=settings.http_timeout_s)
+    engine: AsyncEngine = create_async_engine(settings.database_url, pool_pre_ping=True)
+    sessionmaker = async_sessionmaker(engine, expire_on_commit=False)
+    app.state.db_engine = engine
+    app.state.db_sessionmaker = sessionmaker
+
+    from app.core.models import Base  # local import to avoid import-order surprises
+
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
+
+    redis_client = redis.from_url(settings.redis_url)
+    app.state.redis = redis_client
     try:
         yield
     finally:
         await app.state.http.aclose()
+        await _close_redis(redis_client)
+        await engine.dispose()
 
 
 def create_app() -> FastAPI:
@@ -42,12 +80,19 @@ def create_app() -> FastAPI:
     async def security_headers(request: Request, call_next):  # type: ignore[no-untyped-def]
         request_id = request.headers.get("x-request-id") or str(uuid4())
         request.state.request_id = request_id
+        device_id = request.cookies.get(DEVICE_COOKIE)
+        if not device_id:
+            device_id = new_token(nbytes=16)
+        request.state.device_id = device_id
+
         response = await call_next(request)
         response.headers.setdefault("x-request-id", request_id)
         response.headers.setdefault("x-content-type-options", "nosniff")
         response.headers.setdefault("x-frame-options", "DENY")
         response.headers.setdefault("referrer-policy", "no-referrer")
         response.headers.setdefault("cross-origin-resource-policy", "same-site")
+        if request.cookies.get(DEVICE_COOKIE) != device_id:
+            set_device_cookie(response, settings=request.app.state.settings, device_id=device_id)
         return response
 
     @app.exception_handler(httpx.HTTPStatusError)
