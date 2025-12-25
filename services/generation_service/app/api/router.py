@@ -9,9 +9,16 @@ import redis.asyncio as redis
 from fastapi import APIRouter, Depends, File, Form, UploadFile
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from nanovisual_shared.schemas import CreateJobRequest, CreateJobResponse, HealthResponse, JobStatusResponse
+from nanovisual_shared.schemas import (
+    CreateJobRequest,
+    CreateJobResponse,
+    GenerationCapabilities,
+    HealthResponse,
+    JobStatusResponse,
+)
 
 from app.api.deps import get_db_session, get_redis, get_settings, require_internal_token
+from app.core.capabilities import build_generation_capabilities
 from app.core.errors import QueueUnavailableError
 from app.core.jobs_repository import create_job, get_job_status_response, mark_failed
 from app.core.settings import Settings
@@ -22,6 +29,17 @@ router = APIRouter()
 @router.get("/health", response_model=HealthResponse)
 async def health() -> HealthResponse:
     return HealthResponse()
+
+
+@router.get(
+    "/capabilities",
+    response_model=GenerationCapabilities,
+    dependencies=[Depends(require_internal_token)],
+)
+async def capabilities(
+    settings: Annotated[Settings, Depends(get_settings)],
+) -> GenerationCapabilities:
+    return build_generation_capabilities(settings=settings)
 
 
 @router.post(

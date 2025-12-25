@@ -5,6 +5,23 @@ export type StyleCategoryPublic = {
   preview_image: string;
 };
 
+export type ImageSizePreset = {
+  id: string;
+  label: string;
+  width: number;
+  height: number;
+  aspect_ratio?: string | null;
+  quality?: string | null;
+};
+
+export type GenerationCapabilities = {
+  image_provider: "mock" | "openai" | "gemini";
+  model: string;
+  supports_source_images: boolean;
+  max_photos: number;
+  size_presets: ImageSizePreset[];
+};
+
 export type GenerateImageRequest = {
   style_ids: string[];
   user_input: string;

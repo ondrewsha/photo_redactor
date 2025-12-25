@@ -5,6 +5,7 @@ import type {
   ChangePasswordRequest,
   CreatePaymentRequest,
   CreatePaymentResponse,
+  GenerationCapabilities,
   GenerateImageRequest,
   GenerateImageResponse,
   JobStatusResponse,
@@ -25,6 +26,12 @@ export async function listCategories(
   signal?: AbortSignal,
 ): Promise<StyleCategoryPublic[]> {
   return requestJson<StyleCategoryPublic[]>(`${API}/categories`, { signal });
+}
+
+export async function getCapabilities(
+  signal?: AbortSignal,
+): Promise<GenerationCapabilities> {
+  return requestJson<GenerationCapabilities>(`${API}/capabilities`, { signal });
 }
 
 export async function generateImage(

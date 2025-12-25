@@ -17,8 +17,8 @@ class JobStatus(str, Enum):
 
 class CreateJobRequest(BaseSchema):
     prompt: str = Field(..., min_length=1)
-    width: int = Field(1024, ge=64, le=2048)
-    height: int = Field(1024, ge=64, le=2048)
+    width: int = Field(1024, ge=64, le=4096)
+    height: int = Field(1024, ge=64, le=4096)
     seed: int | None = Field(None, ge=0)
 
 

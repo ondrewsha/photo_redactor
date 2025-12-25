@@ -35,8 +35,8 @@ class GenerateImageRequest(BaseSchema):
     # Backward-compatible field (deprecated): use style_ids instead.
     style_id: str | None = Field(default=None)
     user_input: str = Field(..., min_length=1)
-    width: int = Field(1024, ge=64, le=2048)
-    height: int = Field(1024, ge=64, le=2048)
+    width: int = Field(1024, ge=64, le=4096)
+    height: int = Field(1024, ge=64, le=4096)
 
     @model_validator(mode="before")
     @classmethod

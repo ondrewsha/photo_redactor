@@ -11,7 +11,7 @@ from urllib.parse import urlparse
 
 import httpx
 
-from app.core.errors import GeneratorConfigurationError, UnsupportedImageSizeError
+from app.core.errors import GeneratorConfigurationError, UnsupportedImageSizeError, UnsupportedSourceImagesError
 from app.core.image_generators.base import GeneratedImage
 from app.core.settings import Settings
 
@@ -42,6 +42,18 @@ _DALLE2_MAX_IMAGE_BYTES = 4_000_000
 
 def _is_dalle2(model: str) -> bool:
     return model.strip().lower() == "dall-e-2"
+
+
+def _is_dalle3(model: str) -> bool:
+    return model.strip().lower() == "dall-e-3"
+
+
+def _allowed_generate_sizes(model: str) -> set[_OpenAISize]:
+    if _is_dalle2(model):
+        return {"256x256", "512x512", "1024x1024"}
+    if _is_dalle3(model):
+        return {"1024x1024", "1792x1024", "1024x1792"}
+    return {"1024x1024", "1536x1024", "1024x1536"}
 
 
 def _trim_prompt(prompt: str, *, max_len: int) -> str:
@@ -291,6 +303,8 @@ class OpenAIImageGenerator:
     ) -> GeneratedImage:
         _ = seed
         if source_images:
+            if not _is_dalle2(self._settings.openai_model):
+                raise UnsupportedSourceImagesError(model=self._settings.openai_model)
             return await self._edit(prompt=prompt, width=width, height=height, source_images=source_images)
         return await self._generate(prompt=prompt, width=width, height=height)
 
@@ -301,6 +315,8 @@ class OpenAIImageGenerator:
             if width != height or width not in (256, 512, 1024):
                 raise UnsupportedImageSizeError(width=width, height=height)
         size = _map_size(width, height)
+        if size not in _allowed_generate_sizes(model):
+            raise UnsupportedImageSizeError(width=width, height=height)
 
         kwargs: dict[str, object] = {}
         if self._settings.openai_style is not None and not _is_dalle2(model):

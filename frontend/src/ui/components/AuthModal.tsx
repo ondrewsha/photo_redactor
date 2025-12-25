@@ -30,8 +30,9 @@ export function AuthModal(props: {
   open: boolean;
   onClose: () => void;
   onAuthed: () => void;
+  initialTab?: Tab;
 }) {
-  const [tab, setTab] = useState<Tab>("login");
+  const [tab, setTab] = useState<Tab>(props.initialTab ?? "login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
@@ -54,6 +55,11 @@ export function AuthModal(props: {
     setMessage(null);
     setPassword("");
   }, [props.open]);
+
+  useEffect(() => {
+    if (!props.open) return;
+    setTab(props.initialTab ?? "login");
+  }, [props.initialTab, props.open]);
 
   const title = tab === "login" ? "Вход" : "Регистрация";
   const subtitle =
@@ -224,4 +230,3 @@ export function AuthModal(props: {
     </AnimatePresence>
   );
 }
-

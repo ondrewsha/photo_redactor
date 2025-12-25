@@ -18,10 +18,15 @@ logger = logging.getLogger(__name__)
 
 _IMAGEN_ASPECT_RATIOS: dict[str, float] = {
     "1:1": 1.0,
+    "2:3": 2 / 3,
+    "3:2": 3 / 2,
     "4:3": 4 / 3,
     "3:4": 3 / 4,
+    "4:5": 4 / 5,
+    "5:4": 5 / 4,
     "16:9": 16 / 9,
     "9:16": 9 / 16,
+    "21:9": 21 / 9,
 }
 
 
@@ -44,6 +49,15 @@ def _pick_imagen_aspect_ratio(width: int, height: int) -> str:
         return "1:1"
     ratio = width / height
     return min(_IMAGEN_ASPECT_RATIOS.items(), key=lambda kv: abs(kv[1] - ratio))[0]
+
+
+def _pick_resolution(width: int, height: int) -> str:
+    max_side = max(width, height)
+    if max_side <= 1024:
+        return "1K"
+    if max_side <= 2048:
+        return "2K"
+    return "4K"
 
 
 def _detect_mime(data: bytes) -> str:
@@ -174,10 +188,39 @@ class GeminiImageGenerator:
                 )
             ]
 
-        response = self._client.models.generate_content(
-            model=self._settings.gemini_model,
-            contents=contents,
-        )
+        config = None
+        try:
+            from google.genai import types
+
+            cfg_cls = getattr(types, "GenerateContentConfig", None)
+            img_cls = getattr(types, "ImageConfig", None)
+            cfg_fields = getattr(cfg_cls, "model_fields", None)
+            img_fields = getattr(img_cls, "model_fields", None)
+            if (
+                cfg_cls is not None
+                and img_cls is not None
+                and isinstance(cfg_fields, dict)
+                and "image_config" in cfg_fields
+                and isinstance(img_fields, dict)
+            ):
+                img_kwargs: dict[str, Any] = {}
+                if "aspect_ratio" in img_fields:
+                    img_kwargs["aspect_ratio"] = _pick_imagen_aspect_ratio(width, height)
+                if "image_size" in img_fields:
+                    img_kwargs["image_size"] = _pick_resolution(width, height)
+                if img_kwargs:
+                    config = cfg_cls(image_config=img_cls(**img_kwargs))
+        except Exception:
+            config = None
+
+        call_kwargs: dict[str, Any] = {
+            "model": self._settings.gemini_model,
+            "contents": contents,
+        }
+        if config is not None:
+            call_kwargs["config"] = config
+
+        response = self._client.models.generate_content(**call_kwargs)
 
         parts: Any = getattr(response, "parts", None)
         if not parts:
@@ -220,8 +263,7 @@ class GeminiImageGenerator:
             if "aspect_ratio" in fields:
                 config_kwargs["aspect_ratio"] = _pick_imagen_aspect_ratio(width, height)
             if "image_size" in fields and not _is_imagen_fast_model(self._settings.gemini_model):
-                if max(width, height) >= 1400:
-                    config_kwargs["image_size"] = "2K"
+                config_kwargs["image_size"] = _pick_resolution(width, height)
 
         config = types.GenerateImagesConfig(**config_kwargs)
 
