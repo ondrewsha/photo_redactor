@@ -139,6 +139,7 @@ export interface TranslationSchema {
     totalPrice: string;
     pay: string;
     currency: string;
+    units: string;
   };
   footer: {
     brand: string;

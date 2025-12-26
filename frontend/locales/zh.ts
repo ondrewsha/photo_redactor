@@ -75,7 +75,8 @@ export const zh: TranslationSchema = {
     unitPrice: "单价",
     totalPrice: "总价",
     pay: "完成支付",
-    currency: "CNY"
+    currency: "CNY",
+    units: "件"
   },
   auth: {
     loginTitle: "欢迎回来",

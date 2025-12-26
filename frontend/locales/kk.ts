@@ -80,7 +80,8 @@ export const kk: TranslationSchema = {
     totalPrice: "Жиынтығы",
     pay: "Төлеу",
     // Fix: Added missing currency key
-    currency: "₸"
+    currency: "₸",
+    units: "дана"
   },
   auth: {
     loginTitle: "Қайта қош келдіңіз",

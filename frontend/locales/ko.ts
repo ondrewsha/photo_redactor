@@ -75,7 +75,8 @@ export const ko: TranslationSchema = {
     unitPrice: "단가",
     totalPrice: "합계",
     pay: "결제 완료",
-    currency: "KRW"
+    currency: "KRW",
+    units: "개"
   },
   auth: {
     loginTitle: "다시 오신 것을 환영합니다",

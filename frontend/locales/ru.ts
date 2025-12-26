@@ -75,7 +75,8 @@ export const ru: TranslationSchema = {
     unitPrice: "Цена за штуку",
     totalPrice: "Итого",
     pay: "Оплатить",
-    currency: "₽"
+    currency: "₽",
+    units: "шт."
   },
   auth: {
     loginTitle: "С возвращением",

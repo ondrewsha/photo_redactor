@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useTranslation } from '../context/I18nContext';
 import { useAuth } from '../context/AuthContext';
 import { Button } from './ui/Button';
@@ -14,10 +14,20 @@ interface Props {
 
 export const ProfileModal: React.FC<Props> = ({ isOpen, onClose }) => {
   const { t } = useTranslation();
-  const { user, refresh, logout } = useAuth();
+  const { user, logout } = useAuth();
   const { theme } = useTheme();
   const [count, setCount] = useState(10);
   const [loading, setLoading] = useState(false);
+  const suggestions = [1, 10, 30, 60, 90, 100];
+
+  const unitPrice = useMemo(() => {
+    if (count >= 91) return 10;
+    if (count >= 61) return 15;
+    if (count >= 31) return 20;
+    if (count >= 11) return 25;
+    return 30;
+  }, [count]);
+  const totalPrice = useMemo(() => unitPrice * count, [unitPrice, count]);
 
   if (!isOpen || !user) return null;
 
@@ -34,8 +44,6 @@ export const ProfileModal: React.FC<Props> = ({ isOpen, onClose }) => {
       setLoading(false);
     }
   };
-
-  const unitPrice = count >= 500 ? 12 : count >= 200 ? 15 : count >= 50 ? 20 : count >= 10 ? 25 : 30;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -95,10 +103,11 @@ export const ProfileModal: React.FC<Props> = ({ isOpen, onClose }) => {
           <div className="space-y-4">
             <h3 className="text-sm font-bold uppercase tracking-widest text-zinc-400">{t.profile.buyGenerations}</h3>
             <div className="flex gap-2">
-              {[10, 50, 200, 500].map(val => (
+              {suggestions.map((val) => (
                 <button
                   key={val}
                   onClick={() => setCount(val)}
+                  disabled={loading}
                   className={cn(
                     "flex-1 py-3 rounded-xl border text-sm font-bold transition-all",
                     count === val
@@ -121,6 +130,18 @@ export const ProfileModal: React.FC<Props> = ({ isOpen, onClose }) => {
                   : 'bg-zinc-50 shadow-[0_20px_50px_rgba(15,23,42,0.08)]'
               )}
             >
+              <div className="flex justify-between text-xs text-zinc-500">
+                <span>{count} {t.profile.units}</span>
+              </div>
+              <input
+                type="range"
+                min={1}
+                max={100}
+                value={count}
+                onChange={(e) => setCount(Number(e.target.value))}
+                className="mt-3 w-full accent-indigo-500"
+                disabled={loading}
+              />
               <div className="flex justify-between text-xs">
                 <span className={theme === 'dark' ? 'text-zinc-400' : 'text-zinc-500'}>{t.profile.unitPrice}</span>
                 <span className={cn("font-bold", theme === 'dark' ? 'text-white' : 'text-zinc-900')}>
@@ -129,7 +150,7 @@ export const ProfileModal: React.FC<Props> = ({ isOpen, onClose }) => {
               </div>
               <div className="flex justify-between text-lg font-bold">
                 <span className={theme === 'dark' ? 'text-white' : 'text-zinc-900'}>{t.profile.totalPrice}</span>
-                <span className="text-indigo-600 dark:text-indigo-400">{count * unitPrice} {t.profile.currency}</span>
+                <span className="text-indigo-600 dark:text-indigo-400">{totalPrice} {t.profile.currency}</span>
               </div>
             </div>
 

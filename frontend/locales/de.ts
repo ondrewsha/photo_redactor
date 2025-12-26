@@ -80,7 +80,8 @@ export const de: TranslationSchema = {
     totalPrice: "Gesamt",
     pay: "Bezahlen",
     // Fix: Added missing currency key
-    currency: "€"
+    currency: "€",
+    units: "Stück"
   },
   auth: {
     loginTitle: "Willkommen zurück",

@@ -75,7 +75,8 @@ export const ja: TranslationSchema = {
     unitPrice: "単価",
     totalPrice: "合計",
     pay: "支払いを完了",
-    currency: "JPY"
+    currency: "JPY",
+    units: "個"
   },
   auth: {
     loginTitle: "おかえりなさい",

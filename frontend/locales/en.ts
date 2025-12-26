@@ -75,7 +75,8 @@ export const en: TranslationSchema = {
     unitPrice: "Price per unit",
     totalPrice: "Total",
     pay: "Complete Payment",
-    currency: "RUB"
+    currency: "RUB",
+    units: "pcs"
   },
   auth: {
     loginTitle: "Welcome Back",
