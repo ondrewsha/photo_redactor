@@ -1,0 +1,89 @@
+
+import { TranslationSchema } from '../types';
+
+export const ko: TranslationSchema = {
+  common: {
+    generate: "생성",
+    cancel: "취소",
+    reset: "초기화",
+    download: "다운로드",
+    login: "로그인",
+    register: "회원가입",
+    logout: "로그아웃",
+    profile: "프로필",
+    settings: "설정",
+    loading: "로딩 중...",
+    error: "오류",
+    success: "성공",
+    close: "닫기",
+    back: "뒤로",
+    more: "더 보기",
+    done: "완료",
+    tryAgain: "다시 시도"
+  },
+  hero: {
+    title: "AI로 창의력을 펼치세요",
+    subtitle: "간단한 단어를 숨막히는 비주얼로 바꾸세요. 누구나 쉽게 사용할 수 있는 이미지 생성의 미래가 여기 있습니다.",
+    cta: "지금 생성 시작하기",
+    badge: "Gen-V 엔진 소개",
+    learnMore: "더 알아보기"
+  },
+  features: {
+    tag: "프로세스",
+    title: "예술을 위한 설계",
+    description: "단 몇 초 만에 컨셉에서 걸작으로. 클라우드 아키텍처가 복잡함을 처리하는 동안 당신은 창의적인 방향에 집중할 수 있습니다.",
+    step1Title: "설명하기",
+    step1Desc: "자연어를 사용하여 상상하는 것을 AI에게 정확하게 전달하세요.",
+    step2Title: "다듬기",
+    step2Desc: "고급 스타일 라이브러리와 프리셋을 사용하여 픽셀 단위로 조정하세요.",
+    step3Title: "내보내기",
+    step3Desc: "고해상도로 작품을 다운로드하고 세상과 공유하세요.",
+  },
+  generator: {
+    promptPlaceholder: "네온 성운 속을 떠다니는 우주복을 입은 고양이...",
+    helperText: "보고 싶은 내용을 간단한 단어로 설명하세요.",
+    styles: "스타일",
+    size: "크기",
+    photos: "사진",
+    aspectRatio: "가로세로비",
+    quality: "품질",
+    popularStyles: "인기",
+    openLibrary: "스타일 라이브러리",
+    uploadPhoto: "사진 업로드",
+    photoLimit: "최대 {limit}장",
+    photoInstructions: "생성의 참고용 사진을 업로드하세요.",
+    photoUnavailable: "현재 모델은 사진 업로드를 지원하지 않습니다.",
+    initializing: "엔진 초기화 중...",
+    readyTitle: "시각화할 준비가 되셨나요?",
+    crafting: "비전을 만드는 중",
+    outOfBalance: "생성 횟수가 소진되었습니다. 충전해 주세요.",
+    searchStyles: "스타일 검색...",
+    noStylesFound: "스타일을 찾을 수 없음",
+    defaultStyle: "스타일 없음"
+  },
+  profile: {
+    balance: "잔액",
+    refill: "생성 횟수 추가",
+    verified: "이메일 인증됨",
+    notVerified: "이메일 미인증",
+    resendEmail: "인증 메일 재전송",
+    changePassword: "비밀번호 변경",
+    buyGenerations: "패키지 구매",
+    unitPrice: "단가",
+    totalPrice: "합계",
+    pay: "결제 완료",
+    currency: "KRW"
+  },
+  auth: {
+    loginTitle: "다시 오신 것을 환영합니다",
+    registerTitle: "NanoVisual 가입하기",
+    loginSubtitle: "로그인하여 창작 여정을 계속하세요.",
+    registerSubtitle: "계정을 만들고 무료 생성 횟수를 받으세요.",
+    email: "이메일 주소",
+    password: "비밀번호 (8자 이상)",
+    googleAuth: "Google로 계속하기",
+    noAccount: "계정이 없으신가요?",
+    haveAccount: "이미 계정이 있으신가요?",
+    or: "또는"
+  }
+};

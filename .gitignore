@@ -8,3 +8,7 @@ __pycache__/
 node_modules/
 dist/
 .DS_Store
+frontend-old/
+collect_code_smart.py
+CONTEXT_FOR_LLM.md
+FRONTEND_BACKEND_COMPATIBILITY_REPORT.md
