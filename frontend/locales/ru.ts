@@ -96,6 +96,12 @@ export const ru: TranslationSchema = {
     terms: "Условия",
     docs: "Документация",
     support: "Поддержка"
+    ,
+    supportTitle: "Нужна помощь?",
+    supportDescription: "Напиши нам, и мы оперативно ответим на любой вопрос.",
+    supportEmailLabel: "Почта",
+    supportEmail: "support@nanovisual.ai",
+    supportClose: "Закрыть"
   },
   promo: {
     tagline: "Присоединяйся к 10 000+ творцам уже сегодня",

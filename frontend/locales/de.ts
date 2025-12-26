@@ -102,6 +102,12 @@ export const de: TranslationSchema = {
     terms: "Nutzungsbedingungen",
     docs: "Dokumentation",
     support: "Support"
+    ,
+    supportTitle: "Brauchen Sie Hilfe?",
+    supportDescription: "Kontaktieren Sie uns per E-Mail – wir helfen schnell bei Fragen.",
+    supportEmailLabel: "E-Mail",
+    supportEmail: "support@nanovisual.ai",
+    supportClose: "Schließen"
   },
   promo: {
     tagline: "Schließe dich heute 10.000+ Kreativen an",

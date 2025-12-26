@@ -102,6 +102,12 @@ export const kk: TranslationSchema = {
     terms: "Қолдану шарттары",
     docs: "Құжаттама",
     support: "Қолдау"
+    ,
+    supportTitle: "Көмек керек пе?",
+    supportDescription: "Сұрағыңызды жіберсеңіз, тез жауап береміз.",
+    supportEmailLabel: "Пошта",
+    supportEmail: "support@nanovisual.ai",
+    supportClose: "Жабу"
   },
   promo: {
     tagline: "Қазір 10 000+ шығармашыл адамдармен қосылыңыз",

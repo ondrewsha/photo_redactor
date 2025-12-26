@@ -96,6 +96,12 @@ export const ja: TranslationSchema = {
     terms: "利用規約",
     docs: "ドキュメント",
     support: "サポート"
+    ,
+    supportTitle: "お困りですか？",
+    supportDescription: "ご質問をお送りいただければ、すぐにお答えします。",
+    supportEmailLabel: "メール",
+    supportEmail: "support@nanovisual.ai",
+    supportClose: "閉じる"
   },
   promo: {
     tagline: "今すぐ10,000人以上のクリエイターに参加しよう",

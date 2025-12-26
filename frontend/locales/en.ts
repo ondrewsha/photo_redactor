@@ -96,6 +96,12 @@ export const en: TranslationSchema = {
     terms: "Terms",
     docs: "Docs",
     support: "Support"
+    ,
+    supportTitle: "Need help?",
+    supportDescription: "Our team is ready to answer questions and guide you through any issue.",
+    supportEmailLabel: "Email",
+    supportEmail: "support@nanovisual.ai",
+    supportClose: "Close"
   },
   promo: {
     tagline: "Join 10,000+ creators today",

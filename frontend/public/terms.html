@@ -1,0 +1,385 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Terms of Service — NanoVisual</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+</head>
+<body data-page="terms" class="theme-dark">
+  <style>
+    :root {
+      color-scheme: dark;
+    }
+    body {
+      margin: 0;
+      background: var(--bg, #03030a);
+      color: var(--text, #f8f8ff);
+      font-family: 'Inter', system-ui, sans-serif;
+      min-height: 100vh;
+      transition: background 0.3s ease, color 0.3s ease;
+    }
+    body.theme-dark {
+      --bg: #03030a;
+      --text: #f8f8ff;
+      --panel: #0b0b1f;
+      --panel-alt: #101123;
+      --border: rgba(255,255,255,0.08);
+      --muted: #d4d4ff;
+      --accent: #a5b4fc;
+      --accent-strong: #7c3aed;
+    }
+    body.theme-light {
+      --bg: #eef2ff;
+      --text: #0f172a;
+      --panel: #ffffff;
+      --panel-alt: #fefcff;
+      --border: rgba(99,102,241,0.2);
+      --muted: #475569;
+      --accent: #6366f1;
+      --accent-strong: #4c1d95;
+    }
+    .page-shell {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      padding: 3rem 5vw;
+      background: linear-gradient(180deg, var(--bg) 0%, #020205 45%, var(--bg) 100%);
+      gap: 2rem;
+    }
+    body.theme-light .page-shell {
+      background: linear-gradient(180deg, var(--bg) 0%, #f5f5ff 60%, #ffffff 100%);
+    }
+    .page-header {
+      max-width: 960px;
+      margin: 0 auto;
+      padding-bottom: 1rem;
+    }
+    .page-header h1 {
+      font-size: clamp(2.25rem, 3vw, 3rem);
+      font-weight: 900;
+      margin-bottom: 0.5rem;
+    }
+    .page-header p {
+      max-width: 720px;
+      line-height: 1.7;
+      color: var(--muted);
+      margin-top: 0;
+      margin-bottom: 0.25rem;
+    }
+    .control-bar {
+      display:flex;
+      gap:1rem;
+      align-items:center;
+      justify-content:space-between;
+      flex-wrap:wrap;
+      margin-top:1rem;
+    }
+    .control-bar button {
+      padding: 0.65rem 1.5rem;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: rgba(255,255,255,0.05);
+      color: var(--text);
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s ease, color 0.2s ease, transform 0.2s ease;
+    }
+    .control-bar button:hover {
+      background: rgba(255,255,255,0.12);
+      transform: translateY(-1px);
+    }
+    .lang-switch {
+      position: relative;
+      display: inline-flex;
+    }
+    .lang-panel {
+      position: absolute;
+      top: calc(100% + 0.35rem);
+      right: 0;
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 1rem;
+      box-shadow: 0 15px 40px rgba(0,0,0,0.25);
+      overflow: hidden;
+      z-index: 10;
+      display: none;
+      min-width: 140px;
+    }
+    .lang-panel.show {
+      display: block;
+    }
+    .lang-panel button {
+      width: 100%;
+      padding: 0.75rem 1.25rem;
+      background: transparent;
+      border: none;
+      text-align: left;
+      color: var(--text);
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.1rem;
+      cursor: pointer;
+    }
+    .lang-panel button:hover {
+      background: rgba(255,255,255,0.08);
+    }
+    .service-list {
+      display: grid;
+      gap: 1.5rem;
+      max-width: 1000px;
+      margin: 0 auto;
+    }
+    .service-card {
+      background: var(--panel);
+      border-radius: 1.5rem;
+      padding: 2rem;
+      border: 1px solid var(--border);
+      box-shadow: 0 20px 60px rgba(0,0,0,0.25);
+    }
+    .service-card.alt {
+      background: var(--panel-alt);
+    }
+    .service-card h2 {
+      margin-top: 0;
+      color: var(--accent);
+      font-size: 1.5rem;
+    }
+    .service-card p {
+      color: var(--text);
+      line-height: 1.7;
+    }
+    .service-card ul {
+      margin: 1rem 0 0;
+      padding-left: 1.25rem;
+      line-height: 1.8;
+      color: var(--text);
+    }
+    .service-card a {
+      color: var(--accent);
+    }
+    body.theme-light .service-card {
+      box-shadow: 0 25px 60px rgba(15, 23, 42, 0.12);
+    }
+    body.theme-light .service-card.alt {
+      background: #f8f4ff;
+    }
+  </style>
+  <div class="page-shell">
+    <header class="page-header">
+      <p id="pageTagline"></p>
+      <h1 id="pageTitle"></h1>
+      <p id="pageSubtitle"></p>
+      <div class="control-bar">
+        <div class="lang-switch">
+          <button id="langButton"></button>
+          <div id="langPanel" class="lang-panel">
+            <button data-locale="en">English</button>
+            <button data-locale="ru">Русский</button>
+          </div>
+        </div>
+        <button id="themeToggle"></button>
+      </div>
+    </header>
+    <main id="content" class="service-list"></main>
+  </div>
+    <script>
+    (function() {
+      const pageKey = document.body.dataset.page || 'privacy';
+      const translations = {
+        privacy: {
+          en: {
+            tagline: 'NanoVisual',
+            title: 'Privacy Policy',
+            subtitle: 'We collect only the minimum data necessary to power your creative experience.',
+            themeToggle: { light: 'Sветлая тема', dark: 'Темная тема' },
+            sections: [
+              { title: '1. What we collect', list: [
+                'Email address and hashed password for authentication and recovery.',
+                'Generation metadata (style, parameters, timestamps) to support order history.',
+                'Billing tokens and order IDs required for payment tracking.',
+                'Optional uploaded photos stored up to 30 days for your references.'
+              ] },
+              { title: '2. How we use data', paragraphs: [
+                'We use information to authenticate you, run generations, send transactional notifications and support replies.',
+                'External services (payment processors, email gateways) receive only the fields needed to complete the operation.'
+              ] },
+              { title: '3. Storage and retention', paragraphs: [
+                'You may request data deletion via support. Billing records and metadata are retained for 3 years for compliance.',
+                'Uploaded prompts and generated images auto-delete after 30 days unless explicitly downloaded.'
+              ] },
+              { title: '4. Your rights', paragraphs: [
+                'Request copies, corrections, portability or withdraw marketing consent by emailing support.',
+                'For EU residents, GDPR applies: you may complain to your regulator and we will provide the DPO contact.'
+              ] },
+              { title: '5. Security', paragraphs: [
+                'Servers run inside an isolated VPC, all connections use HTTPS/TLS 1.2+. Secrets live in AWS Secrets Manager.',
+                'Access is logged to detect intrusions. Admins use MFA for sensitive workflows.'
+              ] },
+              { title: 'Contacts', paragraphs: [
+                'NanoVisual AI Studio, INN 7700000000, OGRN 1207700000000, Russia.',
+                'Support: <a href="mailto:support@nanovisual.ai">support@nanovisual.ai</a>.'
+              ] }
+            ]
+          },
+          ru: {
+            tagline: 'NanoVisual',
+            title: 'Политика конфиденциальности',
+            subtitle: 'Мы собираем только необходимые данные, чтобы платформа работала корректно и безопасно.',
+            themeToggle: { light: 'Светлая тема', dark: 'Тёмная тема' },
+            sections: [
+              { title: '1. Что мы собираем', list: [
+                'Email и хешированный пароль для входа, восстановления и безопасности.',
+                'Метаинформация о генерациях (стиль, параметры, время) для истории заказов.',
+                'Платёжные токены и идентификаторы заказов для отслеживания транзакций.',
+                'По желанию — загруженные фото хранятся до 30 дней как референсы.'
+              ] },
+              { title: '2. Как мы используем данные', paragraphs: [
+                'Мы применяем информацию для аутентификации, генераций, отправки уведомлений и ответов поддержки.',
+                'Внешние сервисы (платёжный провайдер, почта) получают только требуемые поля.'
+              ] },
+              { title: '3. Хранение и удаление', paragraphs: [
+                'Удаление данных можно запросить через поддержку. Платёжные записи хранятся три года в рамках законодательства.',
+                'Промты и изображения удаляются через 30 дней, если вы их не загрузили.'
+              ] },
+              { title: '4. Ваши права', paragraphs: [
+                'Вы можете запросить копию, исправление, перенос или отозвать согласие на рассылки по почте.',
+                'В ЕС вам доступны права по GDPR, включая обращение к регулятору и запрос данных DPO.'
+              ] },
+              { title: '5. Безопасность', paragraphs: [
+                'Серверы в изолированной VPC, HTTPS/TLS 1.2+, секреты хранятся в AWS Secrets Manager.',
+                'Логи доступны для выявления вторжений, а администраторы работают через MFA.'
+              ] },
+              { title: 'Контакты', paragraphs: [
+                'NanoVisual AI Studio, ИНН 7700000000, ОГРН 1207700000000, Россия.',
+                'Поддержка: <a href="mailto:support@nanovisual.ai">support@nanovisual.ai</a>.'
+              ] }
+            ]
+          }
+        },
+        terms: {
+          en: {
+            tagline: 'NanoVisual Terms',
+            title: 'Terms of Service',
+            subtitle: 'These terms describe how you may use the NanoVisual generator platform.',
+            themeToggle: { light: 'Switch to light', dark: 'Switch to dark' },
+            sections: [
+              { title: '1. Platform usage', paragraphs: [
+                'Use the Service lawfully for personal or commercial compositions. Illegal, violent, discriminatory, or medical/legal advice content is forbidden.'
+              ] },
+              { title: '2. Payments and credits', paragraphs: [
+                'Credits are sold in packs (1–100). Funds are charged upfront. Credits are non-refundable except for technical failures (failed status).',
+                'Payments process via YooKassa and comply with PCI DSS. Receipts are issued automatically.'
+              ] },
+              { title: '3. IP rights', paragraphs: [
+                'You keep the rights to prompts and generated images. NanoVisual may keep anonymous samples for quality, without revealing your identity.',
+                'You are responsible for respecting third-party licenses for any input materials.'
+              ] },
+              { title: '4. Liability', paragraphs: [
+                'NanoVisual is responsible for the technical operation only. We are not liable for your publications or reputation.',
+                'We may suspend accounts violating these terms without refund.'
+              ] },
+              { title: '5. Governing law', paragraphs: [
+                'Russian law applies. Disputes resolve through negotiation, then Moscow courts.',
+                'Contact: support@nanovisual.ai, INN 7700000000, OGRN 1207700000000.'
+              ] }
+            ]
+          },
+          ru: {
+            tagline: 'NanoVisual Terms',
+            title: 'Условия использования',
+            subtitle: 'Создавая аккаунт, вы соглашаетесь с настоящими правилами.',
+            themeToggle: { light: 'Светлая тема', dark: 'Тёмная тема' },
+            sections: [
+              { title: '1. Использование платформы', paragraphs: [
+                'Используйте сервис добросовестно: запрещены призывы к насилию, дискриминации и незаконная деятельность.'
+              ] },
+              { title: '2. Оплата и кредиты', paragraphs: [
+                'Кредиты продаются пачками (1–100 штук). Средства списываются до создания генерации. Возврат возможен только при технической ошибке (статус failed).',
+                'Платежи проходят через YooKassa и соответствуют PCI DSS. Чек приходит автоматически.'
+              ] },
+              { title: '3. Права на контент', paragraphs: [
+                'Вы сохраняете права на промты и изображения. NanoVisual может использовать анонимные примеры для улучшения, не раскрывая вашу личность.',
+                'При использовании чужих материалов вы соблюдаете их лицензии.'
+              ] },
+              { title: '4. Ответственность', paragraphs: [
+                'NanoVisual отвечает только за техническую работу. Мы не компенсируем репутационные потери из-за ваших публикаций.',
+                'Мы вправе заблокировать аккаунт без возврата, если нарушены условия.'
+              ] },
+              { title: '5. Применимое право', paragraphs: [
+                'Действует российское право. Споры решаются через переговоры, затем — в московских судах.',
+                'Контакты: support@nanovisual.ai, ИНН 7700000000, ОГРН 1207700000000.'
+              ] }
+            ]
+          }
+        }
+      };
+      const params = new URLSearchParams(window.location.search);
+      const requestedLang = params.get('lang');
+      const locale = translations[pageKey][requestedLang] ? requestedLang : 'en';
+      const strings = translations[pageKey][locale];
+      const languages = [
+        { code: 'en', label: 'English' },
+        { code: 'ru', label: 'Русский' }
+      ];
+      const langButton = document.getElementById('langButton');
+      const langPanel = document.getElementById('langPanel');
+      const toggle = document.getElementById('themeToggle');
+      const tagline = document.getElementById('pageTagline');
+      const title = document.getElementById('pageTitle');
+      const subtitle = document.getElementById('pageSubtitle');
+      const content = document.getElementById('content');
+      const themeLabels = strings.themeToggle;
+      tagline.textContent = strings.tagline;
+      title.textContent = strings.title;
+      subtitle.textContent = strings.subtitle;
+      updateLangButton(locale);
+      function updateLangButton(code) {
+        const entry = languages.find((l) => l.code === code) || languages[0];
+        if (langButton) langButton.textContent = entry.label;
+      }
+      if (langPanel && langButton) {
+        langButton.addEventListener('click', () => {
+          langPanel.classList.toggle('show');
+        });
+        langPanel.addEventListener('click', (event) => {
+          const target = event.target.closest('button');
+          if (!target) return;
+          const nextLang = target.dataset.locale;
+          params.set('lang', nextLang);
+          window.location.search = params.toString();
+        });
+        document.addEventListener('click', (event) => {
+          if (langPanel.contains(event.target) || langButton.contains(event.target)) return;
+          langPanel.classList.remove('show');
+        });
+      }
+      function renderSections(sections) {
+        return sections.map((section, index) => {
+          const paragraphs = (section.paragraphs || []).map((p) => `<p>${p}</p>`).join('');
+          const list = section.list ? `<ul>${section.list.map((item) => `<li>${item}</li>`).join('')}</ul>` : '';
+          const styleClass = section.alt ? ' service-card alt' : ' service-card';
+          return `<section class="service-card${styleClass}"><h2>${section.title}</h2>${paragraphs}${list}</section>`;
+        }).join('');
+      }
+      content.innerHTML = renderSections(strings.sections);
+      const savedTheme = localStorage.getItem('nano-theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+      setTheme(savedTheme);
+      toggle.addEventListener('click', () => {
+        const active = document.body.classList.contains('theme-dark') ? 'dark' : 'light';
+        setTheme(active === 'dark' ? 'light' : 'dark');
+      });
+      function setTheme(theme) {
+        document.body.classList.remove('theme-dark', 'theme-light');
+        document.body.classList.add(`theme-${theme}`);
+        if (toggle) {
+        const labelText = theme === 'dark' ? themeLabels.light : themeLabels.dark;
+        toggle.textContent = labelText;
+          toggle.setAttribute('aria-label', theme === 'dark' ? themeLabels.light : themeLabels.dark);
+        }
+        localStorage.setItem('nano-theme', theme);
+      }
+    })();
+  </script>
+
+</body>
+</html>

@@ -11,6 +11,7 @@ import { ProfileModal } from './components/ProfileModal';
 import { Button } from './components/ui/Button';
 import { cn } from './lib/cn';
 import { useTheme } from './context/ThemeContext';
+import { SupportModal } from './components/SupportModal';
 
 const PromoCTA: React.FC<{ onAuthClick: (tab: 'login' | 'register') => void }> = ({ onAuthClick }) => {
   const { t } = useTranslation();
@@ -95,6 +96,7 @@ const AppContent: React.FC = () => {
     tab: 'login'
   });
   const [profileModalOpen, setProfileModalOpen] = useState(false);
+  const [supportModalOpen, setSupportModalOpen] = useState(false);
 
   const scrollToTarget = () => {
     const targetId = user ? 'generator' : 'cta-promo';
@@ -107,10 +109,8 @@ const AppContent: React.FC = () => {
   };
 
   const footerLinks = [
-    { label: t.footer.privacy, href: '#' },
-    { label: t.footer.terms, href: '#' },
-    { label: t.footer.docs, href: '#' },
-    { label: t.footer.support, href: '#' },
+    { label: t.footer.privacy, href: '/privacy.html' },
+    { label: t.footer.terms, href: '/terms.html' },
   ];
 
   return (
@@ -202,11 +202,13 @@ const AppContent: React.FC = () => {
              <div className="h-10 w-10 bg-indigo-600 rounded-xl flex items-center justify-center text-white font-black">NV</div>
              <span className={cn("font-black uppercase tracking-tighter", theme === 'dark' ? 'text-white' : 'text-zinc-900')}>{t.footer.brand}</span>
           </div>
-          <div className="flex gap-10">
+          <div className="flex gap-10 items-center">
             {footerLinks.map(link => (
               <a
                 key={link.label}
                 href={link.href}
+                target="_blank"
+                rel="noreferrer noopener"
                 className={cn(
                   "text-xs font-bold uppercase tracking-widest transition-colors",
                   theme === 'dark' ? 'text-zinc-400 hover:text-indigo-400' : 'text-zinc-500 hover:text-indigo-600'
@@ -215,6 +217,15 @@ const AppContent: React.FC = () => {
                 {link.label}
               </a>
             ))}
+            <button
+              onClick={() => setSupportModalOpen(true)}
+              className={cn(
+                "text-xs font-bold uppercase tracking-widest transition-colors",
+                theme === 'dark' ? 'text-zinc-400 hover:text-indigo-400' : 'text-zinc-500 hover:text-indigo-600'
+              )}
+            >
+              {t.footer.support}
+            </button>
           </div>
           <div
             className={cn(
@@ -236,6 +247,11 @@ const AppContent: React.FC = () => {
       <ProfileModal 
         isOpen={profileModalOpen}
         onClose={() => setProfileModalOpen(false)}
+      />
+
+      <SupportModal 
+        isOpen={supportModalOpen}
+        onClose={() => setSupportModalOpen(false)}
       />
     </div>
   );

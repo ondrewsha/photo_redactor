@@ -96,6 +96,12 @@ export const ko: TranslationSchema = {
     terms: "이용 약관",
     docs: "문서",
     support: "지원"
+    ,
+    supportTitle: "도움이 필요하신가요?",
+    supportDescription: "문의 내용을 보내주시면 빠르게 답해드립니다.",
+    supportEmailLabel: "이메일",
+    supportEmail: "support@nanovisual.ai",
+    supportClose: "닫기"
   },
   promo: {
     tagline: "지금 10,000+ 크리에이터와 함께 시작하세요",

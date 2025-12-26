@@ -96,6 +96,12 @@ export const zh: TranslationSchema = {
     terms: "使用条款",
     docs: "文档",
     support: "支持"
+    ,
+    supportTitle: "需要帮助？",
+    supportDescription: "联系我们的团队，我们会尽快回复。",
+    supportEmailLabel: "邮箱",
+    supportEmail: "support@nanovisual.ai",
+    supportClose: "关闭"
   },
   promo: {
     tagline: "加入 10,000+ 名创作者，一起创作",

@@ -147,6 +147,11 @@ export interface TranslationSchema {
     terms: string;
     docs: string;
     support: string;
+    supportTitle: string;
+    supportDescription: string;
+    supportEmailLabel: string;
+    supportEmail: string;
+    supportClose: string;
   };
   auth: {
     loginTitle: string;
