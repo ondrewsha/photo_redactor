@@ -1,5 +1,6 @@
 
 import { TranslationSchema } from '../types';
+import { englishStyleNames, defaultSizeLabels } from './styleNames';
 
 export const de: TranslationSchema = {
   common: {
@@ -63,7 +64,9 @@ export const de: TranslationSchema = {
     outOfBalance: "Keine Generationen mehr übrig. Bitte laden Sie Ihr Guthaben auf.",
     searchStyles: "Stile suchen...",
     noStylesFound: "Keine Stile gefunden",
-    defaultStyle: "Kein Stil"
+    defaultStyle: "Kein Stil",
+    styleNames: englishStyleNames,
+    sizeLabels: defaultSizeLabels
   },
   profile: {
     balance: "Guthaben",
@@ -90,5 +93,17 @@ export const de: TranslationSchema = {
     haveAccount: "Bereits ein Konto?",
     // Fix: Added missing or key
     or: "Oder"
+  }
+  ,
+  footer: {
+    brand: "NanoVisual AI",
+    privacy: "Datenschutz",
+    terms: "Nutzungsbedingungen",
+    docs: "Dokumentation",
+    support: "Support"
+  },
+  promo: {
+    tagline: "Schließe dich heute 10.000+ Kreativen an",
+    subtext: "Die KI-Plattform für schnelle, beeindruckende Bilder."
   }
 };

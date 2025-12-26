@@ -120,6 +120,12 @@ export interface TranslationSchema {
     searchStyles: string;
     noStylesFound: string;
     defaultStyle: string;
+    styleNames: Record<string, string>;
+    sizeLabels: Record<string, string>;
+  };
+  promo: {
+    tagline: string;
+    subtext: string;
   };
   profile: {
     balance: string;
@@ -133,6 +139,13 @@ export interface TranslationSchema {
     totalPrice: string;
     pay: string;
     currency: string;
+  };
+  footer: {
+    brand: string;
+    privacy: string;
+    terms: string;
+    docs: string;
+    support: string;
   };
   auth: {
     loginTitle: string;

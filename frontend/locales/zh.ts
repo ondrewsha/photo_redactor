@@ -1,5 +1,6 @@
 
 import { TranslationSchema } from '../types';
+import { englishStyleNames, defaultSizeLabels } from './styleNames';
 
 export const zh: TranslationSchema = {
   common: {
@@ -59,7 +60,9 @@ export const zh: TranslationSchema = {
     outOfBalance: "生成次数已用完。请充值。",
     searchStyles: "搜索风格...",
     noStylesFound: "未找到风格",
-    defaultStyle: "无样式"
+    defaultStyle: "无样式",
+    styleNames: englishStyleNames,
+    sizeLabels: defaultSizeLabels
   },
   profile: {
     balance: "余额",
@@ -84,5 +87,17 @@ export const zh: TranslationSchema = {
     noAccount: "还没有账号？",
     haveAccount: "已有账号？",
     or: "或"
+  }
+  ,
+  footer: {
+    brand: "NanoVisual AI",
+    privacy: "隐私政策",
+    terms: "使用条款",
+    docs: "文档",
+    support: "支持"
+  },
+  promo: {
+    tagline: "加入 10,000+ 名创作者，一起创作",
+    subtext: "为快速生成精美图像而打造的 AI 平台。"
   }
 };

@@ -1,5 +1,6 @@
 
 import { TranslationSchema } from '../types';
+import { englishStyleNames, defaultSizeLabels } from './styleNames';
 
 export const ko: TranslationSchema = {
   common: {
@@ -59,7 +60,9 @@ export const ko: TranslationSchema = {
     outOfBalance: "생성 횟수가 소진되었습니다. 충전해 주세요.",
     searchStyles: "스타일 검색...",
     noStylesFound: "스타일을 찾을 수 없음",
-    defaultStyle: "스타일 없음"
+    defaultStyle: "스타일 없음",
+    styleNames: englishStyleNames,
+    sizeLabels: defaultSizeLabels
   },
   profile: {
     balance: "잔액",
@@ -84,5 +87,17 @@ export const ko: TranslationSchema = {
     noAccount: "계정이 없으신가요?",
     haveAccount: "이미 계정이 있으신가요?",
     or: "또는"
+  }
+  ,
+  footer: {
+    brand: "NanoVisual AI",
+    privacy: "개인정보 처리방침",
+    terms: "이용 약관",
+    docs: "문서",
+    support: "지원"
+  },
+  promo: {
+    tagline: "지금 10,000+ 크리에이터와 함께 시작하세요",
+    subtext: "빠르고 아름다운 이미지를 만드는 AI 스튜디오."
   }
 };

@@ -1,5 +1,6 @@
 
 import { TranslationSchema } from '../types';
+import { ruStyleNames, ruSizeLabels } from './styleNames';
 
 export const ru: TranslationSchema = {
   common: {
@@ -59,7 +60,9 @@ export const ru: TranslationSchema = {
     outOfBalance: "Генерации закончились. Пожалуйста, пополните баланс.",
     searchStyles: "Поиск стилей...",
     noStylesFound: "Стили не найдены",
-    defaultStyle: "Без стиля"
+    defaultStyle: "Без стиля",
+    styleNames: ruStyleNames,
+    sizeLabels: ruSizeLabels
   },
   profile: {
     balance: "Баланс",
@@ -84,5 +87,17 @@ export const ru: TranslationSchema = {
     noAccount: "Нет аккаунта?",
     haveAccount: "Уже есть аккаунт?",
     or: "Или"
+  }
+  ,
+  footer: {
+    brand: "NanoVisual AI",
+    privacy: "Политика конфиденциальности",
+    terms: "Условия",
+    docs: "Документация",
+    support: "Поддержка"
+  },
+  promo: {
+    tagline: "Присоединяйся к 10 000+ творцам уже сегодня",
+    subtext: "Платформа, созданная для быстрого создания визуалов."
   }
 };

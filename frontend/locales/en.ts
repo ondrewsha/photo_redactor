@@ -1,5 +1,6 @@
 
 import { TranslationSchema } from '../types';
+import { englishStyleNames, defaultSizeLabels } from './styleNames';
 
 export const en: TranslationSchema = {
   common: {
@@ -59,7 +60,9 @@ export const en: TranslationSchema = {
     outOfBalance: "Out of generations. Please refill your balance.",
     searchStyles: "Search styles...",
     noStylesFound: "No styles found",
-    defaultStyle: "No style"
+    defaultStyle: "No style",
+    styleNames: englishStyleNames,
+    sizeLabels: defaultSizeLabels
   },
   profile: {
     balance: "Balance",
@@ -84,5 +87,17 @@ export const en: TranslationSchema = {
     noAccount: "Don't have an account?",
     haveAccount: "Already have an account?",
     or: "Or"
+  }
+  ,
+  footer: {
+    brand: "NanoVisual AI",
+    privacy: "Privacy",
+    terms: "Terms",
+    docs: "Docs",
+    support: "Support"
+  },
+  promo: {
+    tagline: "Join 10,000+ creators today",
+    subtext: "The AI studio built for fast, beautiful visuals."
   }
 };

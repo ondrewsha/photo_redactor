@@ -19,10 +19,17 @@ export const StylesLibraryModal: React.FC<Props> = ({ isOpen, onClose, styles, s
   const { t } = useTranslation();
   const [search, setSearch] = useState('');
   const { theme } = useTheme();
+  const styleNameMap = t.generator.styleNames;
+  const getStyleLabel = (style: StyleCategoryPublic) =>
+    styleNameMap?.[style.id] ?? style.display_name;
 
   const filteredStyles = useMemo(() => {
-    return styles.filter(s => s.display_name.toLowerCase().includes(search.toLowerCase()));
-  }, [styles, search]);
+    const query = search.toLowerCase();
+    return styles.filter((s) => {
+      const label = getStyleLabel(s).toLowerCase();
+      return label.includes(query) || s.display_name.toLowerCase().includes(query);
+    });
+  }, [styles, search, styleNameMap]);
 
   const categories = useMemo(() => {
     const map = new Map<string, StyleCategoryPublic[]>();
@@ -97,9 +104,9 @@ export const StylesLibraryModal: React.FC<Props> = ({ isOpen, onClose, styles, s
                         style={{ backgroundImage: gradientForStyle(s.id) }}
                       >
                         <div className="absolute inset-0 bg-black/20" />
-                        <div className="relative z-10 flex h-full flex-col justify-center p-4 text-white">
-                          <span className="text-[12px] font-bold uppercase leading-snug">{s.display_name}</span>
-                        </div>
+                          <div className="relative z-10 flex h-full flex-col justify-center p-4 text-white">
+                            <span className="text-[12px] font-bold uppercase leading-snug">{getStyleLabel(s)}</span>
+                          </div>
                         {selectedStyleIds.includes(s.id) && (
                           <div className="absolute top-2 right-2 h-5 w-5 rounded-full bg-indigo-500 flex items-center justify-center text-white">
                             <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={4}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>

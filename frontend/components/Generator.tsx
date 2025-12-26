@@ -7,7 +7,8 @@ import { api, resolveAssetUrl } from '../lib/api';
 import { 
   StyleCategoryPublic, 
   GenerationCapabilities, 
-  JobStatus 
+  JobStatus,
+  ImageSizePreset 
 } from '../types';
 import { cn } from '../lib/cn';
 import { StylesLibraryModal } from './StylesLibraryModal';
@@ -62,6 +63,18 @@ export const Generator: React.FC = () => {
 
   const textTone = theme === 'dark' ? 'text-white' : 'text-zinc-900';
   const mutedTone = theme === 'dark' ? 'text-zinc-400' : 'text-zinc-500';
+
+  const getStyleLabel = (style: StyleCategoryPublic) =>
+    t.generator.styleNames?.[style.id] ?? style.display_name;
+
+  const getPresetLabel = (preset: ImageSizePreset) => {
+    const sizeKey = `${preset.width}x${preset.height}`;
+    return (
+      t.generator.sizeLabels?.[sizeKey] ??
+      preset.label ??
+      `${preset.width}×${preset.height}`
+    );
+  };
 
   const isGemini = caps?.image_provider === 'gemini';
   const geminiAspectRatioOptions = useMemo(() => {
@@ -342,7 +355,7 @@ export const Generator: React.FC = () => {
                     className="px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-tighter transition-all text-white shadow-lg border border-transparent"
                     style={{ backgroundImage: gradientForStyle(style.id) }}
                   >
-                    {style.display_name}
+                    {getStyleLabel(style)}
                   </button>
               ))}
             </div>
@@ -386,7 +399,7 @@ export const Generator: React.FC = () => {
                 </div>
                 {selectedPreset && (
                   <p className={selectedPresetLabelClass}>
-                    {selectedPreset.label} • {selectedPreset.width}×{selectedPreset.height}
+                    {getPresetLabel(selectedPreset)} • {selectedPreset.width}×{selectedPreset.height}
                   </p>
                 )}
               </div>
@@ -398,8 +411,10 @@ export const Generator: React.FC = () => {
                     onClick={() => setSelectedSizeId(p.id)}
                     className={sizeButtonClass(selectedSizeId === p.id)}
                   >
-                    <span className="font-bold uppercase tracking-tight">{p.label}</span>
-                    <span className="text-[10px] opacity-60 font-mono">{p.width}x{p.height}</span>
+                    <span className="font-bold uppercase tracking-tight">{getPresetLabel(p)}</span>
+                    <span className="text-[10px] opacity-60 font-mono">
+                      {p.width}×{p.height}
+                    </span>
                   </button>
                 ))}
               </div>

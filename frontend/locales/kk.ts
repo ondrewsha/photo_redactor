@@ -1,5 +1,6 @@
 
 import { TranslationSchema } from '../types';
+import { englishStyleNames, defaultSizeLabels } from './styleNames';
 
 export const kk: TranslationSchema = {
   common: {
@@ -63,7 +64,9 @@ export const kk: TranslationSchema = {
     outOfBalance: "Генерациялар таусылды. Балансыңызды толтырыңыз.",
     searchStyles: "Стильдерді іздеу...",
     noStylesFound: "Стильдер табылмады",
-    defaultStyle: "Стиль жоқ"
+    defaultStyle: "Стиль жоқ",
+    styleNames: englishStyleNames,
+    sizeLabels: defaultSizeLabels
   },
   profile: {
     balance: "Баланс",
@@ -90,5 +93,17 @@ export const kk: TranslationSchema = {
     haveAccount: "Аккаунт бар ма?",
     // Fix: Added missing or key
     or: "Немесе"
+  }
+  ,
+  footer: {
+    brand: "NanoVisual AI",
+    privacy: "Құпиялылық саясаты",
+    terms: "Қолдану шарттары",
+    docs: "Құжаттама",
+    support: "Қолдау"
+  },
+  promo: {
+    tagline: "Қазір 10 000+ шығармашыл адамдармен қосылыңыз",
+    subtext: "Жылдам және әдемі визуалдар жасауға арналған AI студиясы."
   }
 };

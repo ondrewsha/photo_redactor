@@ -73,10 +73,11 @@ const PromoCTA: React.FC<{ onAuthClick: (tab: 'login' | 'register') => void }> =
               {t.common.login}
             </Button>
           </div>
-          
-          <p className="text-[10px] text-zinc-500 uppercase tracking-[0.2em] font-bold">
-            Join 10,000+ creators today
+
+          <p className="text-sm text-zinc-500 uppercase tracking-tight">
+            {t.promo.subtext}
           </p>
+
         </div>
       </div>
     </section>
@@ -104,6 +105,13 @@ const AppContent: React.FC = () => {
   const handleAuth = (tab: 'login' | 'register') => {
     setAuthModal({ open: true, tab });
   };
+
+  const footerLinks = [
+    { label: t.footer.privacy, href: '#' },
+    { label: t.footer.terms, href: '#' },
+    { label: t.footer.docs, href: '#' },
+    { label: t.footer.support, href: '#' },
+  ];
 
   return (
     <div
@@ -192,19 +200,19 @@ const AppContent: React.FC = () => {
         <div className="mx-auto max-w-7xl px-6 lg:px-8 flex flex-col md:flex-row justify-between items-center gap-10">
           <div className="flex items-center gap-3">
              <div className="h-10 w-10 bg-indigo-600 rounded-xl flex items-center justify-center text-white font-black">NV</div>
-             <span className={cn("font-black uppercase tracking-tighter", theme === 'dark' ? 'text-white' : 'text-zinc-900')}>NanoVisual AI</span>
+             <span className={cn("font-black uppercase tracking-tighter", theme === 'dark' ? 'text-white' : 'text-zinc-900')}>{t.footer.brand}</span>
           </div>
           <div className="flex gap-10">
-            {['Privacy', 'Terms', 'Docs', 'Support'].map(link => (
+            {footerLinks.map(link => (
               <a
-                key={link}
-                href="#"
+                key={link.label}
+                href={link.href}
                 className={cn(
                   "text-xs font-bold uppercase tracking-widest transition-colors",
                   theme === 'dark' ? 'text-zinc-400 hover:text-indigo-400' : 'text-zinc-500 hover:text-indigo-600'
                 )}
               >
-                {link}
+                {link.label}
               </a>
             ))}
           </div>
