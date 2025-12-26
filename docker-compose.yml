@@ -20,11 +20,13 @@ services:
 
   redis:
     image: redis:7-alpine
-    command: ["redis-server", "--appendonly", "yes"]
+    command: ["redis-server", "--appendonly", "yes", "--requirepass", "${REDIS_PASSWORD}"]
     ports:
       - "6379:6379"
     volumes:
       - redis_data:/data
+    environment:
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 5s
@@ -54,7 +56,7 @@ services:
       dockerfile: services/generation_service/Dockerfile
     environment:
       GEN_SERVICE_DATABASE_URL: "${GEN_SERVICE_DATABASE_URL:-postgresql+asyncpg://$POSTGRES_USER:$POSTGRES_PASSWORD@postgres:5432/$POSTGRES_DB}"
-      GEN_SERVICE_REDIS_URL: ${GEN_SERVICE_REDIS_URL:-redis://redis:6379/0}
+      GEN_SERVICE_REDIS_URL: ${GEN_SERVICE_REDIS_URL:-redis://:${REDIS_PASSWORD:-nanovisual_secret}@redis:6379/0}
       GEN_SERVICE_QUEUE_KEY: "${GEN_SERVICE_QUEUE_KEY:-$POSTGRES_DB:$POSTGRES_USER:queue:imggen}"
       GEN_SERVICE_MEDIA_ROOT: ${GEN_SERVICE_MEDIA_ROOT:-/data/media}
       GEN_SERVICE_PUBLIC_BASE_URL: ${GEN_SERVICE_PUBLIC_BASE_URL:-}
@@ -93,7 +95,7 @@ services:
       GATEWAY_PROMPT_SERVICE_URL: ${GATEWAY_PROMPT_SERVICE_URL:-http://prompt_service:8000}
       GATEWAY_GENERATION_SERVICE_URL: ${GATEWAY_GENERATION_SERVICE_URL:-http://generation_service:8000}
       GATEWAY_DATABASE_URL: "${GATEWAY_DATABASE_URL:-postgresql+asyncpg://$POSTGRES_USER:$POSTGRES_PASSWORD@postgres:5432/$POSTGRES_DB}"
-      GATEWAY_REDIS_URL: ${GATEWAY_REDIS_URL:-redis://redis:6379/0}
+      GATEWAY_REDIS_URL: ${GATEWAY_REDIS_URL:-redis://:${REDIS_PASSWORD:-nanovisual_secret}@redis:6379/0}
       GATEWAY_INTERNAL_TOKEN: ${GATEWAY_INTERNAL_TOKEN:-}
       GATEWAY_CORS_ALLOW_ORIGINS: ${GATEWAY_CORS_ALLOW_ORIGINS:-http://localhost:5173}
       GATEWAY_HTTP_TIMEOUT_S: ${GATEWAY_HTTP_TIMEOUT_S:-30}
