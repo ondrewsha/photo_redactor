@@ -86,7 +86,6 @@ export const kk: TranslationSchema = {
     registerSubtitle: "Аккаунт жасап, бонустық генерациялар алыңыз.",
     email: "Email мекенжайы",
     password: "Құпия сөз (кемінде 8 таңба)",
-    googleAuth: "Google арқылы жалғастыру",
     noAccount: "Аккаунт жоқ па?",
     haveAccount: "Аккаунт бар ма?",
     // Fix: Added missing or key

@@ -81,7 +81,6 @@ export const ja: TranslationSchema = {
     registerSubtitle: "アカウントを作成して無料の生成回数をゲット。",
     email: "メールアドレス",
     password: "パスワード（8文字以上）",
-    googleAuth: "Googleで続行",
     noAccount: "アカウントをお持ちでないですか？",
     haveAccount: "すでにアカウントをお持ちですか？",
     or: "または"

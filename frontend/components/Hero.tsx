@@ -11,6 +11,27 @@ export const Hero: React.FC<{ onCtaClick: () => void }> = ({ onCtaClick }) => {
   const heroTextTone = theme === 'dark' ? 'text-white' : 'text-zinc-900';
   const heroSubTone = theme === 'dark' ? 'text-zinc-300' : 'text-zinc-600';
   const heroLinkTone = theme === 'dark' ? 'text-white' : 'text-zinc-900';
+  const heroIllustration = React.useMemo(() => {
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 600">
+      <defs>
+        <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stop-color="#3e3bff"/>
+          <stop offset="100%" stop-color="#f472b6"/>
+        </linearGradient>
+        <linearGradient id="h" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0%" stop-color="#0f172a"/>
+          <stop offset="100%" stop-color="#05264e"/>
+        </linearGradient>
+      </defs>
+      <rect width="960" height="600" rx="48" fill="url(#h)"/>
+      <rect x="80" y="60" width="800" height="480" rx="32" fill="url(#g)"/>
+      <circle cx="240" cy="200" r="40" fill="#fff" fill-opacity="0.2"/>
+      <path d="M220 360c0-40 60-90 120-40s140 30 140-20 70-40 70-40" fill="none" stroke="#fff" stroke-opacity="0.6" stroke-width="18" stroke-linecap="round"/>
+      <rect x="260" y="320" width="220" height="108" rx="22" fill="rgba(255,255,255,0.14)"/>
+      <rect x="560" y="320" width="120" height="120" rx="20" fill="rgba(255,255,255,0.18)"/>
+    </svg>`;
+    return `data:image/svg+xml,${encodeURIComponent(svg)}`;
+  }, []);
 
   return (
     <div
@@ -45,13 +66,15 @@ export const Hero: React.FC<{ onCtaClick: () => void }> = ({ onCtaClick }) => {
         
         <div className="mx-auto mt-16 flex max-w-2xl sm:mt-24 lg:ml-10 lg:mr-0 lg:mt-0 lg:max-w-none lg:flex-none xl:ml-32">
           <div className="max-w-3xl flex-none sm:max-w-5xl lg:max-w-none">
-            <img 
-              src="https://picsum.photos/seed/nv1/800/600" 
-              alt="App screenshot" 
-              width="2432" 
-              height="1442" 
-              className="w-[76rem] rounded-3xl bg-white/5 shadow-2xl ring-1 ring-white/10"
-            />
+            <div className="overflow-hidden rounded-[3rem] bg-white/5 shadow-2xl ring-1 ring-white/10 w-[76rem] h-[45rem]">
+              <img
+                src={heroIllustration}
+                alt="App screenshot"
+                width="2432"
+                height="1442"
+                className="h-full w-full object-cover"
+              />
+            </div>
           </div>
         </div>
       </div>

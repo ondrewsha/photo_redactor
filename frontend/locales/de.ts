@@ -86,7 +86,6 @@ export const de: TranslationSchema = {
     registerSubtitle: "Erstelle ein Konto und erhalte Bonus-Generationen.",
     email: "E-Mail-Adresse",
     password: "Passwort (min. 8 Zeichen)",
-    googleAuth: "Mit Google fortfahren",
     noAccount: "Kein Konto?",
     haveAccount: "Bereits ein Konto?",
     // Fix: Added missing or key

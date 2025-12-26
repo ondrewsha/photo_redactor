@@ -81,7 +81,6 @@ export const ru: TranslationSchema = {
     registerSubtitle: "Создай аккаунт и получи бонусные генерации.",
     email: "Email адрес",
     password: "Пароль (мин. 8 символов)",
-    googleAuth: "Продолжить через Google",
     noAccount: "Нет аккаунта?",
     haveAccount: "Уже есть аккаунт?",
     or: "Или"

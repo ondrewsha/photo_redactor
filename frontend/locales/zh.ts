@@ -81,7 +81,6 @@ export const zh: TranslationSchema = {
     registerSubtitle: "创建账户并获得免费生成次数。",
     email: "电子邮箱",
     password: "密码（最少8个字符）",
-    googleAuth: "使用 Google 继续",
     noAccount: "还没有账号？",
     haveAccount: "已有账号？",
     or: "或"

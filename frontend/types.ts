@@ -141,7 +141,6 @@ export interface TranslationSchema {
     registerSubtitle: string;
     email: string;
     password: string;
-    googleAuth: string;
     noAccount: string;
     haveAccount: string;
     or: string;

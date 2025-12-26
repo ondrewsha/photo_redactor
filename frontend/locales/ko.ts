@@ -81,7 +81,6 @@ export const ko: TranslationSchema = {
     registerSubtitle: "계정을 만들고 무료 생성 횟수를 받으세요.",
     email: "이메일 주소",
     password: "비밀번호 (8자 이상)",
-    googleAuth: "Google로 계속하기",
     noAccount: "계정이 없으신가요?",
     haveAccount: "이미 계정이 있으신가요?",
     or: "또는"

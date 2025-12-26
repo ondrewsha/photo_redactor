@@ -102,14 +102,6 @@ export const resolveAssetUrl = (imageUrl: string | null | undefined) => {
   return normalized;
 };
 
-export const buildGatewayUrl = (path: string) => {
-  if (!path) return GATEWAY_BASE;
-  if (/^https?:\/\//.test(path)) return path;
-  const normalized = path.startsWith('/') ? path : `/${path}`;
-  if (GATEWAY_BASE) return `${GATEWAY_BASE}${normalized}`;
-  return normalized;
-};
-
 export const api = {
   auth: {
     me: () => request<AuthMeResponse>('/auth/me'),

@@ -81,7 +81,6 @@ export const en: TranslationSchema = {
     registerSubtitle: "Create an account and get free generations.",
     email: "Email address",
     password: "Password (min. 8 characters)",
-    googleAuth: "Continue with Google",
     noAccount: "Don't have an account?",
     haveAccount: "Already have an account?",
     or: "Or"
