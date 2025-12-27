@@ -5,7 +5,8 @@ import {
   GenerateImageWithPhotosRequest,
   JobStatusResponse, 
   StyleCategoryPublic, 
-  GenerationCapabilities 
+  GenerationCapabilities,
+  HistoryListResponse 
 } from '../types';
 
 const BASE_URL = import.meta.env.VITE_GATEWAY_URL || '/api';
@@ -133,6 +134,9 @@ export const api = {
       });
     },
     status: (id: string) => request<JobStatusResponse>(`/jobs/${id}`),
+  },
+  history: {
+    list: (limit = 12) => request<HistoryListResponse>(`/history?limit=${limit}`),
   },
   billing: {
     quote: (count: number) => request<any>(`/billing/quote?count=${count}`),

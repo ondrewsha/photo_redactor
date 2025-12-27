@@ -64,6 +64,14 @@ export const ja: TranslationSchema = {
     styleNames: englishStyleNames,
     sizeLabels: defaultSizeLabels
   },
+  history: {
+    title: "生成履歴",
+    empty: "まだ保存された生成がありません。",
+    showMore: "すべて表示",
+    modalTitle: "最近の生成",
+    modalClose: "閉じる",
+    promptLabel: "プロンプト"
+  },
   profile: {
     balance: "残高",
     refill: "生成回数を追加",

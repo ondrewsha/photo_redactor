@@ -55,6 +55,19 @@ export type JobStatusResponse = {
   error_message: string | null;
 };
 
+export type HistoryItem = {
+  job_id: string;
+  prompt: string;
+  image_url: string;
+  width: number;
+  height: number;
+  created_at: string;
+};
+
+export type HistoryListResponse = {
+  items: HistoryItem[];
+};
+
 export type AuthMeResponse = {
   email: string;
   email_verified: boolean;
@@ -122,6 +135,14 @@ export interface TranslationSchema {
     defaultStyle: string;
     styleNames: Record<string, string>;
     sizeLabels: Record<string, string>;
+  };
+  history: {
+    title: string;
+    empty: string;
+    showMore: string;
+    modalTitle: string;
+    modalClose: string;
+    promptLabel: string;
   };
   promo: {
     tagline: string;

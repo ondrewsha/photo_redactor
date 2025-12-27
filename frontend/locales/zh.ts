@@ -64,6 +64,14 @@ export const zh: TranslationSchema = {
     styleNames: englishStyleNames,
     sizeLabels: defaultSizeLabels
   },
+  history: {
+    title: "生成历史",
+    empty: "暂无保存的生成记录。",
+    showMore: "查看全部",
+    modalTitle: "最近的生成",
+    modalClose: "关闭",
+    promptLabel: "提示词"
+  },
   profile: {
     balance: "余额",
     refill: "增加生成次数",

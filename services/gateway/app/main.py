@@ -10,6 +10,7 @@ import redis.asyncio as redis
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from motor.motor_asyncio import AsyncIOMotorClient
 from sqlalchemy.ext.asyncio import AsyncEngine, async_sessionmaker, create_async_engine
 
 from app.api.router import router
@@ -53,12 +54,18 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         await conn.run_sync(Base.metadata.create_all)
 
     redis_client = redis.from_url(settings.redis_url)
+    mongo_client = AsyncIOMotorClient(settings.mongo_url)
+    history_collection = mongo_client[settings.mongo_database][settings.mongo_history_collection]
+    await history_collection.create_index([("user_id", 1), ("completed_at", -1)])
     app.state.redis = redis_client
+    app.state.mongo_client = mongo_client
+    app.state.history_collection = history_collection
     try:
         yield
     finally:
         await app.state.http.aclose()
         await _close_redis(redis_client)
+        mongo_client.close()
         await engine.dispose()
 
 

@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from datetime import datetime
+
 from pydantic import Field, model_validator
 
 from nanovisual_shared.schemas import BaseSchema, JobStatus
@@ -78,3 +80,16 @@ class CreatePaymentResponse(BaseSchema):
     generation_count: int = Field(..., ge=1)
     amount_rub: int = Field(..., ge=0)
     currency: str = Field("RUB", min_length=1, max_length=10)
+
+
+class HistoryItem(BaseSchema):
+    job_id: str
+    prompt: str
+    image_url: str
+    width: int
+    height: int
+    created_at: datetime
+
+
+class HistoryListResponse(BaseSchema):
+    items: list[HistoryItem] = Field(default_factory=list)

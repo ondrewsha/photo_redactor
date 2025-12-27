@@ -64,6 +64,14 @@ export const ko: TranslationSchema = {
     styleNames: englishStyleNames,
     sizeLabels: defaultSizeLabels
   },
+  history: {
+    title: "생성 기록",
+    empty: "저장된 생성물이 없습니다.",
+    showMore: "전체 보기",
+    modalTitle: "최근 생성",
+    modalClose: "닫기",
+    promptLabel: "프롬프트"
+  },
   profile: {
     balance: "잔액",
     refill: "생성 횟수 추가",

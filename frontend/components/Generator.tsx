@@ -1,5 +1,5 @@
 
-import React, { ChangeEvent, useState, useEffect, useRef, useMemo } from 'react';
+import React, { ChangeEvent, useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { useTranslation } from '../context/I18nContext';
 import { useAuth } from '../context/AuthContext';
 import { Button } from './ui/Button';
@@ -8,10 +8,12 @@ import {
   StyleCategoryPublic, 
   GenerationCapabilities, 
   JobStatus,
-  ImageSizePreset 
+  ImageSizePreset,
+  HistoryItem 
 } from '../types';
 import { cn } from '../lib/cn';
 import { StylesLibraryModal } from './StylesLibraryModal';
+import { HistoryModal } from './HistoryModal';
 import { useTheme } from '../context/ThemeContext';
 import { gradientForStyle } from '../lib/gradients';
 
@@ -19,6 +21,7 @@ export const Generator: React.FC = () => {
   const { t } = useTranslation();
   const { user, refresh } = useAuth();
   const { theme } = useTheme();
+  const HISTORY_INLINE_LIMIT = 3;
   
   const [prompt, setPrompt] = useState('');
   const [styles, setStyles] = useState<StyleCategoryPublic[]>([]);
@@ -32,6 +35,8 @@ export const Generator: React.FC = () => {
   const [, setProgress] = useState(0);
   const [resultUrl, setResultUrl] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [history, setHistory] = useState<HistoryItem[]>([]);
+  const [historyModalOpen, setHistoryModalOpen] = useState(false);
   const [libraryOpen, setLibraryOpen] = useState(false);
   const [isInitializing, setIsInitializing] = useState(true);
   const [uploadedPhotos, setUploadedPhotos] = useState<File[]>([]);
@@ -121,6 +126,27 @@ export const Generator: React.FC = () => {
     }
   }, [caps, geminiAspectRatioOptions, geminiQualityOptions]);
 
+  const loadHistory = useCallback(async () => {
+    if (!user) {
+      setHistory([]);
+      return;
+    }
+    try {
+      const data = await api.history.list(12);
+      setHistory(data.items);
+    } catch (err) {
+      console.error('Не удалось загрузить историю генераций', err);
+    }
+  }, [user]);
+
+  useEffect(() => {
+    if (!user) {
+      setHistory([]);
+      return;
+    }
+    loadHistory();
+  }, [user, loadHistory]);
+
   const selectedPreset = useMemo(() => {
     if (!caps) return undefined;
     if (caps.image_provider === 'gemini' && selectedAspectRatio && selectedQuality) {
@@ -182,6 +208,19 @@ export const Generator: React.FC = () => {
     "md:col-span-2 text-[11px] uppercase tracking-[0.3em]",
     theme === 'dark' ? 'text-purple-300' : 'text-purple-600'
   );
+  const historyPanelClass = cn(
+    "w-full rounded-[2rem] border p-6 transition-colors",
+    theme === 'dark'
+      ? 'border-zinc-800 bg-zinc-900/80 text-white shadow-2xl'
+      : 'border-zinc-200 bg-white text-zinc-900 shadow-[0_25px_60px_rgba(15,23,42,0.08)]'
+  );
+  const historyCardClass = cn(
+    "min-w-[16rem] overflow-hidden rounded-[1.5rem] border transition-colors",
+    theme === 'dark'
+      ? 'border-zinc-800 bg-zinc-900'
+      : 'border-zinc-200 bg-white shadow-lg'
+  );
+  const historyLabelClass = theme === 'dark' ? 'text-zinc-400' : 'text-zinc-500';
 
   useEffect(() => {
     const init = async () => {
@@ -271,6 +310,7 @@ export const Generator: React.FC = () => {
             if (status.result) {
               setRawResultPath(status.result.image_url);
               setResultUrl(resolveAssetUrl(status.result.image_url));
+              void loadHistory();
             } else {
               setError('No image result');
             }
@@ -570,23 +610,65 @@ export const Generator: React.FC = () => {
                 onChange={(e) => setPrompt(e.target.value)}
                 disabled={phase === 'pending' || phase === 'processing'}
               />
-            </div>
-            <div className="flex flex-col gap-2 shrink-0">
-                <Button 
-                  className={generateButtonClass}
-                  onClick={handleGenerate}
-                  isLoading={phase === 'pending' || phase === 'processing'}
-                  disabled={!prompt.trim() || user.balance <= 0}
-                  size="icon"
-                >
-                  <svg className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M13 5l7 7-7 7M5 5l7 7-7 7" /></svg>
-                </Button>
+          </div>
+          <div className="flex flex-col gap-2 shrink-0">
+              <Button 
+                className={generateButtonClass}
+                onClick={handleGenerate}
+                isLoading={phase === 'pending' || phase === 'processing'}
+                disabled={!prompt.trim() || user.balance <= 0}
+                size="icon"
+              >
+                <svg className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M13 5l7 7-7 7M5 5l7 7-7 7" /></svg>
+              </Button>
+          </div>
+        </div>
+        {user && (
+          <div className="mt-6">
+            <div className={historyPanelClass}>
+              <div className="flex items-center justify-between gap-3">
+                <h4 className={cn("text-sm font-bold uppercase tracking-[0.4em]", theme === 'dark' ? 'text-zinc-300' : 'text-zinc-500')}>
+                  {t.history.title}
+                </h4>
+                {history.length > HISTORY_INLINE_LIMIT && (
+                  <Button variant="ghost" size="sm" className="uppercase tracking-[0.3em]" onClick={() => setHistoryModalOpen(true)}>
+                    {t.history.showMore}
+                  </Button>
+                )}
+              </div>
+              {history.length === 0 ? (
+                <p className={cn("text-sm", historyLabelClass)}>{t.history.empty}</p>
+              ) : (
+                <div className="mt-3 flex gap-4 overflow-x-auto pb-2">
+                  {history.slice(0, HISTORY_INLINE_LIMIT).map((entry) => (
+                    <div key={entry.job_id} className={historyCardClass}>
+                      <div className="relative h-36 overflow-hidden">
+                        <img
+                          src={resolveAssetUrl(entry.image_url)}
+                          alt={t.history.promptLabel}
+                          className="h-full w-full object-cover"
+                        />
+                      </div>
+                      <div className="space-y-1 p-4">
+                        <p className="text-[10px] uppercase tracking-[0.45em] text-zinc-400">{t.history.promptLabel}</p>
+                        <p className={cn("text-sm font-semibold leading-snug break-words", theme === 'dark' ? 'text-white' : 'text-zinc-900')}>
+                          {entry.prompt}
+                        </p>
+                        <p className="text-[11px] uppercase tracking-[0.35em] text-zinc-400">
+                          {new Date(entry.created_at).toLocaleString()}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
-          {user.balance <= 0 && (
-             <div className={outOfBalanceClass}>
-                {t.generator.outOfBalance}
-             </div>
+        )}
+        {user.balance <= 0 && (
+           <div className={outOfBalanceClass}>
+              {t.generator.outOfBalance}
+           </div>
           )}
         </div>
       </div>
@@ -597,6 +679,11 @@ export const Generator: React.FC = () => {
         styles={styles}
         selectedStyleIds={selectedStyles}
         onToggleStyle={toggleStyle}
+      />
+      <HistoryModal
+        isOpen={historyModalOpen}
+        onClose={() => setHistoryModalOpen(false)}
+        items={history}
       />
     </div>
   );

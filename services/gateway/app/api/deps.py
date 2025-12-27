@@ -6,6 +6,7 @@ from typing import Annotated
 import httpx
 import redis.asyncio as redis
 from fastapi import Depends, Request
+from motor.motor_asyncio import AsyncIOMotorCollection
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from app.core.settings import Settings
@@ -33,3 +34,6 @@ async def get_db_session(
 def get_redis(request: Request) -> redis.Redis:
     return request.app.state.redis
 
+
+def get_history_collection(request: Request) -> AsyncIOMotorCollection:
+    return request.app.state.history_collection

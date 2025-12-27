@@ -68,6 +68,14 @@ export const de: TranslationSchema = {
     styleNames: englishStyleNames,
     sizeLabels: defaultSizeLabels
   },
+  history: {
+    title: "Generationsverlauf",
+    empty: "Noch keine gespeicherten Generationen.",
+    showMore: "Alle anzeigen",
+    modalTitle: "Letzte Generationen",
+    modalClose: "Schließen",
+    promptLabel: "Prompt"
+  },
   profile: {
     balance: "Guthaben",
     refill: "Generationen hinzufügen",

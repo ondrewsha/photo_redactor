@@ -15,6 +15,9 @@ class Settings(BaseSettings):
 
     database_url: str = "postgresql+asyncpg://nanovisual:nanovisual@postgres:5432/nanovisual"
     redis_url: str = "redis://redis:6379/0"
+    mongo_url: str = "mongodb://mongo:27017"
+    mongo_database: str = "nanovisual_history"
+    mongo_history_collection: str = "generation_history"
 
     internal_token: str | None = Field(default=None, repr=False)
 
@@ -61,6 +64,9 @@ class Settings(BaseSettings):
         "frontend_base_url",
         "google_redirect_url",
         "yookassa_return_url",
+        "mongo_url",
+        "mongo_database",
+        "mongo_history_collection",
         mode="before",
     )
     @classmethod

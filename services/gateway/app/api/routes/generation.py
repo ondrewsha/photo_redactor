@@ -14,8 +14,10 @@ from nanovisual_shared.schemas import ComposePromptRequest, ComposePromptRespons
 from app.api.auth_deps import parse_uuid, require_csrf, require_verified_user
 from app.api.deps import get_db_session
 from app.api.deps import get_http, get_settings
+from app.api.deps import get_history_collection
 from app.api.schemas import GenerateImageRequest, GenerateImageResponse
 from app.api.upstream import forward_headers
+from app.core.history import create_history_entry, finalize_history_entry
 from app.core.models import User, UserJobReservation, Wallet, WalletTransaction
 from app.core.settings import Settings
 
@@ -115,6 +117,7 @@ async def generate(
     db: Annotated[AsyncSession, Depends(get_db_session)],
     settings: Annotated[Settings, Depends(get_settings)],
     http: Annotated[httpx.AsyncClient, Depends(get_http)],
+    history_collection: AsyncIOMotorCollection = Depends(get_history_collection),
 ) -> GenerateImageResponse:
     require_csrf(request)
     reservation_id = await _reserve_generation(db, user_id=user.id)
@@ -143,6 +146,14 @@ async def generate(
         )
         job.raise_for_status()
         job_data: CreateJobResponse = CreateJobResponse.model_validate(job.json())
+        await create_history_entry(
+            collection=history_collection,
+            job_id=str(job_data.job_id),
+            user_id=str(user.id),
+            prompt=composed_data.final_prompt,
+            width=payload.width,
+            height=payload.height,
+        )
         await _link_job_to_reservation(db, reservation_id=reservation_id, job_id=uuid.UUID(str(job_data.job_id)))
         return GenerateImageResponse(job_id=str(job_data.job_id), status=job_data.status)
     except Exception:  # noqa: BLE001 - refund + re-raise
@@ -162,6 +173,7 @@ async def generate_with_image(
     db: AsyncSession = Depends(get_db_session),
     settings: Settings = Depends(get_settings),
     http: httpx.AsyncClient = Depends(get_http),
+    history_collection: AsyncIOMotorCollection = Depends(get_history_collection),
 ) -> GenerateImageResponse:
     require_csrf(request)
     reservation_id = await _reserve_generation(db, user_id=user.id)
@@ -203,6 +215,14 @@ async def generate_with_image(
         )
         job.raise_for_status()
         job_data: CreateJobResponse = CreateJobResponse.model_validate(job.json())
+        await create_history_entry(
+            collection=history_collection,
+            job_id=str(job_data.job_id),
+            user_id=str(user.id),
+            prompt=composed_data.final_prompt,
+            width=width,
+            height=height,
+        )
         await _link_job_to_reservation(db, reservation_id=reservation_id, job_id=uuid.UUID(str(job_data.job_id)))
         return GenerateImageResponse(job_id=str(job_data.job_id), status=job_data.status)
     except Exception:  # noqa: BLE001
@@ -218,6 +238,7 @@ async def job_status(
     db: Annotated[AsyncSession, Depends(get_db_session)],
     settings: Annotated[Settings, Depends(get_settings)],
     http: Annotated[httpx.AsyncClient, Depends(get_http)],
+    history_collection: AsyncIOMotorCollection = Depends(get_history_collection),
 ) -> JobStatusResponse:
     job_uuid = parse_uuid(job_id)
     res = await db.execute(
@@ -249,6 +270,12 @@ async def job_status(
         except Exception:  # noqa: BLE001
             await db.rollback()
             raise
+    if data.status.value == "completed" and data.result and data.result.image_url:
+        await finalize_history_entry(
+            collection=history_collection,
+            job_id=job_id,
+            image_url=data.result.image_url,
+        )
 
     return data
 

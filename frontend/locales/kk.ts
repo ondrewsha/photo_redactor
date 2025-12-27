@@ -68,6 +68,14 @@ export const kk: TranslationSchema = {
     styleNames: englishStyleNames,
     sizeLabels: defaultSizeLabels
   },
+  history: {
+    title: "Генерациялар тарихы",
+    empty: "Әлі сақталған генерациялар жоқ.",
+    showMore: "Барлығын көрсету",
+    modalTitle: "Соңғы генерациялар",
+    modalClose: "Жабу",
+    promptLabel: "Промпт"
+  },
   profile: {
     balance: "Баланс",
     refill: "Генерацияларды толтыру",
