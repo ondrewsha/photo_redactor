@@ -84,7 +84,9 @@ class CreatePaymentResponse(BaseSchema):
 
 class HistoryItem(BaseSchema):
     job_id: str
-    prompt: str
+    user_prompt: str
+    final_prompt: str
+    style_ids: list[str]
     image_url: str
     width: int
     height: int

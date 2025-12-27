@@ -150,7 +150,9 @@ async def generate(
             collection=history_collection,
             job_id=str(job_data.job_id),
             user_id=str(user.id),
-            prompt=composed_data.final_prompt,
+            user_prompt=payload.user_input,
+            final_prompt=composed_data.final_prompt,
+            style_ids=style_ids,
             width=payload.width,
             height=payload.height,
         )
@@ -219,7 +221,9 @@ async def generate_with_image(
             collection=history_collection,
             job_id=str(job_data.job_id),
             user_id=str(user.id),
-            prompt=composed_data.final_prompt,
+            user_prompt=user_input,
+            final_prompt=composed_data.final_prompt,
+            style_ids=cleaned_style_ids,
             width=width,
             height=height,
         )

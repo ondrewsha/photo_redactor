@@ -68,9 +68,14 @@ export const zh: TranslationSchema = {
     title: "生成历史",
     empty: "暂无保存的生成记录。",
     showMore: "查看全部",
-    modalTitle: "最近的生成",
+    modalTitle: "您的杰作",
     modalClose: "关闭",
-    promptLabel: "提示词"
+    promptLabel: "请求",
+    stylesLabel: "使用风格",
+    download: "下载",
+    delete: "删除",
+    open: "展开",
+    deleteConfirm: "确认从历史中删除该记录？"
   },
   profile: {
     balance: "余额",

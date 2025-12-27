@@ -2,17 +2,29 @@ import React from 'react';
 import { Button } from './ui/Button';
 import { HistoryItem } from '../types';
 import { cn } from '../lib/cn';
-import { resolveAssetUrl } from '../lib/api';
 import { useTheme } from '../context/ThemeContext';
 import { useTranslation } from '../context/I18nContext';
+import { HistoryCard } from './HistoryCard';
 
 interface Props {
   isOpen: boolean;
   onClose: () => void;
   items: HistoryItem[];
+  getStyleLabel: (id: string) => string;
+  onDownload: (item: HistoryItem) => void;
+  onDelete: (item: HistoryItem) => void;
+  onOpen: (item: HistoryItem) => void;
 }
 
-export const HistoryModal: React.FC<Props> = ({ isOpen, onClose, items }) => {
+export const HistoryModal: React.FC<Props> = ({
+  isOpen,
+  onClose,
+  items,
+  getStyleLabel,
+  onDownload,
+  onDelete,
+  onOpen,
+}) => {
   const { t } = useTranslation();
   const { theme } = useTheme();
   if (!isOpen) return null;
@@ -47,33 +59,24 @@ export const HistoryModal: React.FC<Props> = ({ isOpen, onClose, items }) => {
           {items.length === 0 ? (
             <div className="text-center text-sm font-bold uppercase tracking-widest text-zinc-500">{t.history.empty}</div>
           ) : (
-            <div className="grid gap-4 md:grid-cols-2">
-              {items.map((item) => (
-                <div
-                  key={item.job_id}
-                  className={cn(
-                    "overflow-hidden rounded-[1.5rem] border shadow-lg transition-colors",
-                    theme === 'dark'
-                      ? 'border-zinc-800 bg-zinc-900'
-                      : 'border-zinc-200 bg-white'
-                  )}
-                >
-                  <div className="relative h-48 overflow-hidden">
-                    <img
-                      src={resolveAssetUrl(item.image_url)}
-                      alt={t.history.promptLabel}
-                      className="h-full w-full object-cover"
-                    />
-                  </div>
-                  <div className="space-y-2 p-4">
-                    <p className="text-[10px] uppercase tracking-[0.45em] text-zinc-400">{t.history.promptLabel}</p>
-                    <p className="text-sm font-semibold leading-snug text-zinc-900 dark:text-white">{item.prompt}</p>
-                    <p className="text-[11px] uppercase tracking-[0.4em] text-zinc-400">
-                      {new Date(item.created_at).toLocaleString()}
-                    </p>
-                  </div>
-                </div>
-              ))}
+            <div className="mt-3 grid gap-4 md:grid-cols-3">
+              {items.map((item) => {
+                const ids = Array.isArray(item.style_ids) ? item.style_ids : [];
+                const styleLabels = ids.length
+                  ? ids.map((id) => getStyleLabel(id))
+                  : [t.generator.defaultStyle];
+                return (
+                <HistoryCard
+                    key={item.job_id}
+                    item={item}
+                    styleNames={styleLabels}
+                    onDownload={onDownload}
+                    onDelete={onDelete}
+                    onOpen={onOpen}
+                    className="w-full max-w-xs md:max-w-none"
+                  />
+                );
+              })}
             </div>
           )}
         </div>

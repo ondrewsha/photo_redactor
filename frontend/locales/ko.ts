@@ -68,9 +68,14 @@ export const ko: TranslationSchema = {
     title: "생성 기록",
     empty: "저장된 생성물이 없습니다.",
     showMore: "전체 보기",
-    modalTitle: "최근 생성",
+    modalTitle: "당신의 걸작",
     modalClose: "닫기",
-    promptLabel: "프롬프트"
+    promptLabel: "요청",
+    stylesLabel: "사용한 스타일",
+    download: "다운로드",
+    delete: "삭제",
+    open: "확대",
+    deleteConfirm: "이 기록을 삭제하시겠습니까?"
   },
   profile: {
     balance: "잔액",

@@ -68,9 +68,14 @@ export const ja: TranslationSchema = {
     title: "生成履歴",
     empty: "まだ保存された生成がありません。",
     showMore: "すべて表示",
-    modalTitle: "最近の生成",
+    modalTitle: "あなたの傑作",
     modalClose: "閉じる",
-    promptLabel: "プロンプト"
+    promptLabel: "リクエスト",
+    stylesLabel: "使用スタイル",
+    download: "ダウンロード",
+    delete: "削除",
+    open: "拡大",
+    deleteConfirm: "この履歴を削除しますか？"
   },
   profile: {
     balance: "残高",

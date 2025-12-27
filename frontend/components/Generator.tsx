@@ -14,6 +14,7 @@ import {
 import { cn } from '../lib/cn';
 import { StylesLibraryModal } from './StylesLibraryModal';
 import { HistoryModal } from './HistoryModal';
+import { HistoryCard } from './HistoryCard';
 import { useTheme } from '../context/ThemeContext';
 import { gradientForStyle } from '../lib/gradients';
 
@@ -42,6 +43,7 @@ export const Generator: React.FC = () => {
   const [uploadedPhotos, setUploadedPhotos] = useState<File[]>([]);
   const [photoPreviews, setPhotoPreviews] = useState<string[]>([]);
   const [rawResultPath, setRawResultPath] = useState<string | null>(null);
+  const [fullscreenItem, setFullscreenItem] = useState<HistoryItem | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const lightPanelShadow = "shadow-[0_30px_70px_rgba(15,23,42,0.08)]";
@@ -69,8 +71,34 @@ export const Generator: React.FC = () => {
   const textTone = theme === 'dark' ? 'text-white' : 'text-zinc-900';
   const mutedTone = theme === 'dark' ? 'text-zinc-400' : 'text-zinc-500';
 
-  const getStyleLabel = (style: StyleCategoryPublic) =>
-    t.generator.styleNames?.[style.id] ?? style.display_name;
+  const getStyleLabel = useCallback(
+    (style: StyleCategoryPublic) => t.generator.styleNames?.[style.id] ?? style.display_name,
+    [t.generator.styleNames]
+  );
+
+  const styleLabelMap = useMemo(() => {
+    const map = new Map<string, string>();
+    styles.forEach((style) => {
+      map.set(style.id, getStyleLabel(style));
+    });
+    map.set('none', t.generator.defaultStyle);
+    return map;
+  }, [styles, getStyleLabel, t.generator.defaultStyle]);
+
+  const getStyleLabelById = useCallback(
+    (id: string) => styleLabelMap.get(id) || id,
+    [styleLabelMap]
+  );
+
+  const historyStyleLabels = useCallback(
+    (entry: HistoryItem) => {
+      const ids = Array.isArray(entry.style_ids) ? entry.style_ids : [];
+      if (!ids.length) return [t.generator.defaultStyle];
+      const labels = ids.map((id) => getStyleLabelById(id));
+      return labels.length ? labels : [t.generator.defaultStyle];
+    },
+    [getStyleLabelById, t.generator.defaultStyle]
+  );
 
   const getPresetLabel = (preset: ImageSizePreset) => {
     const sizeKey = `${preset.width}x${preset.height}`;
@@ -214,12 +242,6 @@ export const Generator: React.FC = () => {
       ? 'border-zinc-800 bg-zinc-900/80 text-white shadow-2xl'
       : 'border-zinc-200 bg-white text-zinc-900 shadow-[0_25px_60px_rgba(15,23,42,0.08)]'
   );
-  const historyCardClass = cn(
-    "min-w-[16rem] overflow-hidden rounded-[1.5rem] border transition-colors",
-    theme === 'dark'
-      ? 'border-zinc-800 bg-zinc-900'
-      : 'border-zinc-200 bg-white shadow-lg'
-  );
   const historyLabelClass = theme === 'dark' ? 'text-zinc-400' : 'text-zinc-500';
 
   useEffect(() => {
@@ -346,6 +368,51 @@ export const Generator: React.FC = () => {
     }
     return resultUrl;
   }, [rawResultPath, resultUrl]);
+
+  const downloadResource = (url: string, jobId: string) => {
+    const anchor = document.createElement('a');
+    anchor.href = url;
+    const extension = url.split('.').pop()?.split(/[\?#]/)[0] || 'webp';
+    anchor.download = `${jobId}.${extension}`;
+    document.body.appendChild(anchor);
+    anchor.click();
+    document.body.removeChild(anchor);
+  };
+
+  const buildDownloadUrl = (imageUrl: string | null | undefined) => {
+    if (!imageUrl) return null;
+    if (import.meta.env.DEV) {
+      const path = imageUrl.startsWith('http') ? new URL(imageUrl).pathname : imageUrl;
+      const normalized = path.startsWith('/') ? path : `/${path}`;
+      return `/api${normalized}`;
+    }
+    return resolveAssetUrl(imageUrl);
+  };
+
+  const handleHistoryDownload = (item: HistoryItem) => {
+    const downloadLink = buildDownloadUrl(item.image_url);
+    if (!downloadLink) return;
+    downloadResource(downloadLink, item.job_id);
+  };
+
+  const handleHistoryDelete = async (item: HistoryItem) => {
+    if (!window.confirm(t.history.deleteConfirm)) return;
+    try {
+      await api.history.delete(item.job_id);
+      setHistory((prev) => prev.filter((entry) => entry.job_id !== item.job_id));
+      if (fullscreenItem?.job_id === item.job_id) {
+        setFullscreenItem(null);
+      }
+    } catch (err) {
+      console.error('Failed to delete history entry', err);
+    }
+  };
+
+  const handleHistoryOpen = (item: HistoryItem) => {
+    setFullscreenItem(item);
+  };
+
+  const closeFullscreen = () => setFullscreenItem(null);
 
   const toggleStyle = (id: string) => {
     setSelectedStyles(prev => {
@@ -639,26 +706,17 @@ export const Generator: React.FC = () => {
               {history.length === 0 ? (
                 <p className={cn("text-sm", historyLabelClass)}>{t.history.empty}</p>
               ) : (
-                <div className="mt-3 flex gap-4 overflow-x-auto pb-2">
+                <div className="mt-3 grid grid-cols-1 gap-4 md:grid-cols-3 justify-center">
                   {history.slice(0, HISTORY_INLINE_LIMIT).map((entry) => (
-                    <div key={entry.job_id} className={historyCardClass}>
-                      <div className="relative h-36 overflow-hidden">
-                        <img
-                          src={resolveAssetUrl(entry.image_url)}
-                          alt={t.history.promptLabel}
-                          className="h-full w-full object-cover"
-                        />
-                      </div>
-                      <div className="space-y-1 p-4">
-                        <p className="text-[10px] uppercase tracking-[0.45em] text-zinc-400">{t.history.promptLabel}</p>
-                        <p className={cn("text-sm font-semibold leading-snug break-words", theme === 'dark' ? 'text-white' : 'text-zinc-900')}>
-                          {entry.prompt}
-                        </p>
-                        <p className="text-[11px] uppercase tracking-[0.35em] text-zinc-400">
-                          {new Date(entry.created_at).toLocaleString()}
-                        </p>
-                      </div>
-                    </div>
+                    <HistoryCard
+                      key={entry.job_id}
+                      item={entry}
+                      styleNames={historyStyleLabels(entry)}
+                      onDownload={handleHistoryDownload}
+                      onDelete={handleHistoryDelete}
+                      onOpen={handleHistoryOpen}
+                      className="w-full max-w-xs md:max-w-none"
+                    />
                   ))}
                 </div>
               )}
@@ -684,7 +742,107 @@ export const Generator: React.FC = () => {
         isOpen={historyModalOpen}
         onClose={() => setHistoryModalOpen(false)}
         items={history}
+        getStyleLabel={getStyleLabelById}
+        onDownload={handleHistoryDownload}
+        onDelete={handleHistoryDelete}
+        onOpen={handleHistoryOpen}
       />
+      {fullscreenItem && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center px-4 py-6">
+          <div
+            className="absolute inset-0 bg-black/70 backdrop-blur-sm"
+            onClick={closeFullscreen}
+          />
+          <div
+            className={cn(
+              "relative w-full max-w-4xl overflow-hidden rounded-[2rem] border shadow-2xl transition-colors",
+              theme === 'dark'
+                ? 'border-zinc-800 bg-zinc-900 text-white'
+                : 'border-zinc-200 bg-white text-zinc-900'
+            )}
+          >
+            <div className="relative h-96 overflow-hidden">
+              <img
+                src={resolveAssetUrl(fullscreenItem.image_url)}
+                alt={t.history.promptLabel}
+                className="h-full w-full object-contain"
+              />
+              <button
+                type="button"
+                className={cn(
+                  "absolute top-4 right-4 h-12 w-12 rounded-2xl flex items-center justify-center border transition-colors",
+                  theme === 'dark'
+                    ? 'border-white/30 bg-black/30 text-white hover:border-white hover:bg-white/10'
+                    : 'border-zinc-200 bg-white text-zinc-900 hover:border-indigo-500 hover:bg-indigo-50'
+                )}
+                onClick={closeFullscreen}
+                aria-label={t.common.close}
+              >
+                <svg className="h-6 w-6" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} fill="none">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            <div className="space-y-4 p-6">
+              <p className="text-[10px] uppercase tracking-[0.45em] text-zinc-400">{t.history.promptLabel}</p>
+              <p className="text-lg font-semibold leading-snug">{fullscreenItem.user_prompt}</p>
+              <div className="flex flex-wrap gap-2">
+                {historyStyleLabels(fullscreenItem).map((name) => (
+                  <span
+                    key={name}
+                    className="rounded-full border border-current px-3 py-1 text-[11px] uppercase tracking-[0.3em]"
+                  >
+                    {name}
+                  </span>
+                ))}
+              </div>
+              <div className="flex items-center justify-between">
+                <p className="text-[11px] uppercase tracking-[0.4em] text-zinc-400">
+                  {new Date(fullscreenItem.created_at).toLocaleString()}
+                </p>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    className={cn(
+                      "h-10 w-10 rounded-2xl flex items-center justify-center border transition-colors",
+                      theme === 'dark'
+                        ? 'border-white/30 bg-black/30 text-white hover:border-white hover:bg-white/10'
+                        : 'border-zinc-200 bg-white text-zinc-900 hover:border-indigo-500 hover:bg-indigo-50'
+                    )}
+                    onClick={() => handleHistoryDownload(fullscreenItem)}
+                    aria-label={t.history.download}
+                  >
+                    <svg className="h-5 w-5" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} fill="none">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a2 2 0 002 2h12a2 2 0 002-2v-1" />
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M7 10l5 5 5-5" />
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 15V4" />
+                    </svg>
+                  </button>
+                  <button
+                    type="button"
+                    className={cn(
+                      "h-10 w-10 rounded-2xl flex items-center justify-center border transition-colors",
+                      theme === 'dark'
+                        ? 'border-white/30 bg-black/30 text-white hover:border-white hover:bg-white/10'
+                        : 'border-zinc-200 bg-white text-zinc-900 hover:border-rose-500 hover:bg-rose-50'
+                    )}
+                    onClick={() => handleHistoryDelete(fullscreenItem)}
+                    aria-label={t.history.delete}
+                  >
+                    <svg className="h-5 w-5" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} fill="none">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M6 7h12" />
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M11 11v6" />
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M15 11v6" />
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 7l1 12a2 2 0 002 2h8a2 2 0 002-2l1-12" />
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 7V5a2 2 0 012-2h2a2 2 0 012 2v2" />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

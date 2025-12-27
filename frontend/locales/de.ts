@@ -72,9 +72,14 @@ export const de: TranslationSchema = {
     title: "Generationsverlauf",
     empty: "Noch keine gespeicherten Generationen.",
     showMore: "Alle anzeigen",
-    modalTitle: "Letzte Generationen",
+    modalTitle: "Ihre Meisterwerke",
     modalClose: "Schließen",
-    promptLabel: "Prompt"
+    promptLabel: "Anfrage",
+    stylesLabel: "Stile",
+    download: "Herunterladen",
+    delete: "Löschen",
+    open: "Öffnen",
+    deleteConfirm: "Eintrag aus der Historie entfernen?"
   },
   profile: {
     balance: "Guthaben",

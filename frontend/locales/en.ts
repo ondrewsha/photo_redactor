@@ -68,9 +68,14 @@ export const en: TranslationSchema = {
     title: "Generation history",
     empty: "No saved generations yet.",
     showMore: "Show all",
-    modalTitle: "Recent generations",
+    modalTitle: "Your masterpieces",
     modalClose: "Close",
-    promptLabel: "Prompt"
+    promptLabel: "Request",
+    stylesLabel: "Styles",
+    download: "Download",
+    delete: "Delete",
+    open: "Open",
+    deleteConfirm: "Remove this entry from history?"
   },
   profile: {
     balance: "Balance",

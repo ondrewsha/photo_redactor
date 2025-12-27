@@ -6,7 +6,8 @@ import {
   JobStatusResponse, 
   StyleCategoryPublic, 
   GenerationCapabilities,
-  HistoryListResponse 
+  HistoryListResponse,
+  MessageResponse,
 } from '../types';
 
 const BASE_URL = import.meta.env.VITE_GATEWAY_URL || '/api';
@@ -137,6 +138,7 @@ export const api = {
   },
   history: {
     list: (limit = 12) => request<HistoryListResponse>(`/history?limit=${limit}`),
+    delete: (jobId: string) => request<MessageResponse>(`/history/${jobId}`, { method: 'DELETE' }),
   },
   billing: {
     quote: (count: number) => request<any>(`/billing/quote?count=${count}`),

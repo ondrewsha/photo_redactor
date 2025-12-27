@@ -68,9 +68,14 @@ export const ru: TranslationSchema = {
     title: "История генераций",
     empty: "Здесь появятся последние изображения.",
     showMore: "Показать всё",
-    modalTitle: "Ваши генерации",
+    modalTitle: "Ваши шедевры",
     modalClose: "Закрыть",
-    promptLabel: "Промпт"
+    promptLabel: "Запрос",
+    stylesLabel: "Стили",
+    download: "Скачать",
+    delete: "Удалить",
+    open: "Развернуть",
+    deleteConfirm: "Удалить запись из истории?"
   },
   profile: {
     balance: "Баланс",

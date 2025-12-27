@@ -57,7 +57,9 @@ export type JobStatusResponse = {
 
 export type HistoryItem = {
   job_id: string;
-  prompt: string;
+  user_prompt: string;
+  final_prompt: string;
+  style_ids: string[];
   image_url: string;
   width: number;
   height: number;
@@ -66,6 +68,10 @@ export type HistoryItem = {
 
 export type HistoryListResponse = {
   items: HistoryItem[];
+};
+
+export type MessageResponse = {
+  message: string;
 };
 
 export type AuthMeResponse = {
@@ -143,6 +149,11 @@ export interface TranslationSchema {
     modalTitle: string;
     modalClose: string;
     promptLabel: string;
+    stylesLabel: string;
+    download: string;
+    delete: string;
+    open: string;
+    deleteConfirm: string;
   };
   promo: {
     tagline: string;

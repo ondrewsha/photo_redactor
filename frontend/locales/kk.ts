@@ -72,9 +72,14 @@ export const kk: TranslationSchema = {
     title: "Генерациялар тарихы",
     empty: "Әлі сақталған генерациялар жоқ.",
     showMore: "Барлығын көрсету",
-    modalTitle: "Соңғы генерациялар",
+    modalTitle: "Сіздің шедеврлеріңіз",
     modalClose: "Жабу",
-    promptLabel: "Промпт"
+    promptLabel: "Сұраныс",
+    stylesLabel: "Қолданылған стильдер",
+    download: "Жүктеу",
+    delete: "Өшіру",
+    open: "Толық ашу",
+    deleteConfirm: "Бұл жазбаны тарихтан алып тастау керек пе?"
   },
   profile: {
     balance: "Баланс",
