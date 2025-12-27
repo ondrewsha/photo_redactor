@@ -1,6 +1,6 @@
 
 import { TranslationSchema } from '../types';
-import { englishStyleNames, defaultSizeLabels } from './styleNames';
+import { kkStyleNames, kkSizeLabels } from './styleNames';
 
 export const kk: TranslationSchema = {
   common: {
@@ -65,8 +65,8 @@ export const kk: TranslationSchema = {
     searchStyles: "Стильдерді іздеу...",
     noStylesFound: "Стильдер табылмады",
     defaultStyle: "Стиль жоқ",
-    styleNames: englishStyleNames,
-    sizeLabels: defaultSizeLabels
+    styleNames: kkStyleNames,
+    sizeLabels: kkSizeLabels
   },
   history: {
     title: "Генерациялар тарихы",

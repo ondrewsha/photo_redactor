@@ -1,6 +1,6 @@
 
 import { TranslationSchema } from '../types';
-import { englishStyleNames, defaultSizeLabels } from './styleNames';
+import { enStyleNames, enSizeLabels } from './styleNames';
 
 export const en: TranslationSchema = {
   common: {
@@ -61,8 +61,8 @@ export const en: TranslationSchema = {
     searchStyles: "Search styles...",
     noStylesFound: "No styles found",
     defaultStyle: "No style",
-    styleNames: englishStyleNames,
-    sizeLabels: defaultSizeLabels
+    styleNames: enStyleNames,
+    sizeLabels: enSizeLabels
   },
   history: {
     title: "Generation history",

@@ -1,6 +1,6 @@
 
 import { TranslationSchema } from '../types';
-import { englishStyleNames, defaultSizeLabels } from './styleNames';
+import { koStyleNames, koSizeLabels } from './styleNames';
 
 export const ko: TranslationSchema = {
   common: {
@@ -61,8 +61,8 @@ export const ko: TranslationSchema = {
     searchStyles: "스타일 검색...",
     noStylesFound: "스타일을 찾을 수 없음",
     defaultStyle: "스타일 없음",
-    styleNames: englishStyleNames,
-    sizeLabels: defaultSizeLabels
+    styleNames: koStyleNames,
+    sizeLabels: koSizeLabels
   },
   history: {
     title: "생성 기록",

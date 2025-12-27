@@ -1,6 +1,6 @@
 
 import { TranslationSchema } from '../types';
-import { englishStyleNames, defaultSizeLabels } from './styleNames';
+import { jaStyleNames, jaSizeLabels } from './styleNames';
 
 export const ja: TranslationSchema = {
   common: {
@@ -61,8 +61,8 @@ export const ja: TranslationSchema = {
     searchStyles: "スタイルを検索...",
     noStylesFound: "スタイルが見つかりません",
     defaultStyle: "スタイルなし",
-    styleNames: englishStyleNames,
-    sizeLabels: defaultSizeLabels
+    styleNames: jaStyleNames,
+    sizeLabels: jaSizeLabels
   },
   history: {
     title: "生成履歴",

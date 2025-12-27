@@ -98,3 +98,7 @@ cp .env.example .env
 npm install
 npm run dev
 ```
+
+### Локализация стилей и размеров
+
+Файлы в `frontend/locales/*.ts` подсоединяют словари из `frontend/locales/styleNames.ts`. Если добавляешь новый язык или обновляешь названия стилей/размеров, дополни соответствующие `XXStyleNames`/`XXSizeLabels` и убедись, что перевод подключён в `frontend/locales/index.ts`.

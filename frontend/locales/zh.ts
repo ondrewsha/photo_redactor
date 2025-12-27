@@ -1,6 +1,6 @@
 
 import { TranslationSchema } from '../types';
-import { englishStyleNames, defaultSizeLabels } from './styleNames';
+import { zhStyleNames, zhSizeLabels } from './styleNames';
 
 export const zh: TranslationSchema = {
   common: {
@@ -61,8 +61,8 @@ export const zh: TranslationSchema = {
     searchStyles: "搜索风格...",
     noStylesFound: "未找到风格",
     defaultStyle: "无样式",
-    styleNames: englishStyleNames,
-    sizeLabels: defaultSizeLabels
+    styleNames: zhStyleNames,
+    sizeLabels: zhSizeLabels
   },
   history: {
     title: "生成历史",
