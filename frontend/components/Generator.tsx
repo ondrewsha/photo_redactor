@@ -43,6 +43,7 @@ export const Generator: React.FC = () => {
   const [uploadedPhotos, setUploadedPhotos] = useState<File[]>([]);
   const [photoPreviews, setPhotoPreviews] = useState<string[]>([]);
   const [rawResultPath, setRawResultPath] = useState<string | null>(null);
+  const [currentJobId, setCurrentJobId] = useState<string | null>(null);
   const [fullscreenItem, setFullscreenItem] = useState<HistoryItem | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
@@ -321,6 +322,7 @@ export const Generator: React.FC = () => {
               photos: uploadedPhotos.slice(0, maxPhotos),
             })
           : await api.generation.generate(payload);
+      setCurrentJobId(job_id);
 
       const poll = async () => {
         try {
@@ -359,34 +361,43 @@ export const Generator: React.FC = () => {
     }
   };
 
-  const downloadHref = useMemo(() => {
-    if (!rawResultPath || !resultUrl) return null;
-    if (import.meta.env.DEV) {
-      const path = rawResultPath.startsWith('http') ? new URL(rawResultPath).pathname : rawResultPath;
-      const normalized = path.startsWith('/') ? path : `/${path}`;
-      return `/api${normalized}`;
-    }
-    return resultUrl;
-  }, [rawResultPath, resultUrl]);
-
-  const downloadResource = (url: string, jobId: string) => {
-    const anchor = document.createElement('a');
-    anchor.href = url;
-    const extension = url.split('.').pop()?.split(/[\?#]/)[0] || 'webp';
-    anchor.download = `${jobId}.${extension}`;
-    document.body.appendChild(anchor);
-    anchor.click();
-    document.body.removeChild(anchor);
-  };
-
-  const buildDownloadUrl = (imageUrl: string | null | undefined) => {
+  const buildDownloadUrl = useCallback((imageUrl: string | null | undefined) => {
     if (!imageUrl) return null;
-    if (import.meta.env.DEV) {
-      const path = imageUrl.startsWith('http') ? new URL(imageUrl).pathname : imageUrl;
-      const normalized = path.startsWith('/') ? path : `/${path}`;
-      return `/api${normalized}`;
+    const raw = imageUrl.startsWith('http')
+      ? new URL(imageUrl).pathname
+      : imageUrl;
+    const normalized = raw.startsWith('/') ? raw : `/${raw}`;
+    return `/api${normalized}`;
+  }, []);
+
+  const downloadHref = useMemo(() => buildDownloadUrl(rawResultPath), [rawResultPath, buildDownloadUrl]);
+
+  const downloadResource = async (url: string, jobId: string) => {
+    try {
+      const response = await fetch(url, { credentials: 'include' });
+      if (!response.ok) {
+        throw new Error(`Download failed with status ${response.status}`);
+      }
+      const blob = await response.blob();
+      const candidateExt = url
+        .split('/')
+        .pop()
+        ?.split(/[\?#]/)[0]
+        ?.split('.')
+        .pop();
+      const mimeExt = blob.type.split('/').pop()?.replace('jpeg', 'jpg');
+      const extension = candidateExt || mimeExt || 'webp';
+      const downloadUrl = URL.createObjectURL(blob);
+      const anchor = document.createElement('a');
+      anchor.href = downloadUrl;
+      anchor.download = `${jobId}.${extension}`;
+      document.body.appendChild(anchor);
+      anchor.click();
+      document.body.removeChild(anchor);
+      URL.revokeObjectURL(downloadUrl);
+    } catch (err) {
+      console.error('Download failed', err);
     }
-    return resolveAssetUrl(imageUrl);
   };
 
   const handleHistoryDownload = (item: HistoryItem) => {
@@ -638,14 +649,18 @@ export const Generator: React.FC = () => {
                 <img src={resultUrl} className="h-full w-full object-contain" alt="Generated" />
                 <div className="absolute top-6 right-6 flex flex-col gap-3 opacity-0 group-hover:opacity-100 transition-all transform translate-x-4 group-hover:translate-x-0">
                 {downloadHref && (
-                  <a
-                    href={downloadHref}
-                    download
+                  <button
+                    type="button"
                     className={actionButtonClasses('save')}
-                    rel="noreferrer noopener"
+                    disabled={!currentJobId}
+                    onClick={() => {
+                      if (!currentJobId) return;
+                      void downloadResource(downloadHref, currentJobId);
+                    }}
+                    aria-label={t.history.download}
                   >
                     <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a2 2 0 002 2h12a2 2 0 002-2v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
-                  </a>
+                  </button>
                 )}
               <button 
                 className={actionButtonClasses('cancel')}
@@ -761,7 +776,7 @@ export const Generator: React.FC = () => {
                 : 'border-zinc-200 bg-white text-zinc-900'
             )}
           >
-            <div className="relative h-96 overflow-hidden">
+          <div className="relative h-96 overflow-hidden pt-4">
               <img
                 src={resolveAssetUrl(fullscreenItem.image_url)}
                 alt={t.history.promptLabel}

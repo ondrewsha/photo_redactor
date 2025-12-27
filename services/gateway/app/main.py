@@ -98,6 +98,9 @@ def create_app() -> FastAPI:
         response.headers.setdefault("x-frame-options", "DENY")
         response.headers.setdefault("referrer-policy", "no-referrer")
         response.headers.setdefault("cross-origin-resource-policy", "same-site")
+        response.headers.setdefault("access-control-allow-origin", settings.frontend_base_url or "http://localhost:5173")
+        if settings.cors_allow_origins_list:
+            response.headers.setdefault("access-control-allow-credentials", "true")
         if request.cookies.get(DEVICE_COOKIE) != device_id:
             set_device_cookie(response, settings=request.app.state.settings, device_id=device_id)
         return response

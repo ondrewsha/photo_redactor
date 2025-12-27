@@ -99,6 +99,14 @@ npm install
 npm run dev
 ```
 
+### Production (Docker)
+
+```bash
+docker compose up --build -d frontend
+```
+
+Фронтенд будет доступен по `http://localhost:${FRONTEND_PORT:-5173}`; переменная `VITE_GATEWAY_URL` используется при сборке и может быть настроена через `.env`, чтобы указывать на нужный gateway.
+
 ### Локализация стилей и размеров
 
 Файлы в `frontend/locales/*.ts` подсоединяют словари из `frontend/locales/styleNames.ts`. Если добавляешь новый язык или обновляешь названия стилей/размеров, дополни соответствующие `XXStyleNames`/`XXSizeLabels` и убедись, что перевод подключён в `frontend/locales/index.ts`.

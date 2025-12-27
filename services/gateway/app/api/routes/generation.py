@@ -314,7 +314,14 @@ async def media_proxy(
     if upstream_resp.status_code >= 400:
         body = await upstream_resp.aread()
         await upstream_stream.__aexit__(None, None, None)
-        return Response(status_code=upstream_resp.status_code, content=body)
+        return Response(
+            status_code=upstream_resp.status_code,
+            content=body,
+            headers={
+                "access-control-allow-origin": settings.frontend_base_url or "*",
+                "access-control-allow-credentials": "true",
+            },
+        )
 
     content_type = upstream_resp.headers.get("content-type", "application/octet-stream")
     cache_control = upstream_resp.headers.get("cache-control", "public, max-age=31536000")
@@ -327,7 +334,11 @@ async def media_proxy(
         finally:
             await upstream_stream.__aexit__(None, None, None)
 
-    headers: dict[str, str] = {"cache-control": cache_control}
+    headers: dict[str, str] = {
+        "cache-control": cache_control,
+        "access-control-allow-origin": settings.frontend_base_url or "*",
+        "access-control-allow-credentials": "true",
+    }
     if content_length:
         headers["content-length"] = content_length
 
