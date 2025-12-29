@@ -14,6 +14,11 @@ interface Props {
   onDownload: (item: HistoryItem) => void;
   onDelete: (item: HistoryItem) => void;
   onOpen: (item: HistoryItem) => void;
+  page: number;
+  total: number;
+  limit: number;
+  onPageChange: (newPage: number) => void;
+  loading?: boolean;
 }
 
 export const HistoryModal: React.FC<Props> = ({
@@ -24,10 +29,18 @@ export const HistoryModal: React.FC<Props> = ({
   onDownload,
   onDelete,
   onOpen,
+  page,
+  total,
+  limit,
+  onPageChange,
+  loading = false,
 }) => {
   const { t } = useTranslation();
   const { theme } = useTheme();
   if (!isOpen) return null;
+  const totalPages = Math.max(1, Math.ceil(total / limit));
+  const canPrev = page > 1 && !loading;
+  const canNext = page < totalPages && !loading;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -81,9 +94,20 @@ export const HistoryModal: React.FC<Props> = ({
           )}
         </div>
         <div className={cn(
-          "flex justify-end px-6 py-4 border-t",
+          "flex items-center justify-between px-6 py-4 border-t",
           theme === 'dark' ? 'border-zinc-800' : 'border-zinc-200'
         )}>
+          <div className="flex items-center gap-3 text-[11px] uppercase tracking-[0.35em] text-zinc-500 dark:text-zinc-400">
+            <Button variant="ghost" size="sm" onClick={() => onPageChange(page - 1)} disabled={!canPrev}>
+              {t.history.prev}
+            </Button>
+            <span>
+              {t.history.pageLabel} {page} / {totalPages}
+            </span>
+            <Button variant="ghost" size="sm" onClick={() => onPageChange(page + 1)} disabled={!canNext}>
+              {t.history.next}
+            </Button>
+          </div>
           <Button onClick={onClose}>{t.history.modalClose}</Button>
         </div>
       </div>

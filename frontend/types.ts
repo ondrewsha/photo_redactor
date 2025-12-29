@@ -68,6 +68,9 @@ export type HistoryItem = {
 
 export type HistoryListResponse = {
   items: HistoryItem[];
+  total: number;
+  page: number;
+  limit: number;
 };
 
 export type MessageResponse = {
@@ -91,6 +94,9 @@ export type BillingHistoryItem = {
 
 export type BillingHistoryResponse = {
   items: BillingHistoryItem[];
+  total: number;
+  page: number;
+  limit: number;
 };
 
 export interface TranslationSchema {
@@ -167,6 +173,9 @@ export interface TranslationSchema {
     delete: string;
     open: string;
     deleteConfirm: string;
+    pageLabel: string;
+    prev: string;
+    next: string;
   };
   promo: {
     tagline: string;

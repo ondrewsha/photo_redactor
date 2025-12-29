@@ -23,6 +23,7 @@ export const Generator: React.FC = () => {
   const { user, refresh } = useAuth();
   const { theme } = useTheme();
   const HISTORY_INLINE_LIMIT = 3;
+  const HISTORY_PAGE_LIMIT = 12;
   
   const [prompt, setPrompt] = useState('');
   const [styles, setStyles] = useState<StyleCategoryPublic[]>([]);
@@ -38,6 +39,9 @@ export const Generator: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [history, setHistory] = useState<HistoryItem[]>([]);
   const [historyModalOpen, setHistoryModalOpen] = useState(false);
+  const [historyPage, setHistoryPage] = useState(1);
+  const [historyTotal, setHistoryTotal] = useState(0);
+  const [historyLoading, setHistoryLoading] = useState(false);
   const [libraryOpen, setLibraryOpen] = useState(false);
   const [isInitializing, setIsInitializing] = useState(true);
   const [uploadedPhotos, setUploadedPhotos] = useState<File[]>([]);
@@ -155,25 +159,41 @@ export const Generator: React.FC = () => {
     }
   }, [caps, geminiAspectRatioOptions, geminiQualityOptions]);
 
-  const loadHistory = useCallback(async () => {
+  const loadHistory = useCallback(async (page = 1) => {
     if (!user) {
       setHistory([]);
+      setHistoryTotal(0);
+      setHistoryPage(1);
       return;
     }
+    setHistoryLoading(true);
     try {
-      const data = await api.history.list(12);
+      const data = await api.history.list(HISTORY_PAGE_LIMIT, page);
       setHistory(data.items);
+      setHistoryTotal(data.total);
+      setHistoryPage(data.page);
     } catch (err) {
       console.error('Не удалось загрузить историю генераций', err);
+    } finally {
+      setHistoryLoading(false);
     }
   }, [user]);
+
+  const handleHistoryPageChange = useCallback((newPage: number) => {
+    if (!newPage) return;
+    const maxPage = historyTotal ? Math.ceil(historyTotal / HISTORY_PAGE_LIMIT) : 1;
+    if (newPage < 1 || newPage > maxPage) return;
+    void loadHistory(newPage);
+  }, [historyTotal, loadHistory]);
 
   useEffect(() => {
     if (!user) {
       setHistory([]);
+      setHistoryTotal(0);
+      setHistoryPage(1);
       return;
     }
-    loadHistory();
+    void loadHistory(1);
   }, [user, loadHistory]);
 
   const selectedPreset = useMemo(() => {
@@ -758,6 +778,11 @@ export const Generator: React.FC = () => {
         onClose={() => setHistoryModalOpen(false)}
         items={history}
         getStyleLabel={getStyleLabelById}
+        page={historyPage}
+        total={historyTotal}
+        limit={HISTORY_PAGE_LIMIT}
+        onPageChange={handleHistoryPageChange}
+        loading={historyLoading}
         onDownload={handleHistoryDownload}
         onDelete={handleHistoryDelete}
         onOpen={handleHistoryOpen}

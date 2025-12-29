@@ -8,7 +8,7 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from fastapi.responses import RedirectResponse
-from sqlalchemy import select
+from sqlalchemy import select, func
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 from yookassa import Configuration as YooConfiguration
@@ -220,14 +220,20 @@ async def history(
     user: Annotated[User, Depends(require_user)],
     db: Annotated[AsyncSession, Depends(get_db_session)],
     limit: Annotated[int, Query(ge=1, le=100)] = 20,
+    page: Annotated[int, Query(ge=1)] = 1,
 ) -> BillingHistoryResponse:
     res = await db.execute(
         select(WalletTransaction)
         .where(WalletTransaction.user_id == user.id)
         .order_by(WalletTransaction.created_at.desc())
+        .offset((page - 1) * limit)
         .limit(limit)
     )
     items = res.scalars().all()
+    total_res = await db.execute(
+        select(func.count()).where(WalletTransaction.user_id == user.id)
+    )
+    total = int(total_res.scalar_one())
     reference_ids = {_parse_uuid(item.reference) for item in items}
     reference_ids.discard(None)
     amount_map: dict[UUID, int] = {}
@@ -252,7 +258,7 @@ async def history(
                 amount_rub=amount_rub,
             )
         )
-    return BillingHistoryResponse(items=history_items)
+    return BillingHistoryResponse(items=history_items, total=total, page=page, limit=limit)
 
 
 @router.get("/mock/confirm")

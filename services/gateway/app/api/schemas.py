@@ -93,6 +93,9 @@ class BillingHistoryItem(BaseSchema):
 
 class BillingHistoryResponse(BaseSchema):
     items: list[BillingHistoryItem] = Field(default_factory=list)
+    total: int
+    page: int
+    limit: int
 
 
 class HistoryItem(BaseSchema):
@@ -108,3 +111,6 @@ class HistoryItem(BaseSchema):
 
 class HistoryListResponse(BaseSchema):
     items: list[HistoryItem] = Field(default_factory=list)
+    total: int
+    page: int
+    limit: int

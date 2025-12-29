@@ -64,15 +64,23 @@ async def get_history_for_user(
     *,
     user_id: str,
     limit: int,
-) -> list[dict]:
-    cursor = collection.find(
-        {"user_id": user_id, "image_url": {"$ne": None}},
-        sort=[("completed_at", -1)],
-    ).limit(limit)
-    results = []
+    offset: int,
+) -> tuple[list[dict], int]:
+    filter_query = {"user_id": user_id, "image_url": {"$ne": None}}
+    cursor = (
+        collection.find(filter_query, sort=[("completed_at", -1)])
+        .skip(offset)
+        .limit(limit)
+    )
+    results: list[dict] = []
     try:
         async for entry in cursor:
             results.append(entry)
     except PyMongoError:
         logger.exception("Не удалось получить историю для пользователя %s", user_id)
-    return results
+    try:
+        total = await collection.count_documents(filter_query)
+    except PyMongoError:
+        logger.exception("Не удалось получить количество транзакций для пользователя %s", user_id)
+        total = len(results)
+    return results, total

@@ -20,11 +20,14 @@ async def list_history(
     user: Annotated[User, Depends(require_verified_user)],
     history_collection: AsyncIOMotorCollection = Depends(get_history_collection),
     limit: int = Query(12, ge=1, le=50),
+    page: int = Query(1, ge=1),
 ) -> HistoryListResponse:
-    entries = await get_history_for_user(
+    offset = (page - 1) * limit
+    entries, total = await get_history_for_user(
         history_collection,
         user_id=str(user.id),
         limit=limit,
+        offset=offset,
     )
     items = []
     for entry in entries:
@@ -42,7 +45,7 @@ async def list_history(
                 }
             )
         )
-    return HistoryListResponse(items=items)
+    return HistoryListResponse(items=items, total=total, page=page, limit=limit)
 
 
 @router.delete("/history/{job_id}", response_model=MessageResponse)

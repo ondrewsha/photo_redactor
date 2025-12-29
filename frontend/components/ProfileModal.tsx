@@ -22,6 +22,9 @@ export const ProfileModal: React.FC<Props> = ({ isOpen, onClose }) => {
   const [billingHistoryOpen, setBillingHistoryOpen] = useState(false);
   const [billingHistoryItems, setBillingHistoryItems] = useState<BillingHistoryItem[]>([]);
   const [billingHistoryLoading, setBillingHistoryLoading] = useState(false);
+  const [billingHistoryPage, setBillingHistoryPage] = useState(1);
+  const [billingHistoryTotal, setBillingHistoryTotal] = useState(0);
+  const BILLING_HISTORY_LIMIT = 10;
   const [changePasswordOpen, setChangePasswordOpen] = useState(false);
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
@@ -50,18 +53,30 @@ export const ProfileModal: React.FC<Props> = ({ isOpen, onClose }) => {
     }
   }, [count]);
 
-  const openBillingHistory = useCallback(async () => {
+  const loadBillingHistory = useCallback(async (page = 1) => {
     setBillingHistoryLoading(true);
     try {
-      const data = await api.billing.history(20);
+      const data = await api.billing.history(BILLING_HISTORY_LIMIT, page);
       setBillingHistoryItems(data.items);
+      setBillingHistoryTotal(data.total);
+      setBillingHistoryPage(data.page);
       setBillingHistoryOpen(true);
     } catch (err) {
       console.error('Не удалось загрузить историю пополнений', err);
     } finally {
       setBillingHistoryLoading(false);
     }
-  }, []);
+  }, [BILLING_HISTORY_LIMIT]);
+
+  const openBillingHistory = useCallback(() => {
+    void loadBillingHistory(1);
+  }, [loadBillingHistory]);
+
+  const handleBillingPageChange = useCallback((newPage: number) => {
+    const maxPage = billingHistoryTotal ? Math.ceil(billingHistoryTotal / BILLING_HISTORY_LIMIT) : 1;
+    if (newPage < 1 || newPage > maxPage) return;
+    void loadBillingHistory(newPage);
+  }, [billingHistoryTotal, loadBillingHistory]);
 
   const logoutButtonClass = cn(
     "w-full justify-start border transition-colors uppercase tracking-[0.35em] text-xs text-rose-600 border-rose-100",
@@ -267,6 +282,11 @@ export const ProfileModal: React.FC<Props> = ({ isOpen, onClose }) => {
         items={transactionItems}
         theme={theme}
         t={t}
+        page={billingHistoryPage}
+        total={billingHistoryTotal}
+        limit={BILLING_HISTORY_LIMIT}
+        onPageChange={handleBillingPageChange}
+        loading={billingHistoryLoading}
       />
       <ChangePasswordModal
         isOpen={changePasswordOpen}
@@ -294,10 +314,29 @@ type BillingHistoryModalProps = {
   items: BillingHistoryItem[];
   theme: 'light' | 'dark';
   t: TranslationSchema;
+  page: number;
+  total: number;
+  limit: number;
+  onPageChange: (newPage: number) => void;
+  loading?: boolean;
 };
 
-const BillingHistoryModal: React.FC<BillingHistoryModalProps> = ({ isOpen, onClose, items, theme, t }) => {
+const BillingHistoryModal: React.FC<BillingHistoryModalProps> = ({
+  isOpen,
+  onClose,
+  items,
+  theme,
+  t,
+  page,
+  total,
+  limit,
+  onPageChange,
+  loading = false,
+}) => {
   if (!isOpen) return null;
+  const totalPages = Math.max(1, Math.ceil(total / limit));
+  const canPrev = page > 1 && !loading;
+  const canNext = page < totalPages && !loading;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -324,7 +363,7 @@ const BillingHistoryModal: React.FC<BillingHistoryModalProps> = ({ isOpen, onClo
             </svg>
           </Button>
         </div>
-        <div className="p-6 space-y-4 overflow-y-auto max-h-[65vh]">
+        <div className="p-6 space-y-4 overflow-y-auto max-h-[61vh]">
           {items.length === 0 ? (
             <div className="text-center text-sm font-semibold uppercase tracking-[0.4em] text-zinc-500 dark:text-zinc-400">
               {t.profile.historyEmpty}
@@ -372,6 +411,23 @@ const BillingHistoryModal: React.FC<BillingHistoryModalProps> = ({ isOpen, onClo
               ))}
             </div>
           )}
+        </div>
+        <div className={cn(
+            "p-6 mb-4 flex items-center justify-between border-t transition-colors",
+            theme === 'dark' ? 'border-zinc-800' : 'border-zinc-200'
+          )}>
+          <div className="flex items-center gap-3 text-xs uppercase tracking-[0.3em] text-zinc-500 dark:text-zinc-400">
+            <Button variant="ghost" size="sm" onClick={() => onPageChange(page - 1)} disabled={!canPrev}>
+              {t.history.prev}
+            </Button>
+            <span>
+              {t.history.pageLabel} {page} / {totalPages}
+            </span>
+            <Button variant="ghost" size="sm" onClick={() => onPageChange(page + 1)} disabled={!canNext}>
+              {t.history.next}
+            </Button>
+          </div>
+          <Button onClick={onClose} size="lg">{t.common.done}</Button>
         </div>
       </div>
     </div>

@@ -143,12 +143,12 @@ export const api = {
     status: (id: string) => request<JobStatusResponse>(`/jobs/${id}`),
   },
   history: {
-    list: (limit = 12) => request<HistoryListResponse>(`/history?limit=${limit}`),
+    list: (limit = 12, page = 1) => request<HistoryListResponse>(`/history?limit=${limit}&page=${page}`),
     delete: (jobId: string) => request<MessageResponse>(`/history/${jobId}`, { method: 'DELETE' }),
   },
   billing: {
     quote: (count: number) => request<any>(`/billing/quote?count=${count}`),
     pay: (p: any) => request<any>('/billing/pay', { method: 'POST', body: JSON.stringify(p) }),
-    history: (limit = 20) => request<BillingHistoryResponse>(`/billing/history?limit=${limit}`),
+    history: (limit = 20, page = 1) => request<BillingHistoryResponse>(`/billing/history?limit=${limit}&page=${page}`),
   }
 };
