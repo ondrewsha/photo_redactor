@@ -89,7 +89,30 @@ export const zh: TranslationSchema = {
     totalPrice: "总价",
     pay: "完成支付",
     currency: "CNY",
-    units: "件"
+    units: "件",
+    historyTitle: "充值历史",
+    historyEmpty: "尚无购买记录。",
+    historyButton: "查看填写记录",
+    historyDefaultComment: "生成次数套餐",
+    historyKinds: {
+      purchase: "充值",
+      trial: "赠送",
+      refund: "退款"
+    }
+    ,
+    historyDescriptions: {
+      purchase: "生成次数套餐",
+      trial: "欢迎赠送",
+      refund: "退款"
+    },
+    changePasswordTitle: "修改密码",
+    currentPassword: "当前密码",
+    newPassword: "新密码",
+    confirmPassword: "再次输入新密码",
+    changePasswordSubmit: "更新密码",
+    passwordMismatch: "两次输入的密码不一致。",
+    passwordChangeSuccess: "密码已更新。",
+    passwordChangeError: "无法修改密码。"
   },
   auth: {
     loginTitle: "欢迎回来",

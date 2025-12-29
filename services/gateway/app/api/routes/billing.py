@@ -15,7 +15,13 @@ from yookassa import Payment as YooPayment
 
 from app.api.auth_deps import parse_uuid, require_csrf, require_user
 from app.api.deps import get_db_session, get_settings
-from app.api.schemas import BillingQuoteResponse, CreatePaymentRequest, CreatePaymentResponse
+from app.api.schemas import (
+    BillingHistoryResponse,
+    BillingHistoryItem,
+    BillingQuoteResponse,
+    CreatePaymentRequest,
+    CreatePaymentResponse,
+)
 from app.core.models import Payment, User, Wallet, WalletTransaction
 from app.core.security import new_token
 from app.core.settings import Settings
@@ -181,8 +187,6 @@ async def pay(
     if settings.payment_provider == "mock":
         payment.provider_payment_id = f"mock_{payment.id}"
         payment.confirmation_url = f"{settings.public_base_url.rstrip('/')}/billing/mock/confirm?payment_id={payment.id}"
-        await db.commit()
-        await db.refresh(payment)
     elif settings.payment_provider == "yookassa":
         return_url = settings.yookassa_return_url or f"{settings.frontend_base_url.rstrip('/')}/?pay=return"
         provider_id, confirmation_url = await _create_yookassa_payment(
@@ -196,10 +200,11 @@ async def pay(
         )
         payment.provider_payment_id = provider_id
         payment.confirmation_url = confirmation_url
-        await db.commit()
-        await db.refresh(payment)
     else:
         raise HTTPException(status_code=500, detail="Платёжный провайдер не поддерживается.")
+
+    await db.commit()
+    await db.refresh(payment)
 
     return CreatePaymentResponse(
         payment_id=str(payment.id),
@@ -208,6 +213,33 @@ async def pay(
         generation_count=payment.generation_count,
         amount_rub=int(payment.amount_kopecks // 100),
         currency=payment.currency,
+    )
+
+
+@router.get("/history", response_model=BillingHistoryResponse)
+async def history(
+    user: Annotated[User, Depends(require_user)],
+    db: Annotated[AsyncSession, Depends(get_db_session)],
+    limit: Annotated[int, Query(ge=1, le=100)] = 20,
+) -> BillingHistoryResponse:
+    res = await db.execute(
+        select(WalletTransaction)
+        .where(WalletTransaction.user_id == user.id)
+        .order_by(WalletTransaction.created_at.desc())
+        .limit(limit)
+    )
+    items = res.scalars().all()
+    return BillingHistoryResponse(
+        items=[
+            BillingHistoryItem(
+                transaction_id=str(item.id),
+                delta=item.delta,
+                kind=item.kind,
+                comment=item.comment,
+                created_at=item.created_at,
+            )
+            for item in items
+        ]
     )
 
 

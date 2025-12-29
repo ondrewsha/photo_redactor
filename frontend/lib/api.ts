@@ -1,6 +1,7 @@
 
 import { 
   AuthMeResponse, 
+  BillingHistoryResponse,
   GenerateImageRequest, 
   GenerateImageWithPhotosRequest,
   JobStatusResponse, 
@@ -110,6 +111,11 @@ export const api = {
     login: (p: any) => request<any>('/auth/login', { method: 'POST', body: JSON.stringify(p) }),
     register: (p: any) => request<any>('/auth/register', { method: 'POST', body: JSON.stringify(p) }),
     logout: () => request<any>('/auth/logout', { method: 'POST' }),
+    changePassword: (payload: { current_password: string; new_password: string }) =>
+      request<MessageResponse>('/auth/change-password', {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      }),
   },
   generation: {
     capabilities: () => request<GenerationCapabilities>('/capabilities', undefined, MOCK_CAPS),
@@ -143,5 +149,6 @@ export const api = {
   billing: {
     quote: (count: number) => request<any>(`/billing/quote?count=${count}`),
     pay: (p: any) => request<any>('/billing/pay', { method: 'POST', body: JSON.stringify(p) }),
+    history: (limit = 20) => request<BillingHistoryResponse>(`/billing/history?limit=${limit}`),
   }
 };

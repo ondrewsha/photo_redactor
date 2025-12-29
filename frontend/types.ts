@@ -80,6 +80,18 @@ export type AuthMeResponse = {
   balance: number;
 };
 
+export type BillingHistoryItem = {
+  transaction_id: string;
+  delta: number;
+  kind: string;
+  comment: string | null;
+  created_at: string;
+};
+
+export type BillingHistoryResponse = {
+  items: BillingHistoryItem[];
+};
+
 export interface TranslationSchema {
   common: {
     generate: string;
@@ -172,6 +184,20 @@ export interface TranslationSchema {
     pay: string;
     currency: string;
     units: string;
+    historyTitle: string;
+    historyEmpty: string;
+    historyButton: string;
+    historyDefaultComment: string;
+    historyKinds: Record<string, string>;
+    historyDescriptions: Record<string, string>;
+    changePasswordTitle: string;
+    currentPassword: string;
+    newPassword: string;
+    confirmPassword: string;
+    changePasswordSubmit: string;
+    passwordMismatch: string;
+    passwordChangeSuccess: string;
+    passwordChangeError: string;
   };
   footer: {
     brand: string;

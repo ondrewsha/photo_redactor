@@ -89,7 +89,30 @@ export const en: TranslationSchema = {
     totalPrice: "Total",
     pay: "Complete Payment",
     currency: "RUB",
-    units: "pcs"
+    units: "pcs",
+    historyTitle: "Top-up History",
+    historyEmpty: "No purchases yet.",
+    historyButton: "View purchases",
+    historyDefaultComment: "Generation package",
+    historyKinds: {
+      purchase: "Top-up",
+      trial: "Bonus",
+      refund: "Refund"
+    }
+    ,
+    historyDescriptions: {
+      purchase: "Generation package",
+      trial: "Welcome bonus",
+      refund: "Refund"
+    },
+    changePasswordTitle: "Change password",
+    currentPassword: "Current password",
+    newPassword: "New password",
+    confirmPassword: "Repeat new password",
+    changePasswordSubmit: "Update password",
+    passwordMismatch: "New passwords do not match.",
+    passwordChangeSuccess: "Password updated.",
+    passwordChangeError: "Could not change password."
   },
   auth: {
     loginTitle: "Welcome Back",

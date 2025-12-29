@@ -94,7 +94,30 @@ export const de: TranslationSchema = {
     pay: "Bezahlen",
     // Fix: Added missing currency key
     currency: "€",
-    units: "Stück"
+    units: "Stück",
+    historyTitle: "Aufladeverlauf",
+    historyEmpty: "Noch keine Käufe.",
+    historyButton: "Einkaufshistorie",
+    historyDefaultComment: "Paket mit Generationen",
+    historyKinds: {
+      purchase: "Aufladung",
+      trial: "Bonus",
+      refund: "Rückerstattung"
+    }
+    ,
+    historyDescriptions: {
+      purchase: "Paket mit Generationen",
+      trial: "Bonus",
+      refund: "Rückerstattung"
+    },
+    changePasswordTitle: "Passwort ändern",
+    currentPassword: "Aktuelles Passwort",
+    newPassword: "Neues Passwort",
+    confirmPassword: "Neues Passwort wiederholen",
+    changePasswordSubmit: "Passwort aktualisieren",
+    passwordMismatch: "Passwörter stimmen nicht überein.",
+    passwordChangeSuccess: "Passwort aktualisiert.",
+    passwordChangeError: "Passwort konnte nicht geändert werden."
   },
   auth: {
     loginTitle: "Willkommen zurück",

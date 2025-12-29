@@ -89,7 +89,30 @@ export const ru: TranslationSchema = {
     totalPrice: "Итого",
     pay: "Оплатить",
     currency: "₽",
-    units: "шт."
+    units: "шт.",
+    historyTitle: "История пополнений",
+    historyEmpty: "Покупок ещё не было.",
+    historyButton: "Посмотреть историю пополнений",
+    historyDefaultComment: "Покупка генераций",
+    historyKinds: {
+      purchase: "Пополнение",
+      trial: "Бонус",
+      refund: "Возврат"
+    }
+    ,
+    historyDescriptions: {
+      purchase: "Покупка генераций",
+      trial: "Приветственный бонус",
+      refund: "Возврат"
+    },
+    changePasswordTitle: "Сменить пароль",
+    currentPassword: "Текущий пароль",
+    newPassword: "Новый пароль",
+    confirmPassword: "Повторите новый пароль",
+    changePasswordSubmit: "Обновить пароль",
+    passwordMismatch: "Пароли не совпадают.",
+    passwordChangeSuccess: "Пароль обновлён.",
+    passwordChangeError: "Не удалось сменить пароль."
   },
   auth: {
     loginTitle: "С возвращением",

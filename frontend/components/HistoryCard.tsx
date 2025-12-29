@@ -104,15 +104,20 @@ export const HistoryCard: React.FC<HistoryCardProps> = ({
         <p className="text-[10px] uppercase tracking-[0.45em] text-zinc-400">{t.history.promptLabel}</p>
         <p className="text-sm font-semibold leading-snug break-words">{item.user_prompt || item.final_prompt || '—'}</p>
         {styleNames.length > 0 && (
-          <div className="flex flex-wrap gap-2">
-            {styleNames.map((name) => (
-              <span
-                key={name}
-                className="rounded-full border border-current px-3 py-1 text-[11px] uppercase tracking-[0.3em]"
-              >
-                {name}
-              </span>
-            ))}
+          <div className="flex flex-col gap-2">
+            <p className="text-[10px] uppercase tracking-[0.45em] text-zinc-400">
+              {t.history.stylesLabel}
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {styleNames.map((name) => (
+                <span
+                  key={name}
+                  className="rounded-full border border-current px-3 py-1 text-[11px] uppercase tracking-[0.3em]"
+                >
+                  {name}
+                </span>
+              ))}
+            </div>
           </div>
         )}
         <p className="text-[11px] uppercase tracking-[0.4em] text-zinc-400">

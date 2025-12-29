@@ -89,7 +89,30 @@ export const ko: TranslationSchema = {
     totalPrice: "합계",
     pay: "결제 완료",
     currency: "KRW",
-    units: "개"
+    units: "개",
+    historyTitle: "충전 내역",
+    historyEmpty: "아직 구매 내역이 없습니다.",
+    historyButton: "충전 내역 보기",
+    historyDefaultComment: "생성 횟수 패키지",
+    historyKinds: {
+      purchase: "충전",
+      trial: "보너스",
+      refund: "환불"
+    }
+    ,
+    historyDescriptions: {
+      purchase: "생성 횟수 패키지",
+      trial: "웰컴 보너스",
+      refund: "환불"
+    },
+    changePasswordTitle: "비밀번호 변경",
+    currentPassword: "현재 비밀번호",
+    newPassword: "새 비밀번호",
+    confirmPassword: "새 비밀번호 확인",
+    changePasswordSubmit: "비밀번호 업데이트",
+    passwordMismatch: "입력한 비밀번호가 일치하지 않습니다.",
+    passwordChangeSuccess: "비밀번호가 변경되었습니다.",
+    passwordChangeError: "비밀번호를 변경할 수 없습니다."
   },
   auth: {
     loginTitle: "다시 오신 것을 환영합니다",

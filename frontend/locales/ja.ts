@@ -90,6 +90,30 @@ export const ja: TranslationSchema = {
     pay: "支払いを完了",
     currency: "JPY",
     units: "個"
+    ,
+    historyTitle: "チャージ履歴",
+    historyEmpty: "まだ購入履歴はありません。",
+    historyButton: "履歴を見る",
+    historyDefaultComment: "生成回数パッケージ",
+    historyKinds: {
+      purchase: "チャージ",
+      trial: "ボーナス",
+      refund: "返金"
+    }
+    ,
+    historyDescriptions: {
+      purchase: "生成回数パッケージ",
+      trial: "ウェルカムボーナス",
+      refund: "返金"
+    },
+    changePasswordTitle: "パスワードを変更",
+    currentPassword: "現在のパスワード",
+    newPassword: "新しいパスワード",
+    confirmPassword: "新しいパスワードを確認",
+    changePasswordSubmit: "パスワードを更新",
+    passwordMismatch: "パスワードが一致しません。",
+    passwordChangeSuccess: "パスワードを更新しました。",
+    passwordChangeError: "パスワードの変更に失敗しました。"
   },
   auth: {
     loginTitle: "おかえりなさい",

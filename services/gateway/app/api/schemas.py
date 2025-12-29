@@ -82,6 +82,18 @@ class CreatePaymentResponse(BaseSchema):
     currency: str = Field("RUB", min_length=1, max_length=10)
 
 
+class BillingHistoryItem(BaseSchema):
+    transaction_id: str
+    delta: int
+    kind: str
+    comment: str | None = None
+    created_at: datetime
+
+
+class BillingHistoryResponse(BaseSchema):
+    items: list[BillingHistoryItem] = Field(default_factory=list)
+
+
 class HistoryItem(BaseSchema):
     job_id: str
     user_prompt: str

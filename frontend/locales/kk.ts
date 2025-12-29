@@ -94,7 +94,30 @@ export const kk: TranslationSchema = {
     pay: "Төлеу",
     // Fix: Added missing currency key
     currency: "₸",
-    units: "дана"
+    units: "дана",
+    historyTitle: "Толтырулар тарихы",
+    historyEmpty: "Әлі сатып алулар жоқ.",
+    historyButton: "Тарихты қарау",
+    historyDefaultComment: "Генерация пакеті",
+    historyKinds: {
+      purchase: "Толтыру",
+      trial: "Бонус",
+      refund: "Қайтару"
+    }
+    ,
+    historyDescriptions: {
+      purchase: "Генерация пакеті",
+      trial: "Қош келдіңіз бонусы",
+      refund: "Қайтару"
+    },
+    changePasswordTitle: "Құпия сөзді өзгерту",
+    currentPassword: "Ағымдағы құпия сөз",
+    newPassword: "Жаңа құпия сөз",
+    confirmPassword: "Жаңа құпия сөзді қайталау",
+    changePasswordSubmit: "Құпия сөзді жаңарту",
+    passwordMismatch: "Құпиясөздер сәйкес емес.",
+    passwordChangeSuccess: "Құпия сөз жаңартылды.",
+    passwordChangeError: "Құпия сөзді өзгерту мүмкін болмады."
   },
   auth: {
     loginTitle: "Қайта қош келдіңіз",
