@@ -5,7 +5,7 @@ import { Button } from './ui/Button';
 import { StyleCategoryPublic } from '../types';
 import { cn } from '../lib/cn';
 import { useTheme } from '../context/ThemeContext';
-import { gradientForStyle } from '../lib/gradients';
+import { styleBackgroundForStyle } from '../lib/gradients';
 
 interface Props {
   isOpen: boolean;
@@ -101,7 +101,7 @@ export const StylesLibraryModal: React.FC<Props> = ({ isOpen, onClose, styles, s
                           "group relative aspect-[4/3] rounded-2xl overflow-hidden border transition-all active:scale-95",
                           selectedStyleIds.includes(s.id) ? "ring-4 ring-indigo-500 border-transparent" : "border-zinc-200 dark:border-zinc-800"
                         )}
-                        style={{ backgroundImage: gradientForStyle(s.id) }}
+                        style={styleBackgroundForStyle(s.id)}
                       >
                         <div className="absolute inset-0 bg-black/20" />
                           <div className="relative z-10 flex h-full flex-col justify-center p-4 text-white">

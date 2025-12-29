@@ -16,7 +16,7 @@ import { StylesLibraryModal } from './StylesLibraryModal';
 import { HistoryModal } from './HistoryModal';
 import { HistoryCard } from './HistoryCard';
 import { useTheme } from '../context/ThemeContext';
-import { gradientForStyle } from '../lib/gradients';
+import { styleBackgroundForStyle } from '../lib/gradients';
 
 export const Generator: React.FC = () => {
   const { t } = useTranslation();
@@ -471,7 +471,7 @@ export const Generator: React.FC = () => {
                     key={style.id}
                     onClick={() => toggleStyle(style.id)}
                     className="px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-tighter transition-all text-white shadow-lg border border-transparent"
-                    style={{ backgroundImage: gradientForStyle(style.id) }}
+                    style={styleBackgroundForStyle(style.id)}
                   >
                     {getStyleLabel(style)}
                   </button>
