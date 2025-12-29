@@ -8,6 +8,7 @@ import { cn } from '../lib/cn';
 import { useTheme } from '../context/ThemeContext';
 import { BillingHistoryItem } from '../types';
 import { TranslationSchema } from '../types';
+import { calculateUnitPrice, calculateTotalPrice } from '../lib/pricing';
 
 interface Props {
   isOpen: boolean;
@@ -30,16 +31,10 @@ export const ProfileModal: React.FC<Props> = ({ isOpen, onClose }) => {
   const [changePasswordSuccess, setChangePasswordSuccess] = useState<string | null>(null);
   const [count, setCount] = useState(10);
   const [loading, setLoading] = useState(false);
-  const suggestions = [1, 10, 30, 60, 90, 100];
+  const suggestions = [10, 20, 50, 70, 90, 100];
 
-  const unitPrice = useMemo(() => {
-    if (count >= 91) return 10;
-    if (count >= 61) return 15;
-    if (count >= 31) return 20;
-    if (count >= 11) return 25;
-    return 30;
-  }, [count]);
-  const totalPrice = useMemo(() => unitPrice * count, [unitPrice, count]);
+  const unitPrice = useMemo(() => calculateUnitPrice(count), [count]);
+  const totalPrice = useMemo(() => calculateTotalPrice(count), [count]);
 
   const handlePay = useCallback(async () => {
     setLoading(true);
@@ -114,7 +109,7 @@ export const ProfileModal: React.FC<Props> = ({ isOpen, onClose }) => {
 
   if (!isOpen || !user) return null;
 
-  const depositItems = billingHistoryItems.filter((entry) => entry.delta > 0);
+  const transactionItems = billingHistoryItems;
 
   const outlineButtonClass = cn(
     "w-full justify-start border transition-colors uppercase tracking-[0.35em] text-xs",
@@ -269,7 +264,7 @@ export const ProfileModal: React.FC<Props> = ({ isOpen, onClose }) => {
       <BillingHistoryModal
         isOpen={billingHistoryOpen}
         onClose={() => setBillingHistoryOpen(false)}
-        items={depositItems}
+        items={transactionItems}
         theme={theme}
         t={t}
       />
@@ -350,13 +345,26 @@ const BillingHistoryModal: React.FC<BillingHistoryModalProps> = ({ isOpen, onClo
                     <span className="text-xs uppercase tracking-[0.3em] text-zinc-400 dark:text-zinc-500">
                       {t.profile.historyKinds[entry.kind] ?? entry.kind}
                     </span>
-                    <span className="text-sm font-bold text-emerald-400">
-                      +{entry.delta}
+                    <span
+                      className={cn(
+                        "text-sm font-bold",
+                        entry.delta > 0 ? "text-emerald-400" : "text-rose-400"
+                      )}
+                    >
+                      {entry.delta > 0 ? `+${entry.delta}` : `${entry.delta}`}
                     </span>
                   </div>
                   <p className="mt-2 text-sm text-zinc-500 dark:text-zinc-400">
                     {t.profile.historyDescriptions[entry.kind] ?? entry.comment ?? t.profile.historyDefaultComment}
                   </p>
+                  {entry.amount_rub != null && (
+                    <div className="mt-2 flex items-center justify-between text-xs text-zinc-500 dark:text-zinc-400">
+                      <span className="uppercase tracking-[0.3em]">{t.profile.historyAmountLabel}</span>
+                      <span className="font-bold">
+                        {`${entry.amount_rub} ${t.profile.currency}`}
+                      </span>
+                    </div>
+                  )}
                   <p className="mt-3 text-[11px] uppercase tracking-[0.35em] text-zinc-400 dark:text-zinc-500">
                     {new Date(entry.created_at).toLocaleString()}
                   </p>

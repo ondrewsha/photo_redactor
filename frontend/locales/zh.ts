@@ -90,21 +90,24 @@ export const zh: TranslationSchema = {
     pay: "完成支付",
     currency: "CNY",
     units: "件",
-    historyTitle: "充值历史",
+    historyTitle: "交易记录",
     historyEmpty: "尚无购买记录。",
-    historyButton: "查看填写记录",
+    historyButton: "查看交易记录",
     historyDefaultComment: "生成次数套餐",
     historyKinds: {
       purchase: "充值",
       trial: "赠送",
-      refund: "退款"
+      refund: "退款",
+      generation: "使用"
     }
     ,
     historyDescriptions: {
       purchase: "生成次数套餐",
       trial: "欢迎赠送",
-      refund: "退款"
+      refund: "退款",
+      generation: "生成次数使用"
     },
+    historyAmountLabel: "金额",
     changePasswordTitle: "修改密码",
     currentPassword: "当前密码",
     newPassword: "新密码",

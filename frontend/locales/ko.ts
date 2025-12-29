@@ -90,21 +90,24 @@ export const ko: TranslationSchema = {
     pay: "결제 완료",
     currency: "KRW",
     units: "개",
-    historyTitle: "충전 내역",
+    historyTitle: "거래 내역",
     historyEmpty: "아직 구매 내역이 없습니다.",
-    historyButton: "충전 내역 보기",
+    historyButton: "거래 내역 보기",
     historyDefaultComment: "생성 횟수 패키지",
     historyKinds: {
       purchase: "충전",
       trial: "보너스",
-      refund: "환불"
+      refund: "환불",
+      generation: "사용"
     }
     ,
     historyDescriptions: {
       purchase: "생성 횟수 패키지",
       trial: "웰컴 보너스",
-      refund: "환불"
+      refund: "환불",
+      generation: "생성 횟수 사용"
     },
+    historyAmountLabel: "금액",
     changePasswordTitle: "비밀번호 변경",
     currentPassword: "현재 비밀번호",
     newPassword: "새 비밀번호",

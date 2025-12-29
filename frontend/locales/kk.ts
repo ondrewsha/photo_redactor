@@ -95,21 +95,24 @@ export const kk: TranslationSchema = {
     // Fix: Added missing currency key
     currency: "₸",
     units: "дана",
-    historyTitle: "Толтырулар тарихы",
+    historyTitle: "Транзакциялар тарихы",
     historyEmpty: "Әлі сатып алулар жоқ.",
-    historyButton: "Тарихты қарау",
+    historyButton: "Транзакциялар тарихын қарау",
     historyDefaultComment: "Генерация пакеті",
     historyKinds: {
       purchase: "Толтыру",
       trial: "Бонус",
-      refund: "Қайтару"
+      refund: "Қайтару",
+      generation: "Шығыстар"
     }
     ,
     historyDescriptions: {
       purchase: "Генерация пакеті",
       trial: "Қош келдіңіз бонусы",
-      refund: "Қайтару"
+      refund: "Қайтару",
+      generation: "Генерацияларды пайдалану"
     },
+    historyAmountLabel: "Сома",
     changePasswordTitle: "Құпия сөзді өзгерту",
     currentPassword: "Ағымдағы құпия сөз",
     newPassword: "Жаңа құпия сөз",

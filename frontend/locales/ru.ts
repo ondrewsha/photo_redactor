@@ -90,21 +90,24 @@ export const ru: TranslationSchema = {
     pay: "Оплатить",
     currency: "₽",
     units: "шт.",
-    historyTitle: "История пополнений",
+    historyTitle: "История транзакций",
     historyEmpty: "Покупок ещё не было.",
-    historyButton: "Посмотреть историю пополнений",
+    historyButton: "Посмотреть историю транзакций",
     historyDefaultComment: "Покупка генераций",
     historyKinds: {
       purchase: "Пополнение",
       trial: "Бонус",
-      refund: "Возврат"
+      refund: "Возврат",
+      generation: "Списание"
     }
     ,
     historyDescriptions: {
       purchase: "Покупка генераций",
       trial: "Приветственный бонус",
-      refund: "Возврат"
+      refund: "Возврат",
+      generation: "Списание генераций"
     },
+    historyAmountLabel: "Стоимость",
     changePasswordTitle: "Сменить пароль",
     currentPassword: "Текущий пароль",
     newPassword: "Новый пароль",

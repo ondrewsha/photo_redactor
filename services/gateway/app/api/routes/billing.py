@@ -4,6 +4,7 @@ import asyncio
 from datetime import datetime, timezone
 from decimal import Decimal
 from typing import Annotated
+from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from fastapi.responses import RedirectResponse
@@ -25,24 +26,13 @@ from app.api.schemas import (
 from app.core.models import Payment, User, Wallet, WalletTransaction
 from app.core.security import new_token
 from app.core.settings import Settings
+from app.core.pricing import calculate_unit_price
 
 router = APIRouter(prefix="/billing", tags=["billing"])
 
 
-def _unit_price_rub(count: int) -> int:
-    if count <= 10:
-        return 30
-    if count <= 50:
-        return 25
-    if count <= 200:
-        return 20
-    if count <= 500:
-        return 15
-    return 12
-
-
 def _quote(count: int) -> BillingQuoteResponse:
-    unit = _unit_price_rub(count)
+    unit = calculate_unit_price(count)
     return BillingQuoteResponse(
         count=count,
         currency="RUB",
@@ -50,6 +40,15 @@ def _quote(count: int) -> BillingQuoteResponse:
         total_price_rub=unit * count,
         suggestions=[1, 10, 50, 200, 500, 1000],
     )
+
+
+def _parse_uuid(value: str | None) -> UUID | None:
+    if not value:
+        return None
+    try:
+        return UUID(value)
+    except ValueError:
+        return None
 
 
 async def _get_or_create_wallet_for_update(db: AsyncSession, *, user_id) -> Wallet:
@@ -229,18 +228,31 @@ async def history(
         .limit(limit)
     )
     items = res.scalars().all()
-    return BillingHistoryResponse(
-        items=[
+    reference_ids = {_parse_uuid(item.reference) for item in items}
+    reference_ids.discard(None)
+    amount_map: dict[UUID, int] = {}
+    if reference_ids:
+        ref_res = await db.execute(
+            select(Payment.id, Payment.amount_kopecks).where(Payment.id.in_(reference_ids))
+        )
+        for pid, amount in ref_res.all():
+            amount_map[pid] = amount
+    history_items: list[BillingHistoryItem] = []
+    for item in items:
+        ref = _parse_uuid(item.reference)
+        amount = amount_map.get(ref) if ref else None
+        amount_rub = int(amount // 100) if amount is not None else None
+        history_items.append(
             BillingHistoryItem(
                 transaction_id=str(item.id),
                 delta=item.delta,
                 kind=item.kind,
                 comment=item.comment,
                 created_at=item.created_at,
+                amount_rub=amount_rub,
             )
-            for item in items
-        ]
-    )
+        )
+    return BillingHistoryResponse(items=history_items)
 
 
 @router.get("/mock/confirm")

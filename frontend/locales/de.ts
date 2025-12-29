@@ -95,21 +95,24 @@ export const de: TranslationSchema = {
     // Fix: Added missing currency key
     currency: "€",
     units: "Stück",
-    historyTitle: "Aufladeverlauf",
+    historyTitle: "Transaktionsverlauf",
     historyEmpty: "Noch keine Käufe.",
-    historyButton: "Einkaufshistorie",
+    historyButton: "Transaktionshistorie",
     historyDefaultComment: "Paket mit Generationen",
     historyKinds: {
       purchase: "Aufladung",
       trial: "Bonus",
-      refund: "Rückerstattung"
+      refund: "Rückerstattung",
+      generation: "Abbuchung"
     }
     ,
     historyDescriptions: {
       purchase: "Paket mit Generationen",
       trial: "Bonus",
-      refund: "Rückerstattung"
+      refund: "Rückerstattung",
+      generation: "Abbuchung von Generationen"
     },
+    historyAmountLabel: "Betrag",
     changePasswordTitle: "Passwort ändern",
     currentPassword: "Aktuelles Passwort",
     newPassword: "Neues Passwort",

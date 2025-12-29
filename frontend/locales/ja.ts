@@ -91,21 +91,24 @@ export const ja: TranslationSchema = {
     currency: "JPY",
     units: "個"
     ,
-    historyTitle: "チャージ履歴",
+    historyTitle: "取引履歴",
     historyEmpty: "まだ購入履歴はありません。",
-    historyButton: "履歴を見る",
+    historyButton: "取引履歴を見る",
     historyDefaultComment: "生成回数パッケージ",
     historyKinds: {
       purchase: "チャージ",
       trial: "ボーナス",
-      refund: "返金"
+      refund: "返金",
+      generation: "利用"
     }
     ,
     historyDescriptions: {
       purchase: "生成回数パッケージ",
       trial: "ウェルカムボーナス",
-      refund: "返金"
+      refund: "返金",
+      generation: "生成回数の利用"
     },
+    historyAmountLabel: "金額",
     changePasswordTitle: "パスワードを変更",
     currentPassword: "現在のパスワード",
     newPassword: "新しいパスワード",

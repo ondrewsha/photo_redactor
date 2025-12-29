@@ -88,6 +88,7 @@ class BillingHistoryItem(BaseSchema):
     kind: str
     comment: str | None = None
     created_at: datetime
+    amount_rub: int | None = None
 
 
 class BillingHistoryResponse(BaseSchema):

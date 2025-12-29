@@ -90,21 +90,24 @@ export const en: TranslationSchema = {
     pay: "Complete Payment",
     currency: "RUB",
     units: "pcs",
-    historyTitle: "Top-up History",
+    historyTitle: "Transaction history",
     historyEmpty: "No purchases yet.",
-    historyButton: "View purchases",
+    historyButton: "View transaction history",
     historyDefaultComment: "Generation package",
     historyKinds: {
       purchase: "Top-up",
       trial: "Bonus",
-      refund: "Refund"
+      refund: "Refund",
+      generation: "Debit"
     }
     ,
     historyDescriptions: {
       purchase: "Generation package",
       trial: "Welcome bonus",
-      refund: "Refund"
+      refund: "Refund",
+      generation: "Generation debit"
     },
+    historyAmountLabel: "Amount",
     changePasswordTitle: "Change password",
     currentPassword: "Current password",
     newPassword: "New password",

@@ -86,6 +86,7 @@ export type BillingHistoryItem = {
   kind: string;
   comment: string | null;
   created_at: string;
+  amount_rub?: number | null;
 };
 
 export type BillingHistoryResponse = {
@@ -190,6 +191,7 @@ export interface TranslationSchema {
     historyDefaultComment: string;
     historyKinds: Record<string, string>;
     historyDescriptions: Record<string, string>;
+    historyAmountLabel: string;
     changePasswordTitle: string;
     currentPassword: string;
     newPassword: string;
