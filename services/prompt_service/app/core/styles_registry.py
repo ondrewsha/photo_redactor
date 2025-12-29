@@ -1148,6 +1148,17 @@ class StyleRegistry:
                 pattern="grid",
             ),
             _style(
+                id="market_env",
+                category=cat_market,
+                name="Карточка — вписать в окружение",
+                preview_text="Окружение",
+                description="Карточка товара: показать объект аккуратно вписанным в подбранную сцену, мягкий свет, размытый фон и внимание к контексту вокруг предмета.",
+                bg="#0b1220",
+                accent="#38bdf8",
+                icon="spark",
+                pattern="grid",
+            ),
+            _style(
                 id="sticker",
                 category=cat_design,
                 name="Наклейки",

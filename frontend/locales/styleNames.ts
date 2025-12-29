@@ -77,6 +77,7 @@ export const englishStyleNames: Record<string, string> = {
   market_set: "Marketplace • Set",
   market_details: "Marketplace • Details",
   market_lifestyle: "Marketplace • Lifestyle",
+  market_env: "Marketplace • Environment",
   market_infographics: "Marketplace • Infographics",
   market_sale: "Marketplace • Sale",
   market_comparison: "Marketplace • Comparison",
@@ -169,6 +170,7 @@ export const ruStyleNames: Record<string, string> = {
   market_sale: "Карточка — акция",
   market_comparison: "Карточка — сравнение",
   market_dimensions: "Карточка — размеры",
+  market_env: "Карточка — вписать в окружение",
   sticker: "Наклейки",
   icons: "Иконки",
   poster: "Плакат"
@@ -296,6 +298,7 @@ export const deStyleNames: Record<string, string> = {
   market_sale: "Marktplatz • Sale",
   market_comparison: "Marktplatz • Vergleich",
   market_dimensions: "Marktplatz • Abmessungen",
+  market_env: "Marktplatz • Umgebung",
   sticker: "Stickerbogen",
   icons: "Icons",
   poster: "Poster"
@@ -402,6 +405,7 @@ export const zhStyleNames: Record<string, string> = {
   market_sale: "市集 • 打折",
   market_comparison: "市集 • 对比",
   market_dimensions: "市集 • 尺寸",
+  market_env: "市集 • 环境融合",
   sticker: "贴纸页",
   icons: "图标",
   poster: "海报"
@@ -508,6 +512,7 @@ export const koStyleNames: Record<string, string> = {
   market_sale: "마켓플레이스 • 할인",
   market_comparison: "마켓플레이스 • 비교",
   market_dimensions: "마켓플레이스 • 사이즈",
+  market_env: "마켓플레이스 • 환경 속 배치",
   sticker: "스티커 시트",
   icons: "아이콘",
   poster: "포스터"
@@ -614,6 +619,7 @@ export const jaStyleNames: Record<string, string> = {
   market_sale: "マーケットプレイス • セール",
   market_comparison: "マーケットプレイス • 比較",
   market_dimensions: "マーケットプレイス • 寸法",
+  market_env: "マーケットプレイス • 環境",
   sticker: "ステッカーシート",
   icons: "アイコン",
   poster: "ポスター"
@@ -720,6 +726,7 @@ export const kkStyleNames: Record<string, string> = {
   market_sale: "Нарық • Акция",
   market_comparison: "Нарық • Салыстыру",
   market_dimensions: "Нарық • Өлшем",
+  market_env: "Нарық • Ортасына ену",
   sticker: "Жапсырма",
   icons: "Иконалар",
   poster: "Плакат"
