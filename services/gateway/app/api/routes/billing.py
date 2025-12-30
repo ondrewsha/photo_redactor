@@ -278,7 +278,7 @@ async def mock_confirm(
     user: Annotated[User, Depends(require_user)],
     db: Annotated[AsyncSession, Depends(get_db_session)],
     settings: Annotated[Settings, Depends(get_settings)],
-    redis_client: Annotated[Redis, Depends(get_redis)],
+    redis_client: Redis = Depends(get_redis),
 ) -> RedirectResponse:
     if settings.payment_provider != "mock":
         raise HTTPException(status_code=404, detail="Не найдено.")
@@ -300,10 +300,10 @@ async def mock_confirm(
 @router.post("/webhook/yookassa")
 async def yookassa_webhook(
     request: Request,
-    secret: str | None = Query(default=None),
+    redis_client: Redis = Depends(get_redis),
     db: AsyncSession = Depends(get_db_session),
     settings: Settings = Depends(get_settings),
-    redis_client: Annotated[Redis, Depends(get_redis)],
+    secret: str | None = Query(default=None),
 ) -> dict[str, str]:
     if settings.payment_provider != "yookassa":
         raise HTTPException(status_code=404, detail="Не найдено.")

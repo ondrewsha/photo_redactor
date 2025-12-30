@@ -125,7 +125,7 @@ async def generate(
     settings: Annotated[Settings, Depends(get_settings)],
     http: Annotated[httpx.AsyncClient, Depends(get_http)],
     history_collection: AsyncIOMotorCollection = Depends(get_history_collection),
-    redis_client: Annotated[Redis, Depends(get_redis)],
+    redis_client: Redis = Depends(get_redis),
 ) -> GenerateImageResponse:
     require_csrf(request)
     reservation_id = await _reserve_generation(db, user_id=user.id, redis_client=redis_client)
@@ -184,7 +184,7 @@ async def generate_with_image(
     settings: Settings = Depends(get_settings),
     http: httpx.AsyncClient = Depends(get_http),
     history_collection: AsyncIOMotorCollection = Depends(get_history_collection),
-    redis_client: Annotated[Redis, Depends(get_redis)],
+    redis_client: Redis = Depends(get_redis),
 ) -> GenerateImageResponse:
     require_csrf(request)
     reservation_id = await _reserve_generation(db, user_id=user.id, redis_client=redis_client)

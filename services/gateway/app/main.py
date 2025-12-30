@@ -48,11 +48,6 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     app.state.db_engine = engine
     app.state.db_sessionmaker = sessionmaker
 
-    from app.core.models import Base  # local import to avoid import-order surprises
-
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
-
     redis_client = redis.from_url(settings.redis_url)
     mongo_client = AsyncIOMotorClient(settings.mongo_url)
     history_collection = mongo_client[settings.mongo_database][settings.mongo_history_collection]
