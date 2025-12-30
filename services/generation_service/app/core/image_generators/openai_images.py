@@ -260,7 +260,7 @@ class OpenAIImageGenerator:
         if not self._settings.openai_api_key:
             raise GeneratorConfigurationError("Задай GEN_SERVICE_OPENAI_API_KEY для image_provider=openai")
 
-        proxy = self._settings.openai_proxy_url or None
+        proxy = self._settings.openai_proxy_url if self._settings.openai_proxy_enabled else None
         if proxy and not _is_proxy_reachable(proxy):
             logger.warning("OpenAI proxy is not reachable, disabling proxy: %s", _redact_proxy_url(proxy))
             proxy = None

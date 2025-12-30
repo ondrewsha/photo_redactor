@@ -21,11 +21,13 @@ class Settings(BaseSettings):
     gemini_api_key: str | None = Field(default=None, repr=False)
     gemini_model: str = "gemini-2.5-flash-image"
     gemini_proxy_url: str | None = Field(default=None, repr=False)
+    gemini_proxy_enabled: bool = True
 
     openai_api_key: str | None = Field(default=None, repr=False)
     openai_base_url: str = "https://api.openai.com/v1"
     openai_model: str = "gpt-image-1"
     openai_proxy_url: str | None = Field(default=None, repr=False)
+    openai_proxy_enabled: bool = True
     openai_output_format: Literal["png", "jpeg", "webp"] = "png"
     openai_quality: Literal["standard", "hd", "low", "medium", "high", "auto"] = "standard"
     openai_style: Literal["vivid", "natural"] | None = None

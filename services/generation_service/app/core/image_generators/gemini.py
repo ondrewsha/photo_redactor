@@ -112,7 +112,7 @@ class GeminiImageGenerator:
                 "Set GEN_SERVICE_GEMINI_API_KEY for image_provider=gemini"
             )
 
-        proxy = self._settings.gemini_proxy_url or None
+        proxy = self._settings.gemini_proxy_url if self._settings.gemini_proxy_enabled else None
         if proxy and not _is_proxy_reachable(proxy):
             logger.warning("Gemini proxy is not reachable, disabling proxy: %s", _redact_proxy_url(proxy))
             proxy = None

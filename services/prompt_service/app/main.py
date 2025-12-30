@@ -47,7 +47,7 @@ def _is_proxy_reachable(proxy_url: str, *, timeout_s: float = 1.5) -> bool:
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     settings = Settings()
     app.state.settings = settings
-    proxy = settings.openai_proxy_url or None
+    proxy = settings.openai_proxy_url if settings.openai_proxy_enabled else None
     if proxy and not _is_proxy_reachable(proxy):
         logger.warning("OpenAI proxy is not reachable, disabling proxy: %s", _redact_proxy_url(proxy))
         proxy = None

@@ -17,6 +17,7 @@ class Settings(BaseSettings):
     openai_base_url: str = "https://api.openai.com/v1"
     openai_model: str = "gpt-5-mini"
     openai_proxy_url: str | None = Field(default=None, repr=False)
+    openai_proxy_enabled: bool = True
 
     http_timeout_s: float = 30.0
 
