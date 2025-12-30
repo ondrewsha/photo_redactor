@@ -149,4 +149,49 @@ export const en: TranslationSchema = {
     tagline: "Join 10,000+ creators today",
     subtext: "The AI studio built for fast, beautiful visuals."
   }
+  ,
+  admin: {
+    title: "Admin dashboard",
+    subtitle: "Monitor users, balances, and transactions in one place.",
+    usersTab: "Users",
+    transactionsTab: "Transactions",
+    filters: {
+      email: "Email",
+      role: "Role",
+      status: "Status",
+      search: "Search users",
+      reset: "Clear filters"
+    },
+    headings: {
+      email: "Email",
+      balance: "Balance",
+      role: "Role",
+      status: "Status",
+      actions: "Actions",
+      created: "Created"
+    },
+    actions: {
+      adjustBalance: "Adjust balance",
+      toggleActive: "Disable",
+      toggleInactive: "Enable",
+      changeBalancePrompt: "Enter amount to add/subtract"
+    },
+    status: {
+      active: "Active",
+      inactive: "Suspended"
+    },
+    prompts: {
+      balanceAmount: "Enter balance adjustment (+/-)",
+      statusConfirm: "Confirm status change?"
+    },
+    pagination: {
+      prev: "Prev",
+      next: "Next",
+      page: "Page"
+    },
+    notifications: {
+      balanceUpdated: "Balance updated",
+      statusUpdated: "Status updated"
+    }
+  },
 };

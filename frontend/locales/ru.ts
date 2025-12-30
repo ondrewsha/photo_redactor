@@ -149,4 +149,49 @@ export const ru: TranslationSchema = {
     tagline: "Присоединяйся к 10 000+ творцам уже сегодня",
     subtext: "Платформа, созданная для быстрого создания визуалов."
   }
+  ,
+  admin: {
+    title: "Админ-панель",
+    subtitle: "Контроль пользователей, балансов и транзакций в одном окне.",
+    usersTab: "Пользователи",
+    transactionsTab: "Транзакции",
+    filters: {
+      email: "Email",
+      role: "Роль",
+      status: "Статус",
+      search: "Поиск",
+      reset: "Сбросить"
+    },
+    headings: {
+      email: "Email",
+      balance: "Баланс",
+      role: "Роль",
+      status: "Статус",
+      actions: "Действия",
+      created: "Создан"
+    },
+    actions: {
+      adjustBalance: "Изменить баланс",
+      toggleActive: "Отключить",
+      toggleInactive: "Включить",
+      changeBalancePrompt: "Введите сумму для баланса (+/-)"
+    },
+    status: {
+      active: "Активен",
+      inactive: "Заморожен"
+    },
+    prompts: {
+      balanceAmount: "Сумма для корректировки (+/-)",
+      statusConfirm: "Подтвердите изменение статуса?"
+    },
+    pagination: {
+      prev: "Назад",
+      next: "Вперёд",
+      page: "Страница"
+    },
+    notifications: {
+      balanceUpdated: "Баланс обновлён",
+      statusUpdated: "Статус обновлён"
+    }
+  },
 };

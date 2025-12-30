@@ -120,6 +120,50 @@ export const ko: TranslationSchema = {
     passwordChangeSuccess: "비밀번호가 변경되었습니다.",
     passwordChangeError: "비밀번호를 변경할 수 없습니다."
   },
+  admin: {
+    title: "Admin dashboard",
+    subtitle: "Monitor users, balances, and transactions in one place.",
+    usersTab: "Users",
+    transactionsTab: "Transactions",
+    filters: {
+      email: "Email",
+      role: "Role",
+      status: "Status",
+      search: "Search users",
+      reset: "Clear filters"
+    },
+    headings: {
+      email: "Email",
+      balance: "Balance",
+      role: "Role",
+      status: "Status",
+      actions: "Actions",
+      created: "Created"
+    },
+    actions: {
+      adjustBalance: "Adjust balance",
+      toggleActive: "Disable",
+      toggleInactive: "Enable",
+      changeBalancePrompt: "Enter amount to add/subtract"
+    },
+    status: {
+      active: "Active",
+      inactive: "Suspended"
+    },
+    prompts: {
+      balanceAmount: "Enter balance adjustment (+/-)",
+      statusConfirm: "Confirm status change?"
+    },
+    pagination: {
+      prev: "Prev",
+      next: "Next",
+      page: "Page"
+    },
+    notifications: {
+      balanceUpdated: "Balance updated",
+      statusUpdated: "Status updated"
+    }
+  },
   auth: {
     loginTitle: "다시 오신 것을 환영합니다",
     registerTitle: "NanoVisual 가입하기",

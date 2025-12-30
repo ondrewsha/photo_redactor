@@ -12,6 +12,7 @@ import { Button } from './components/ui/Button';
 import { cn } from './lib/cn';
 import { useTheme } from './context/ThemeContext';
 import { SupportModal } from './components/SupportModal';
+import { AdminPanel } from './components/admin/AdminPanel';
 
 const PromoCTA: React.FC<{ onAuthClick: (tab: 'login' | 'register') => void }> = ({ onAuthClick }) => {
   const { t } = useTranslation();
@@ -97,6 +98,7 @@ const AppContent: React.FC = () => {
   });
   const [profileModalOpen, setProfileModalOpen] = useState(false);
   const [supportModalOpen, setSupportModalOpen] = useState(false);
+  const [adminPanelOpen, setAdminPanelOpen] = useState(false);
 
   const scrollToTarget = () => {
     const targetId = user ? 'generator' : 'cta-promo';
@@ -112,6 +114,9 @@ const AppContent: React.FC = () => {
     { label: t.footer.privacy, href: '/privacy.html' },
     { label: t.footer.terms, href: '/terms.html' },
   ];
+  const adminFeatureEnabled = Boolean(
+    user && user.role === 'admin' && import.meta.env.VITE_FEATURE_ADMIN_UI === 'true'
+  );
 
   return (
     <div
@@ -123,6 +128,8 @@ const AppContent: React.FC = () => {
       <Header 
         onAuthClick={handleAuth} 
         onProfileClick={() => setProfileModalOpen(true)}
+        onAdminClick={adminFeatureEnabled ? () => setAdminPanelOpen(true) : undefined}
+        showAdminButton={adminFeatureEnabled}
       />
       
       <main className="flex-1">
@@ -253,6 +260,7 @@ const AppContent: React.FC = () => {
         isOpen={supportModalOpen}
         onClose={() => setSupportModalOpen(false)}
       />
+      <AdminPanel open={adminPanelOpen} onClose={() => setAdminPanelOpen(false)} />
     </div>
   );
 };

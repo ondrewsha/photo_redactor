@@ -81,6 +81,7 @@ export type AuthMeResponse = {
   email: string;
   email_verified: boolean;
   balance: number;
+  role: string;
 };
 
 export type BillingHistoryItem = {
@@ -97,6 +98,57 @@ export type BillingHistoryResponse = {
   total: number;
   page: number;
   limit: number;
+};
+
+export type AdminUserSummary = {
+  user_id: string;
+  email: string;
+  role: string;
+  email_verified: boolean;
+  is_active: boolean;
+  balance: number;
+  created_at: string;
+  updated_at: string;
+};
+
+export type AdminUsersResponse = {
+  items: AdminUserSummary[];
+  total: number;
+  page: number;
+  limit: number;
+};
+
+export type AdminUserBalanceRequest = {
+  amount: number;
+  comment?: string | null;
+};
+
+export type AdminUserStatusRequest = {
+  is_active: boolean;
+};
+
+export type AdminTransactionItem = {
+  transaction_id: string;
+  email: string;
+  delta: number;
+  kind: string;
+  comment?: string | null;
+  amount_rub?: number | null;
+  created_at: string;
+};
+
+export type AdminTransactionsSummary = {
+  by_kind: Record<string, number>;
+  total_amount: number;
+  total_count: number;
+};
+
+export type AdminTransactionsResponse = {
+  items: AdminTransactionItem[];
+  total: number;
+  page: number;
+  limit: number;
+  summary: AdminTransactionsSummary;
 };
 
 export interface TranslationSchema {
@@ -232,5 +284,49 @@ export interface TranslationSchema {
     noAccount: string;
     haveAccount: string;
     or: string;
+  };
+  admin: {
+    title: string;
+    subtitle: string;
+    usersTab: string;
+    transactionsTab: string;
+    filters: {
+      email: string;
+      role: string;
+      status: string;
+      search: string;
+      reset: string;
+    };
+    headings: {
+      email: string;
+      balance: string;
+      role: string;
+      status: string;
+      actions: string;
+      created: string;
+    };
+    actions: {
+      adjustBalance: string;
+      toggleActive: string;
+      toggleInactive: string;
+      changeBalancePrompt: string;
+    };
+    status: {
+      active: string;
+      inactive: string;
+    };
+    prompts: {
+      balanceAmount: string;
+      statusConfirm: string;
+    };
+    pagination: {
+      prev: string;
+      next: string;
+      page: string;
+    };
+    notifications: {
+      balanceUpdated: string;
+      statusUpdated: string;
+    };
   };
 }
