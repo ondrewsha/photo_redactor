@@ -6,17 +6,18 @@ import uuid
 import httpx
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, UploadFile, status
 from fastapi.responses import Response, StreamingResponse
+from redis.asyncio import Redis
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from nanovisual_shared.schemas import ComposePromptRequest, ComposePromptResponse, CreateJobRequest, CreateJobResponse, JobStatusResponse, PromptMode
 
 from app.api.auth_deps import parse_uuid, require_csrf, require_verified_user
-from app.api.deps import get_db_session
-from app.api.deps import get_http, get_settings
+from app.api.deps import get_db_session, get_redis, get_http, get_settings
 from app.api.deps import get_history_collection
 from app.api.schemas import GenerateImageRequest, GenerateImageResponse
 from app.api.upstream import forward_headers
+from app.core.admin_metrics import record_generation
 from app.core.history import create_history_entry, finalize_history_entry
 from app.core.models import User, UserJobReservation, Wallet, WalletTransaction
 from app.core.settings import Settings
@@ -35,7 +36,12 @@ async def _get_or_create_wallet_for_update(db: AsyncSession, *, user_id: uuid.UU
     return wallet
 
 
-async def _reserve_generation(db: AsyncSession, *, user_id: uuid.UUID) -> uuid.UUID:
+async def _reserve_generation(
+    db: AsyncSession,
+    *,
+    user_id: uuid.UUID,
+    redis_client: Redis,
+) -> uuid.UUID:
     try:
         wallet = await _get_or_create_wallet_for_update(db, user_id=user_id)
         if wallet.balance <= 0:
@@ -49,6 +55,7 @@ async def _reserve_generation(db: AsyncSession, *, user_id: uuid.UUID) -> uuid.U
         db.add(reservation)
         await db.commit()
         await db.refresh(reservation)
+        await record_generation(redis_client, count=1)
         return reservation.id
     except HTTPException:
         await db.rollback()
@@ -118,9 +125,10 @@ async def generate(
     settings: Annotated[Settings, Depends(get_settings)],
     http: Annotated[httpx.AsyncClient, Depends(get_http)],
     history_collection: AsyncIOMotorCollection = Depends(get_history_collection),
+    redis_client: Annotated[Redis, Depends(get_redis)],
 ) -> GenerateImageResponse:
     require_csrf(request)
-    reservation_id = await _reserve_generation(db, user_id=user.id)
+    reservation_id = await _reserve_generation(db, user_id=user.id, redis_client=redis_client)
     style_ids = payload.style_ids or ["none"]
     try:
         composed = await http.post(
@@ -176,9 +184,10 @@ async def generate_with_image(
     settings: Settings = Depends(get_settings),
     http: httpx.AsyncClient = Depends(get_http),
     history_collection: AsyncIOMotorCollection = Depends(get_history_collection),
+    redis_client: Annotated[Redis, Depends(get_redis)],
 ) -> GenerateImageResponse:
     require_csrf(request)
-    reservation_id = await _reserve_generation(db, user_id=user.id)
+    reservation_id = await _reserve_generation(db, user_id=user.id, redis_client=redis_client)
     cleaned_style_ids = [s.strip() for s in (style_ids or []) if isinstance(s, str) and s.strip()] or ["none"]
 
     try:

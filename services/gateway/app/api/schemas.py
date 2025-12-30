@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime
+from uuid import UUID
 
 from pydantic import Field, model_validator
 
@@ -114,3 +115,80 @@ class HistoryListResponse(BaseSchema):
     total: int
     page: int
     limit: int
+
+
+class AdminUserSummary(BaseSchema):
+    user_id: UUID
+    email: str
+    role: str
+    email_verified: bool
+    is_active: bool
+    balance: int
+    created_at: datetime
+    updated_at: datetime
+
+
+class AdminUsersResponse(BaseSchema):
+    items: list[AdminUserSummary] = Field(default_factory=list)
+    total: int
+    page: int
+    limit: int
+
+
+class AdminUserBalanceRequest(BaseSchema):
+    amount: int
+    comment: str | None = None
+
+
+class AdminUserStatusRequest(BaseSchema):
+    is_active: bool
+
+
+class AdminTransactionItem(BaseSchema):
+    transaction_id: UUID
+    email: str
+    delta: int
+    kind: str
+    comment: str | None = None
+    amount_rub: int | None = None
+    created_at: datetime
+
+
+class AdminTransactionsSummary(BaseSchema):
+    by_kind: dict[str, int] = Field(default_factory=dict)
+    total_amount: int
+    total_count: int
+
+
+class AdminTransactionsResponse(BaseSchema):
+    items: list[AdminTransactionItem] = Field(default_factory=list)
+    total: int
+    page: int
+    limit: int
+    summary: AdminTransactionsSummary
+
+
+class AdminJobSummary(BaseSchema):
+    reservation_id: UUID
+    job_id: UUID | None
+    status: str
+    user_email: str
+    created_at: datetime
+    updated_at: datetime
+
+
+class AdminJobsResponse(BaseSchema):
+    items: list[AdminJobSummary] = Field(default_factory=list)
+    total: int
+    page: int
+    limit: int
+    backlog: dict[str, int] = Field(default_factory=dict)
+
+
+class AdminMetricsResponse(BaseSchema):
+    generation_series: list[dict[str, int]] = Field(default_factory=list)
+    revenue_series: list[dict[str, int]] = Field(default_factory=list)
+    backlog: dict[str, int] = Field(default_factory=dict)
+    webhooks: dict[str, int] = Field(default_factory=dict)
+    api_errors: int
+    failure_rate: float

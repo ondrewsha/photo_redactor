@@ -18,6 +18,7 @@ class Settings(BaseSettings):
     mongo_url: str = "mongodb://mongo:27017"
     mongo_database: str = "nanovisual_history"
     mongo_history_collection: str = "generation_history"
+    queue_key: str = "nanovisual:queue:imggen"
 
     internal_token: str | None = Field(default=None, repr=False)
 
@@ -67,6 +68,7 @@ class Settings(BaseSettings):
         "mongo_url",
         "mongo_database",
         "mongo_history_collection",
+        "queue_key",
         mode="before",
     )
     @classmethod

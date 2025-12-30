@@ -15,7 +15,7 @@ from yookassa import Configuration as YooConfiguration
 from yookassa import Payment as YooPayment
 
 from app.api.auth_deps import parse_uuid, require_csrf, require_user
-from app.api.deps import get_db_session, get_settings
+from app.api.deps import get_db_session, get_redis, get_settings
 from app.api.schemas import (
     BillingHistoryResponse,
     BillingHistoryItem,
@@ -23,10 +23,12 @@ from app.api.schemas import (
     CreatePaymentRequest,
     CreatePaymentResponse,
 )
+from app.core.admin_metrics import record_revenue, record_webhook
 from app.core.models import Payment, User, Wallet, WalletTransaction
 from app.core.security import new_token
 from app.core.settings import Settings
 from app.core.pricing import calculate_unit_price
+from redis.asyncio import Redis
 
 router = APIRouter(prefix="/billing", tags=["billing"])
 
@@ -62,7 +64,13 @@ async def _get_or_create_wallet_for_update(db: AsyncSession, *, user_id) -> Wall
     return wallet
 
 
-async def _apply_success_payment(db: AsyncSession, *, payment_id, provider_payment_id: str | None) -> Payment:
+async def _apply_success_payment(
+    db: AsyncSession,
+    *,
+    payment_id,
+    provider_payment_id: str | None,
+    redis_client: Redis | None = None,
+) -> Payment:
     now = datetime.now(timezone.utc)
     res = await db.execute(select(Payment).where(Payment.id == payment_id).with_for_update())
     payment = res.scalar_one_or_none()
@@ -91,6 +99,9 @@ async def _apply_success_payment(db: AsyncSession, *, payment_id, provider_payme
     )
     await db.commit()
     await db.refresh(payment)
+    amount_rub = int(payment.amount_kopecks // 100)
+    if redis_client:
+        await record_revenue(redis_client, amount_rub)
     return payment
 
 
@@ -267,6 +278,7 @@ async def mock_confirm(
     user: Annotated[User, Depends(require_user)],
     db: Annotated[AsyncSession, Depends(get_db_session)],
     settings: Annotated[Settings, Depends(get_settings)],
+    redis_client: Annotated[Redis, Depends(get_redis)],
 ) -> RedirectResponse:
     if settings.payment_provider != "mock":
         raise HTTPException(status_code=404, detail="Не найдено.")
@@ -275,7 +287,13 @@ async def mock_confirm(
     payment = res.scalar_one_or_none()
     if payment is None:
         raise HTTPException(status_code=404, detail="Платёж не найден.")
-    await _apply_success_payment(db, payment_id=payment.id, provider_payment_id=payment.provider_payment_id)
+    await _apply_success_payment(
+        db,
+        payment_id=payment.id,
+        provider_payment_id=payment.provider_payment_id,
+        redis_client=redis_client,
+    )
+    await record_webhook(redis_client, success=True)
     return RedirectResponse(url=f"{settings.frontend_base_url.rstrip('/')}/?pay=ok", status_code=status.HTTP_302_FOUND)
 
 
@@ -285,6 +303,7 @@ async def yookassa_webhook(
     secret: str | None = Query(default=None),
     db: AsyncSession = Depends(get_db_session),
     settings: Settings = Depends(get_settings),
+    redis_client: Annotated[Redis, Depends(get_redis)],
 ) -> dict[str, str]:
     if settings.payment_provider != "yookassa":
         raise HTTPException(status_code=404, detail="Не найдено.")
@@ -309,5 +328,11 @@ async def yookassa_webhook(
     if payment is None:
         return {"status": "ignored"}
 
-    await _apply_success_payment(db, payment_id=payment.id, provider_payment_id=provider_id)
+    await _apply_success_payment(
+        db,
+        payment_id=payment.id,
+        provider_payment_id=provider_id,
+        redis_client=redis_client,
+    )
+    await record_webhook(redis_client, success=True)
     return {"status": "ok"}

@@ -8,6 +8,7 @@ from app.api.routes.generation import router as generation_router
 from app.api.routes.history import router as history_router
 from app.api.routes.oauth_google import router as google_oauth_router
 from app.api.routes.public import router as public_router
+from app.api.routes.admin import router as admin_router
 
 router = APIRouter()
 router.include_router(public_router)
@@ -16,3 +17,4 @@ router.include_router(google_oauth_router)
 router.include_router(billing_router)
 router.include_router(history_router)
 router.include_router(generation_router)
+router.include_router(admin_router)
