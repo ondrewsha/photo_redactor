@@ -162,7 +162,50 @@ export const ja: TranslationSchema = {
     },
     notifications: {
       balanceUpdated: "Balance updated",
-      statusUpdated: "Status updated"
+      statusUpdated: "Status updated",
+      jobRerun: "ジョブを再実行しました",
+      jobCancel: "ジョブをキャンセルしました"
+    },
+    jobsTab: "ジョブ",
+    metricsTab: "メトリクス",
+    jobsTable: {
+      title: "生成ジョブ",
+      jobId: "ジョブ / 予約",
+      statusLabel: "ステータス",
+      userEmail: "ユーザー",
+      created: "作成日",
+      updated: "更新日",
+      actions: {
+        rerun: "再実行",
+        cancel: "キャンセル"
+      },
+      empty: "ジョブがありません"
+    },
+    billing: {
+      title: "トランザクション",
+      filters: {
+        kind: "取引タイプ"
+      },
+      totalAmount: "合計",
+      totalCount: "件数",
+      kindLabel: "タイプ",
+      userLabel: "メール",
+      deltaLabel: "差額",
+      amountLabel: "金額",
+      createdLabel: "日時",
+      currency: "RUB",
+      empty: "トランザクションがありません"
+    },
+    metrics: {
+      title: "インサイト",
+      tagline: "リアルタイム指標",
+      dailyGens: "生成 / 日",
+      dailyRevenue: "収益 / 日",
+      totalLabel: "週合計",
+      apiErrors: "APIエラー",
+      failureRate: "失敗率",
+      backlogTitle: "バックログ",
+      reload: "自動更新"
     }
   },
   auth: {

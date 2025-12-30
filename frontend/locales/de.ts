@@ -197,7 +197,50 @@ export const de: TranslationSchema = {
     },
     notifications: {
       balanceUpdated: "Balance updated",
-      statusUpdated: "Status updated"
+      statusUpdated: "Status updated",
+      jobRerun: "Job neu gestartet",
+      jobCancel: "Job abgebrochen"
+    },
+    jobsTab: "Jobs",
+    metricsTab: "Metriken",
+    jobsTable: {
+      title: "Generierungsjobs",
+      jobId: "Job / Reservierung",
+      statusLabel: "Status",
+      userEmail: "Benutzer",
+      created: "Erstellt",
+      updated: "Aktualisiert",
+      actions: {
+        rerun: "Erneut starten",
+        cancel: "Abbrechen"
+      },
+      empty: "Keine Jobs"
+    },
+    billing: {
+      title: "Transaktionen",
+      filters: {
+        kind: "Typ"
+      },
+      totalAmount: "Summe",
+      totalCount: "Einträge",
+      kindLabel: "Typ",
+      userLabel: "Email",
+      deltaLabel: "Delta",
+      amountLabel: "Betrag",
+      createdLabel: "Datum",
+      currency: "RUB",
+      empty: "Keine Transaktionen"
+    },
+    metrics: {
+      title: "Insights",
+      tagline: "Live-Metriken",
+      dailyGens: "Generierungen / Tag",
+      dailyRevenue: "Umsatz / Tag",
+      totalLabel: "Wochensumme",
+      apiErrors: "API-Fehler",
+      failureRate: "Fehlerquote",
+      backlogTitle: "Backlog",
+      reload: "Aktualisiert"
     }
   },
 };

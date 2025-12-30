@@ -191,7 +191,51 @@ export const ru: TranslationSchema = {
     },
     notifications: {
       balanceUpdated: "Баланс обновлён",
-      statusUpdated: "Статус обновлён"
+      statusUpdated: "Статус обновлён",
+      jobRerun: "Задача возвращена в очередь",
+      jobCancel: "Задача отменена"
+    }
+    ,
+    jobsTab: "Задачи",
+    metricsTab: "Метрики",
+    jobsTable: {
+      title: "Задачи генерации",
+      jobId: "Job / Резерв",
+      statusLabel: "Статус",
+      userEmail: "Пользователь",
+      created: "Создано",
+      updated: "Обновлено",
+      actions: {
+        rerun: "Повторить",
+        cancel: "Отменить"
+      },
+      empty: "Задачи не найдены"
+    },
+    billing: {
+      title: "Транзакции",
+      filters: {
+        kind: "Тип транзакции"
+      },
+      totalAmount: "Сумма",
+      totalCount: "Записей",
+      kindLabel: "Тип",
+      userLabel: "Email",
+      deltaLabel: "Изменение",
+      amountLabel: "Сумма",
+      createdLabel: "Дата",
+      currency: "₽",
+      empty: "Транзакций пока нет"
+    },
+    metrics: {
+      title: "Панель KPI",
+      tagline: "Свежие показатели",
+      dailyGens: "Генераций / день",
+      dailyRevenue: "Доход / день",
+      totalLabel: "Всего за неделю",
+      apiErrors: "Ошибки API",
+      failureRate: "Процент отказов",
+      backlogTitle: "Backlog",
+      reload: "Обновляется"
     }
   },
 };

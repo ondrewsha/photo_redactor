@@ -327,6 +327,49 @@ export interface TranslationSchema {
     notifications: {
       balanceUpdated: string;
       statusUpdated: string;
+      jobRerun: string;
+      jobCancel: string;
+    };
+    jobsTab: string;
+    metricsTab: string;
+    jobsTable: {
+      title: string;
+      jobId: string;
+      statusLabel: string;
+      userEmail: string;
+      created: string;
+      updated: string;
+      actions: {
+        rerun: string;
+        cancel: string;
+      };
+      empty: string;
+    };
+    billing: {
+      title: string;
+      filters: {
+        kind: string;
+      };
+      totalAmount: string;
+      totalCount: string;
+      kindLabel: string;
+      userLabel: string;
+      deltaLabel: string;
+      amountLabel: string;
+      createdLabel: string;
+      currency: string;
+      empty: string;
+    };
+    metrics: {
+      title: string;
+      tagline: string;
+      dailyGens: string;
+      dailyRevenue: string;
+      totalLabel: string;
+      apiErrors: string;
+      failureRate: string;
+      backlogTitle: string;
+      reload: string;
     };
   };
 }

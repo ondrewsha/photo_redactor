@@ -191,7 +191,51 @@ export const en: TranslationSchema = {
     },
     notifications: {
       balanceUpdated: "Balance updated",
-      statusUpdated: "Status updated"
+      statusUpdated: "Status updated",
+      jobRerun: "Task requeued",
+      jobCancel: "Task cancelled"
+    }
+    ,
+    jobsTab: "Jobs",
+    metricsTab: "Metrics",
+    jobsTable: {
+      title: "Generation jobs",
+      jobId: "Job / Reservation",
+      statusLabel: "Status",
+      userEmail: "User",
+      created: "Created",
+      updated: "Updated",
+      actions: {
+        rerun: "Rerun",
+        cancel: "Cancel"
+      },
+      empty: "No jobs found"
+    },
+    billing: {
+      title: "Transactions",
+      filters: {
+        kind: "Transaction type"
+      },
+      totalAmount: "Amount",
+      totalCount: "Records",
+      kindLabel: "Kind",
+      userLabel: "Email",
+      deltaLabel: "Delta",
+      amountLabel: "Amount",
+      createdLabel: "Date",
+      currency: "RUB",
+      empty: "No transactions yet"
+    },
+    metrics: {
+      title: "Insights",
+      tagline: "Live performance",
+      dailyGens: "Generations / day",
+      dailyRevenue: "Revenue / day",
+      totalLabel: "Weekly total",
+      apiErrors: "API errors",
+      failureRate: "Failure rate",
+      backlogTitle: "Backlog",
+      reload: "Auto-refreshing"
     }
   },
 };

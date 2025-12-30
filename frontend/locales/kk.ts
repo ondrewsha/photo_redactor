@@ -166,7 +166,50 @@ export const kk: TranslationSchema = {
     },
     notifications: {
       balanceUpdated: "Balance updated",
-      statusUpdated: "Status updated"
+      statusUpdated: "Status updated",
+      jobRerun: "Жұмыс қайта тапсырылды",
+      jobCancel: "Жұмыс тоқтатылды"
+    },
+    jobsTab: "Жұмыстар",
+    metricsTab: "Метрикалар",
+    jobsTable: {
+      title: "Генерация жұмыстары",
+      jobId: "Жұмыс / Резерв",
+      statusLabel: "Қалып",
+      userEmail: "Пайдаланушы",
+      created: "Құрылған",
+      updated: "Жаңартылған",
+      actions: {
+        rerun: "Қайта қосу",
+        cancel: "Тоқтату"
+      },
+      empty: "Жұмыстар табылмады"
+    },
+    billing: {
+      title: "Транзакциялар",
+      filters: {
+        kind: "Транзакция түрі"
+      },
+      totalAmount: "Сома",
+      totalCount: "Жазбалар",
+      kindLabel: "Түрі",
+      userLabel: "Email",
+      deltaLabel: "Өзгеріс",
+      amountLabel: "Сома",
+      createdLabel: "Күні",
+      currency: "RUB",
+      empty: "Транзакция жоқ"
+    },
+    metrics: {
+      title: "Insights",
+      tagline: "Тікелей көрсеткіштер",
+      dailyGens: "Генерациялар / күн",
+      dailyRevenue: "Кіріс / күн",
+      totalLabel: "Апталық жиынтық",
+      apiErrors: "API қателері",
+      failureRate: "Қателік пайызы",
+      backlogTitle: "Backlog",
+      reload: "Жаңартылып жатыр"
     }
   },
   auth: {

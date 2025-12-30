@@ -3,6 +3,9 @@ import { useTheme } from '../../context/ThemeContext';
 import { useTranslation } from '../../context/I18nContext';
 import { Button } from '../ui/Button';
 import { AdminUserTable } from './AdminUserTable';
+import { AdminBillingTable } from './AdminBillingTable';
+import { AdminJobsTable } from './AdminJobsTable';
+import { MetricsPanel } from './MetricsPanel';
 import { cn } from '../../lib/cn';
 
 interface AdminPanelProps {
@@ -13,6 +16,7 @@ interface AdminPanelProps {
 export const AdminPanel: React.FC<AdminPanelProps> = ({ open, onClose }) => {
   const { theme } = useTheme();
   const { t } = useTranslation();
+  const [activeTab, setActiveTab] = React.useState<'users' | 'transactions' | 'jobs' | 'metrics'>('users');
 
   if (!open) return null;
 
@@ -40,30 +44,37 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ open, onClose }) => {
           </div>
         </div>
 
-        <div className="mt-6 flex gap-2">
-          <button
-            className={cn(
-              "rounded-2xl px-5 py-2 text-sm font-black uppercase tracking-[0.3em]",
-              theme === 'dark'
-                ? 'bg-indigo-600/90 text-white shadow-lg shadow-indigo-500/20'
-                : 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/30'
-            )}
-          >
-            {t.admin.usersTab}
-          </button>
-          <button
-            className={cn(
-              "rounded-2xl px-5 py-2 text-sm font-black uppercase tracking-[0.3em] text-white",
-              theme === 'dark' ? 'bg-zinc-900/80 border border-white/20' : 'bg-zinc-900/80 border border-zinc-200'
-            )}
-            disabled
-          >
-            {t.admin.transactionsTab}
-          </button>
+        <div className="mt-6 flex flex-wrap gap-2">
+          {[
+            { key: 'users', label: t.admin.usersTab },
+            { key: 'transactions', label: t.admin.transactionsTab },
+            { key: 'jobs', label: t.admin.jobsTab },
+            { key: 'metrics', label: t.admin.metricsTab },
+          ].map((tab) => (
+            <button
+              key={tab.key}
+              className={cn(
+                'rounded-2xl px-5 py-2 text-sm font-black uppercase tracking-[0.3em] transition',
+                activeTab === tab.key
+                  ? theme === 'dark'
+                    ? 'bg-indigo-600/90 text-white shadow-lg shadow-indigo-500/20'
+                    : 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/30'
+                  : theme === 'dark'
+                    ? 'bg-zinc-900/80 border border-white/20 text-white'
+                    : 'bg-zinc-900/80 border border-zinc-200 text-white'
+              )}
+              onClick={() => setActiveTab(tab.key as any)}
+            >
+              {tab.label}
+            </button>
+          ))}
         </div>
 
         <div className="mt-6">
-          <AdminUserTable />
+          {activeTab === 'users' && <AdminUserTable />}
+          {activeTab === 'transactions' && <AdminBillingTable />}
+          {activeTab === 'jobs' && <AdminJobsTable />}
+          {activeTab === 'metrics' && <MetricsPanel />}
         </div>
       </div>
     </div>

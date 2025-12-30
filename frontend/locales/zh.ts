@@ -161,7 +161,50 @@ export const zh: TranslationSchema = {
     },
     notifications: {
       balanceUpdated: "Balance updated",
-      statusUpdated: "Status updated"
+      statusUpdated: "Status updated",
+      jobRerun: "任务已重新执行",
+      jobCancel: "任务已取消"
+    },
+    jobsTab: "任务",
+    metricsTab: "指标",
+    jobsTable: {
+      title: "生成任务",
+      jobId: "任务 / 预留",
+      statusLabel: "状态",
+      userEmail: "用户",
+      created: "创建",
+      updated: "更新",
+      actions: {
+        rerun: "重新执行",
+        cancel: "取消"
+      },
+      empty: "暂无任务"
+    },
+    billing: {
+      title: "交易记录",
+      filters: {
+        kind: "交易类型"
+      },
+      totalAmount: "总金额",
+      totalCount: "总条目",
+      kindLabel: "类型",
+      userLabel: "邮箱",
+      deltaLabel: "变化",
+      amountLabel: "金额",
+      createdLabel: "日期",
+      currency: "RUB",
+      empty: "暂无交易"
+    },
+    metrics: {
+      title: "洞察",
+      tagline: "实时指标",
+      dailyGens: "生成 / 天",
+      dailyRevenue: "收入 / 天",
+      totalLabel: "周总计",
+      apiErrors: "API 错误",
+      failureRate: "失败率",
+      backlogTitle: "待办",
+      reload: "自动刷新"
     }
   },
   auth: {

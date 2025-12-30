@@ -161,7 +161,50 @@ export const ko: TranslationSchema = {
     },
     notifications: {
       balanceUpdated: "Balance updated",
-      statusUpdated: "Status updated"
+      statusUpdated: "Status updated",
+      jobRerun: "작업이 다시 실행되었습니다",
+      jobCancel: "작업이 취소되었습니다"
+    },
+    jobsTab: "작업",
+    metricsTab: "메트릭",
+    jobsTable: {
+      title: "생성 작업",
+      jobId: "작업 / 예약",
+      statusLabel: "상태",
+      userEmail: "사용자",
+      created: "생성일",
+      updated: "업데이트",
+      actions: {
+        rerun: "다시 실행",
+        cancel: "취소"
+      },
+      empty: "작업이 없습니다"
+    },
+    billing: {
+      title: "트랜잭션",
+      filters: {
+        kind: "유형"
+      },
+      totalAmount: "금액",
+      totalCount: "건수",
+      kindLabel: "유형",
+      userLabel: "이메일",
+      deltaLabel: "변동",
+      amountLabel: "금액",
+      createdLabel: "날짜",
+      currency: "RUB",
+      empty: "트랜잭션 없음"
+    },
+    metrics: {
+      title: "인사이트",
+      tagline: "실시간 지표",
+      dailyGens: "생성 / 일",
+      dailyRevenue: "수익 / 일",
+      totalLabel: "주간 합계",
+      apiErrors: "API 오류",
+      failureRate: "실패율",
+      backlogTitle: "대기열",
+      reload: "자동 갱신"
     }
   },
   auth: {

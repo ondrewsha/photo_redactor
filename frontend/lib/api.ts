@@ -14,6 +14,8 @@ import {
   AdminUserBalanceRequest,
   AdminUserStatusRequest,
   AdminTransactionsResponse,
+  AdminJobsResponse,
+  AdminMetricsResponse,
 } from '../types';
 
 const BASE_URL = import.meta.env.VITE_GATEWAY_URL || '/api';
@@ -210,5 +212,33 @@ export const api = {
       query.set('limit', String(params.limit ?? 20));
       return request<AdminTransactionsResponse>(`/admin/transactions?${query.toString()}`);
     },
+    listJobs: (params: {
+      status?: string;
+      email?: string;
+      page?: number;
+      limit?: number;
+    }) => {
+      const query = new URLSearchParams();
+      if (params.status) query.set('status', params.status);
+      if (params.email) query.set('email', params.email);
+      query.set('page', String(params.page ?? 1));
+      query.set('limit', String(params.limit ?? 20));
+      return request<AdminJobsResponse>(`/admin/jobs?${query.toString()}`);
+    },
+    rerunJob: (jobId: string, action?: string) =>
+      request<MessageResponse>(`/admin/jobs/${jobId}/rerun`, {
+        method: 'POST',
+        headers: {
+          'X-Admin-Action': action || `job_rerun_${jobId}`,
+        },
+      }),
+    cancelJob: (jobId: string, action?: string) =>
+      request<MessageResponse>(`/admin/jobs/${jobId}/cancel`, {
+        method: 'POST',
+        headers: {
+          'X-Admin-Action': action || `job_cancel_${jobId}`,
+        },
+      }),
+    metrics: () => request<AdminMetricsResponse>('/admin/metrics'),
   },
 };
