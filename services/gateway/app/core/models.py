@@ -22,6 +22,7 @@ class User(Base):
     google_sub: Mapped[str | None] = mapped_column(String(255), unique=True, nullable=True, index=True)
 
     email_verified: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    role: Mapped[str] = mapped_column(String(32), nullable=False, default="user")
 
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
@@ -174,4 +175,3 @@ class TrialDevice(Base):
         nullable=False,
         server_default=func.now(),
     )
-

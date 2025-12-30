@@ -44,6 +44,12 @@ async def require_verified_user(user: Annotated[User, Depends(require_user)]) ->
     return user
 
 
+async def require_admin(user: Annotated[User, Depends(require_user)]) -> User:
+    if user.role != "admin":
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Требуется админская роль.")
+    return user
+
+
 def require_csrf(request: Request) -> None:
     cookie = request.cookies.get(CSRF_COOKIE)
     header = request.headers.get("x-csrf-token")
