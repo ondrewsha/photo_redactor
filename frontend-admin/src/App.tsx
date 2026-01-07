@@ -18,7 +18,14 @@ import {
   Divider,
 } from 'antd';
 import { LogoutOutlined, UserOutlined, DollarOutlined } from '@ant-design/icons';
-import { adminApi, UserSummary, TransactionsResponse, MetricsResponse } from './api/admin';
+import {
+  adminApi,
+  JobSummary,
+  UserSummary,
+  TransactionsResponse,
+  MetricsResponse,
+  JobsResponse,
+} from './api/admin';
 
 const { Content, Footer } = Layout;
 const { Title } = Typography;
@@ -323,6 +330,11 @@ const App: React.FC = () => {
   const [transactionsLoading, setTransactionsLoading] = useState(false);
   const [metrics, setMetrics] = useState<MetricsResponse | null>(null);
   const [metricsLoading, setMetricsLoading] = useState(false);
+  const [jobs, setJobs] = useState<JobSummary[]>([]);
+  const [jobsPage, setJobsPage] = useState(1);
+  const [jobsTotal, setJobsTotal] = useState(0);
+  const [jobsLoading, setJobsLoading] = useState(false);
+  const [jobStatusFilter, setJobStatusFilter] = useState('');
   const [adjustModalUser, setAdjustModalUser] = useState<UserSummary | null>(null);
 
   const loadSession = async () => {
@@ -378,11 +390,26 @@ const App: React.FC = () => {
     }
   };
 
+  const loadJobs = async (page = jobsPage, status?: string) => {
+    setJobsLoading(true);
+    try {
+      const response = await adminApi.fetchJobs(page, 20, status);
+      setJobs(response.items);
+      setJobsTotal(response.total);
+      setJobsPage(response.page);
+    } catch (err) {
+      message.error('Ошибка при загрузке задач.');
+    } finally {
+      setJobsLoading(false);
+    }
+  };
+
   useEffect(() => {
     if (adminUser) {
       loadUsers();
       loadTransactions();
       loadMetrics();
+      loadJobs();
     }
   }, [adminUser]);
 
@@ -423,6 +450,26 @@ const App: React.FC = () => {
       loadUsers();
     } catch {
       message.error('Не удалось изменить статус.');
+    }
+  };
+
+  const handleRerun = async (jobId: string) => {
+    try {
+      await adminApi.rerunJob(jobId);
+      message.success('Задача возвращена в очередь');
+      loadJobs(jobsPage, jobStatusFilter || undefined);
+    } catch {
+      message.error('Не удалось повторно запустить задачу.');
+    }
+  };
+
+  const handleCancel = async (jobId: string) => {
+    try {
+      await adminApi.cancelJob(jobId);
+      message.success('Задача отменена');
+      loadJobs(jobsPage, jobStatusFilter || undefined);
+    } catch {
+      message.error('Не удалось отменить задачу.');
     }
   };
 
@@ -482,6 +529,74 @@ const App: React.FC = () => {
             loading={transactionsLoading}
             onRefresh={loadTransactions}
           />
+          <Card title="Задачи">
+            <Form layout="inline" className="mb-4">
+              <Form.Item label="Статус">
+                <Input
+                  placeholder="status"
+                  value={jobStatusFilter}
+                  onChange={(event) => setJobStatusFilter(event.target.value)}
+                />
+              </Form.Item>
+              <Form.Item>
+                <Button type="primary" onClick={() => loadJobs(1, jobStatusFilter)}>
+                  Подобрать
+                </Button>
+              </Form.Item>
+              <Form.Item>
+                <Button onClick={() => { setJobStatusFilter(''); loadJobs(); }}>
+                  Сбросить
+                </Button>
+              </Form.Item>
+            </Form>
+            <Table
+              rowKey="reservation_id"
+              dataSource={jobs}
+              loading={jobsLoading}
+              pagination={{
+                current: jobsPage,
+                total: jobsTotal,
+                pageSize: 20,
+                onChange: (page) => loadJobs(page, jobStatusFilter || undefined),
+              }}
+              columns={[
+                {
+                  title: 'Job / Reservation',
+                  dataIndex: 'job_id',
+                  key: 'job',
+                  render: (_: string | null, record: JobSummary) => (
+                    <span>{record.job_id ?? record.reservation_id}</span>
+                  ),
+                },
+                { title: 'Статус', dataIndex: 'status', key: 'status' },
+                { title: 'Пользователь', dataIndex: 'user_email', key: 'user' },
+                {
+                  title: 'Дата обновления',
+                  dataIndex: 'updated_at',
+                  key: 'updated',
+                  render: (value: string) => new Date(value).toLocaleString(),
+                },
+                {
+                  title: 'Действия',
+                  key: 'actions',
+                  render: (_: unknown, record: JobSummary) => (
+                    <div className="flex gap-2">
+                      <Button size="small" onClick={() => handleRerun(record.job_id ?? record.reservation_id)}>
+                        Повторить
+                      </Button>
+                      <Button
+                        size="small"
+                        danger
+                        onClick={() => handleCancel(record.job_id ?? record.reservation_id)}
+                      >
+                        Отменить
+                      </Button>
+                    </div>
+                  ),
+                },
+              ]}
+            />
+          </Card>
         </section>
         <AdjustModal
           user={adjustModalUser}

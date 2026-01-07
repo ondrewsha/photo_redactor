@@ -70,6 +70,23 @@ export interface TransactionsResponse {
   total: number;
 }
 
+export interface JobSummary {
+  reservation_id: string;
+  job_id: string | null;
+  user_email: string;
+  status: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface JobsResponse {
+  items: JobSummary[];
+  total: number;
+  page: number;
+  limit: number;
+  backlog: Record<string, number>;
+}
+
 export interface MetricsResponse {
   generation_series: Array<{ label: string; value: number }>;
   revenue_series: Array<{ label: string; value: number }>;
@@ -104,5 +121,18 @@ export const adminApi = {
   fetchTransactions: (page = 1, limit = 20) =>
     request<TransactionsResponse>(`/admin/transactions?page=${page}&limit=${limit}`),
   fetchMetrics: () => request<MetricsResponse>('/admin/metrics'),
+  fetchJobs: (page = 1, limit = 20, status?: string) => {
+    const query = new URLSearchParams({ page: String(page), limit: String(limit) });
+    if (status) query.set('status', status);
+    return request<JobsResponse>(`/admin/jobs?${query.toString()}`);
+  },
+  rerunJob: (jobId: string) =>
+    request(`/admin/jobs/${jobId}/rerun`, {
+      method: 'POST',
+    }),
+  cancelJob: (jobId: string) =>
+    request(`/admin/jobs/${jobId}/cancel`, {
+      method: 'POST',
+    }),
   fetchSession: () => request<{ email: string }>('/auth/me'),
 };

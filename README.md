@@ -110,3 +110,32 @@ docker compose up --build -d frontend
 ### Локализация стилей и размеров
 
 Файлы в `frontend/locales/*.ts` подсоединяют словари из `frontend/locales/styleNames.ts`. Если добавляешь новый язык или обновляешь названия стилей/размеров, дополни соответствующие `XXStyleNames`/`XXSizeLabels` и убедись, что перевод подключён в `frontend/locales/index.ts`.
+
+
+## Админка (Step 5)
+
+Админский интерфейс вынесен в `frontend-admin` и работает как отдельный сервис на `ADMIN_PORT` (по умолчанию `5174`). Он подхватывает `VITE_API_BASE` и делает `fetch`/`POST` к
+
+```
+/admin/users
+/admin/transactions
+/admin/jobs
+/admin/metrics
+```
+
+используя HTTP-only куки из gateway (включено `credentials: 'include'`). Для локальной разработки:
+
+```bash
+cd frontend-admin
+cp .env.example .env
+npm install
+npm run dev
+```
+
+в `frontend-admin/.env` указывай `VITE_API_BASE=http://localhost:8080`, а затем админка будет доступна по `http://localhost:5174`. Для Docker-сборки:
+
+```bash
+docker compose up --build -d admin
+```
+
+Контейнер `admin` берёт собранный `frontend-admin/dist` и проксирует nginx, поэтому гарантируй, что `ADMIN_PORT` и `VITE_API_BASE` прописаны в корневом `.env`, а `docker-compose.yml` поднимает gateway перед админкой. Также удостоверься, что админский UI запускается автономно от основного фронтенда, чтобы личный кабинет остался изолирован.
