@@ -9,9 +9,16 @@ import { Locale } from '../types';
 interface Props {
   onAuthClick: (tab: 'login' | 'register') => void;
   onProfileClick: () => void;
+  onAdminClick?: () => void;
+  showAdminButton?: boolean;
 }
 
-export const Header: React.FC<Props> = ({ onAuthClick, onProfileClick }) => {
+export const Header: React.FC<Props> = ({
+  onAuthClick,
+  onProfileClick,
+  onAdminClick,
+  showAdminButton,
+}) => {
   const { user, logout } = useAuth();
   const { t, locale, setLocale } = useTranslation();
   const { theme, setTheme, isDark } = useTheme();
@@ -134,6 +141,16 @@ export const Header: React.FC<Props> = ({ onAuthClick, onProfileClick }) => {
               </svg>
             )}
           </Button>
+          {showAdminButton && onAdminClick && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={onAdminClick}
+              className="hidden lg:inline-flex uppercase tracking-widest text-[10px]"
+            >
+              {t.admin.title}
+            </Button>
+          )}
 
           {user ? (
             <div className="flex items-center gap-3">

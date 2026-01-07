@@ -149,4 +149,93 @@ export const ru: TranslationSchema = {
     tagline: "Присоединяйся к 10 000+ творцам уже сегодня",
     subtext: "Платформа, созданная для быстрого создания визуалов."
   }
+  ,
+  admin: {
+    title: "Админ-панель",
+    subtitle: "Контроль пользователей, балансов и транзакций в одном окне.",
+    usersTab: "Пользователи",
+    transactionsTab: "Транзакции",
+    filters: {
+      email: "Email",
+      role: "Роль",
+      status: "Статус",
+      search: "Поиск",
+      reset: "Сбросить"
+    },
+    headings: {
+      email: "Email",
+      balance: "Баланс",
+      role: "Роль",
+      status: "Статус",
+      actions: "Действия",
+      created: "Создан"
+    },
+    actions: {
+      adjustBalance: "Изменить баланс",
+      toggleActive: "Отключить",
+      toggleInactive: "Включить",
+      changeBalancePrompt: "Введите сумму для баланса (+/-)"
+    },
+    status: {
+      active: "Активен",
+      inactive: "Заморожен"
+    },
+    prompts: {
+      balanceAmount: "Сумма для корректировки (+/-)",
+      statusConfirm: "Подтвердите изменение статуса?"
+    },
+    pagination: {
+      prev: "Назад",
+      next: "Вперёд",
+      page: "Страница"
+    },
+    notifications: {
+      balanceUpdated: "Баланс обновлён",
+      statusUpdated: "Статус обновлён",
+      jobRerun: "Задача возвращена в очередь",
+      jobCancel: "Задача отменена"
+    }
+    ,
+    jobsTab: "Задачи",
+    metricsTab: "Метрики",
+    jobsTable: {
+      title: "Задачи генерации",
+      jobId: "Job / Резерв",
+      statusLabel: "Статус",
+      userEmail: "Пользователь",
+      created: "Создано",
+      updated: "Обновлено",
+      actions: {
+        rerun: "Повторить",
+        cancel: "Отменить"
+      },
+      empty: "Задачи не найдены"
+    },
+    billing: {
+      title: "Транзакции",
+      filters: {
+        kind: "Тип транзакции"
+      },
+      totalAmount: "Сумма",
+      totalCount: "Записей",
+      kindLabel: "Тип",
+      userLabel: "Email",
+      deltaLabel: "Изменение",
+      amountLabel: "Сумма",
+      createdLabel: "Дата",
+      currency: "₽",
+      empty: "Транзакций пока нет"
+    },
+    metrics: {
+      title: "Панель KPI",
+      tagline: "Свежие показатели",
+      dailyGens: "Генераций / день",
+      dailyRevenue: "Доход / день",
+      totalLabel: "Всего за неделю",
+      apiErrors: "Ошибки API",
+      failureRate: "Процент отказов",
+      backlogTitle: "Backlog",
+      reload: "Обновляется"
+    }
+  },
 };

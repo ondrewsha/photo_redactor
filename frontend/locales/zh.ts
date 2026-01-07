@@ -120,6 +120,93 @@ export const zh: TranslationSchema = {
     passwordChangeSuccess: "密码已更新。",
     passwordChangeError: "无法修改密码。"
   },
+  admin: {
+    title: "Admin dashboard",
+    subtitle: "Monitor users, balances, and transactions in one place.",
+    usersTab: "Users",
+    transactionsTab: "Transactions",
+    filters: {
+      email: "Email",
+      role: "Role",
+      status: "Status",
+      search: "Search users",
+      reset: "Clear filters"
+    },
+    headings: {
+      email: "Email",
+      balance: "Balance",
+      role: "Role",
+      status: "Status",
+      actions: "Actions",
+      created: "Created"
+    },
+    actions: {
+      adjustBalance: "Adjust balance",
+      toggleActive: "Disable",
+      toggleInactive: "Enable",
+      changeBalancePrompt: "Enter amount to add/subtract"
+    },
+    status: {
+      active: "Active",
+      inactive: "Suspended"
+    },
+    prompts: {
+      balanceAmount: "Enter balance adjustment (+/-)",
+      statusConfirm: "Confirm status change?"
+    },
+    pagination: {
+      prev: "Prev",
+      next: "Next",
+      page: "Page"
+    },
+    notifications: {
+      balanceUpdated: "Balance updated",
+      statusUpdated: "Status updated",
+      jobRerun: "任务已重新执行",
+      jobCancel: "任务已取消"
+    },
+    jobsTab: "任务",
+    metricsTab: "指标",
+    jobsTable: {
+      title: "生成任务",
+      jobId: "任务 / 预留",
+      statusLabel: "状态",
+      userEmail: "用户",
+      created: "创建",
+      updated: "更新",
+      actions: {
+        rerun: "重新执行",
+        cancel: "取消"
+      },
+      empty: "暂无任务"
+    },
+    billing: {
+      title: "交易记录",
+      filters: {
+        kind: "交易类型"
+      },
+      totalAmount: "总金额",
+      totalCount: "总条目",
+      kindLabel: "类型",
+      userLabel: "邮箱",
+      deltaLabel: "变化",
+      amountLabel: "金额",
+      createdLabel: "日期",
+      currency: "RUB",
+      empty: "暂无交易"
+    },
+    metrics: {
+      title: "洞察",
+      tagline: "实时指标",
+      dailyGens: "生成 / 天",
+      dailyRevenue: "收入 / 天",
+      totalLabel: "周总计",
+      apiErrors: "API 错误",
+      failureRate: "失败率",
+      backlogTitle: "待办",
+      reload: "自动刷新"
+    }
+  },
   auth: {
     loginTitle: "欢迎回来",
     registerTitle: "加入 NanoVisual",

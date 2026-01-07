@@ -180,7 +180,12 @@ async def me(
     db: Annotated[AsyncSession, Depends(get_db_session)],
 ) -> AuthMeResponse:
     wallet = await _get_wallet(db, user.id)
-    return AuthMeResponse(email=user.email, email_verified=user.email_verified, balance=wallet.balance)
+    return AuthMeResponse(
+        email=user.email,
+        email_verified=user.email_verified,
+        balance=wallet.balance,
+        role=user.role,
+    )
 
 
 @router.post("/resend-verification", response_model=MessageResponse)

@@ -9,6 +9,13 @@ import {
   GenerationCapabilities,
   HistoryListResponse,
   MessageResponse,
+  AdminUserSummary,
+  AdminUsersResponse,
+  AdminUserBalanceRequest,
+  AdminUserStatusRequest,
+  AdminTransactionsResponse,
+  AdminJobsResponse,
+  AdminMetricsResponse,
 } from '../types';
 
 const BASE_URL = import.meta.env.VITE_GATEWAY_URL || '/api';
@@ -151,4 +158,87 @@ export const api = {
     pay: (p: any) => request<any>('/billing/pay', { method: 'POST', body: JSON.stringify(p) }),
     history: (limit = 20, page = 1) => request<BillingHistoryResponse>(`/billing/history?limit=${limit}&page=${page}`),
   }
+  ,
+  admin: {
+    listUsers: (params: {
+      email?: string;
+      role?: string;
+      is_active?: boolean;
+      page?: number;
+      limit?: number;
+    }) => {
+      const query = new URLSearchParams();
+      if (params.email) query.set('email', params.email);
+      if (params.role) query.set('role', params.role);
+      if (params.is_active !== undefined) query.set('is_active', String(params.is_active));
+      query.set('page', String(params.page ?? 1));
+      query.set('limit', String(params.limit ?? 20));
+      return request<AdminUsersResponse>(`/admin/users?${query.toString()}`);
+    },
+    adjustBalance: (
+      userId: string,
+      payload: AdminUserBalanceRequest,
+      action?: string
+    ) =>
+      request<AdminUserSummary>(`/admin/users/${userId}/balance`, {
+        method: 'POST',
+        body: JSON.stringify(payload),
+        headers: {
+          'X-Admin-Action': action || 'admin_adjust_balance',
+        },
+      }),
+    setUserStatus: (
+      userId: string,
+      payload: AdminUserStatusRequest,
+      action?: string
+    ) =>
+      request<AdminUserSummary>(`/admin/users/${userId}/status`, {
+        method: 'POST',
+        body: JSON.stringify(payload),
+        headers: {
+          'X-Admin-Action': action || 'admin_set_status',
+        },
+      }),
+    listTransactions: (params: {
+      kind?: string;
+      email?: string;
+      page?: number;
+      limit?: number;
+    }) => {
+      const query = new URLSearchParams();
+      if (params.kind) query.set('kind', params.kind);
+      if (params.email) query.set('email', params.email);
+      query.set('page', String(params.page ?? 1));
+      query.set('limit', String(params.limit ?? 20));
+      return request<AdminTransactionsResponse>(`/admin/transactions?${query.toString()}`);
+    },
+    listJobs: (params: {
+      status?: string;
+      email?: string;
+      page?: number;
+      limit?: number;
+    }) => {
+      const query = new URLSearchParams();
+      if (params.status) query.set('status', params.status);
+      if (params.email) query.set('email', params.email);
+      query.set('page', String(params.page ?? 1));
+      query.set('limit', String(params.limit ?? 20));
+      return request<AdminJobsResponse>(`/admin/jobs?${query.toString()}`);
+    },
+    rerunJob: (jobId: string, action?: string) =>
+      request<MessageResponse>(`/admin/jobs/${jobId}/rerun`, {
+        method: 'POST',
+        headers: {
+          'X-Admin-Action': action || `job_rerun_${jobId}`,
+        },
+      }),
+    cancelJob: (jobId: string, action?: string) =>
+      request<MessageResponse>(`/admin/jobs/${jobId}/cancel`, {
+        method: 'POST',
+        headers: {
+          'X-Admin-Action': action || `job_cancel_${jobId}`,
+        },
+      }),
+    metrics: () => request<AdminMetricsResponse>('/admin/metrics'),
+  },
 };

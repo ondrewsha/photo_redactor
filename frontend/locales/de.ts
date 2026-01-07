@@ -155,4 +155,92 @@ export const de: TranslationSchema = {
     tagline: "Schließe dich heute 10.000+ Kreativen an",
     subtext: "Die KI-Plattform für schnelle, beeindruckende Bilder."
   }
+  ,
+  admin: {
+    title: "Admin dashboard",
+    subtitle: "Monitor users, balances, and transactions in one place.",
+    usersTab: "Users",
+    transactionsTab: "Transactions",
+    filters: {
+      email: "Email",
+      role: "Role",
+      status: "Status",
+      search: "Search users",
+      reset: "Clear filters"
+    },
+    headings: {
+      email: "Email",
+      balance: "Balance",
+      role: "Role",
+      status: "Status",
+      actions: "Actions",
+      created: "Created"
+    },
+    actions: {
+      adjustBalance: "Adjust balance",
+      toggleActive: "Disable",
+      toggleInactive: "Enable",
+      changeBalancePrompt: "Enter amount to add/subtract"
+    },
+    status: {
+      active: "Active",
+      inactive: "Suspended"
+    },
+    prompts: {
+      balanceAmount: "Enter balance adjustment (+/-)",
+      statusConfirm: "Confirm status change?"
+    },
+    pagination: {
+      prev: "Prev",
+      next: "Next",
+      page: "Page"
+    },
+    notifications: {
+      balanceUpdated: "Balance updated",
+      statusUpdated: "Status updated",
+      jobRerun: "Job neu gestartet",
+      jobCancel: "Job abgebrochen"
+    },
+    jobsTab: "Jobs",
+    metricsTab: "Metriken",
+    jobsTable: {
+      title: "Generierungsjobs",
+      jobId: "Job / Reservierung",
+      statusLabel: "Status",
+      userEmail: "Benutzer",
+      created: "Erstellt",
+      updated: "Aktualisiert",
+      actions: {
+        rerun: "Erneut starten",
+        cancel: "Abbrechen"
+      },
+      empty: "Keine Jobs"
+    },
+    billing: {
+      title: "Transaktionen",
+      filters: {
+        kind: "Typ"
+      },
+      totalAmount: "Summe",
+      totalCount: "Einträge",
+      kindLabel: "Typ",
+      userLabel: "Email",
+      deltaLabel: "Delta",
+      amountLabel: "Betrag",
+      createdLabel: "Datum",
+      currency: "RUB",
+      empty: "Keine Transaktionen"
+    },
+    metrics: {
+      title: "Insights",
+      tagline: "Live-Metriken",
+      dailyGens: "Generierungen / Tag",
+      dailyRevenue: "Umsatz / Tag",
+      totalLabel: "Wochensumme",
+      apiErrors: "API-Fehler",
+      failureRate: "Fehlerquote",
+      backlogTitle: "Backlog",
+      reload: "Aktualisiert"
+    }
+  },
 };
