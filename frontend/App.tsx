@@ -227,14 +227,17 @@ const AppContent: React.FC = () => {
               {t.footer.support}
             </button>
           </div>
-          <div
+          <a
+            href="https://ndk-ai.ru"
+            target="_blank"
+            rel="noreferrer noopener"
             className={cn(
-              "text-[10px] font-bold uppercase tracking-[0.2em]",
+              "text-[10px] font-bold uppercase tracking-[0.2em] transition-colors hover:text-indigo-500",
               theme === 'dark' ? 'text-zinc-500' : 'text-zinc-400'
             )}
           >
-            © 2025 Laboratory of Visualization
-          </div>
+            © 2025 NDK-AI
+          </a>
         </div>
       </footer>
 

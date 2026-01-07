@@ -45,6 +45,7 @@ services:
       PROMPT_SERVICE_OPENAI_BASE_URL: ${PROMPT_SERVICE_OPENAI_BASE_URL:-https://api.openai.com/v1}
       PROMPT_SERVICE_OPENAI_MODEL: ${PROMPT_SERVICE_OPENAI_MODEL:-gpt-5-mini}
       PROMPT_SERVICE_OPENAI_PROXY_URL: ${PROMPT_SERVICE_OPENAI_PROXY_URL:-}
+      PROMPT_SERVICE_OPENAI_PROXY_ENABLED: ${PROMPT_SERVICE_OPENAI_PROXY_ENABLED:-false}
       PROMPT_SERVICE_HTTP_TIMEOUT_S: ${PROMPT_SERVICE_HTTP_TIMEOUT_S:-30}
     ports:
       - "${PROMPT_SERVICE_PORT:-8001}:8000"
@@ -64,10 +65,12 @@ services:
       GEN_SERVICE_GEMINI_API_KEY: ${GEN_SERVICE_GEMINI_API_KEY:-}
       GEN_SERVICE_GEMINI_MODEL: ${GEN_SERVICE_GEMINI_MODEL:-gemini-2.5-flash-image}
       GEN_SERVICE_GEMINI_PROXY_URL: ${GEN_SERVICE_GEMINI_PROXY_URL:-}
+      GEN_SERVICE_GEMINI_PROXY_ENABLED: ${GEN_SERVICE_GEMINI_PROXY_ENABLED:-false}
       GEN_SERVICE_OPENAI_API_KEY: ${GEN_SERVICE_OPENAI_API_KEY:-}
       GEN_SERVICE_OPENAI_BASE_URL: ${GEN_SERVICE_OPENAI_BASE_URL:-https://api.openai.com/v1}
       GEN_SERVICE_OPENAI_MODEL: ${GEN_SERVICE_OPENAI_MODEL:-gpt-image-1}
       GEN_SERVICE_OPENAI_PROXY_URL: ${GEN_SERVICE_OPENAI_PROXY_URL:-}
+      GEN_SERVICE_OPENAI_PROXY_ENABLED: ${GEN_SERVICE_OPENAI_PROXY_ENABLED:-false}
       GEN_SERVICE_OPENAI_OUTPUT_FORMAT: ${GEN_SERVICE_OPENAI_OUTPUT_FORMAT:-png}
       GEN_SERVICE_OPENAI_QUALITY: ${GEN_SERVICE_OPENAI_QUALITY:-standard}
       GEN_SERVICE_OPENAI_STYLE: ${GEN_SERVICE_OPENAI_STYLE:-}
@@ -140,11 +143,23 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
       args:
-        VITE_GATEWAY_URL: ${VITE_GATEWAY_URL:-http://localhost:8080}
+        VITE_GATEWAY_URL: ${VITE_GATEWAY_URL:-/api}
     environment:
-      - VITE_GATEWAY_URL=${VITE_GATEWAY_URL:-http://localhost:8080}
+      - VITE_GATEWAY_URL=${VITE_GATEWAY_URL:-/api}
     ports:
       - "${FRONTEND_PORT:-5173}:80"
+    depends_on:
+      - gateway
+    restart: unless-stopped
+
+  admin:
+    build:
+      context: ./frontend-admin
+      dockerfile: Dockerfile
+    environment:
+      - VITE_API_BASE=${VITE_API_BASE:-/api}
+    ports:
+      - "${ADMIN_PORT:-5174}:80"
     depends_on:
       - gateway
     restart: unless-stopped

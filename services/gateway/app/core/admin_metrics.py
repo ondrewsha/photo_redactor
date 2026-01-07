@@ -55,12 +55,9 @@ async def collect_metrics(
         rev_key = _date_key("revenue", datetime(current.year, current.month, current.day))
         gen_count = await redis_client.get(gens_key) or b"0"
         rev_amount = await redis_client.get(rev_key) or b"0"
-        generation_series.append(
-            {"date": current.isoformat(), "value": int(gen_count)}
-        )
-        revenue_series.append(
-            {"date": current.isoformat(), "value": int(rev_amount)}
-        )
+        date_int = int(current.strftime("%Y%m%d"))
+        generation_series.append({"date": date_int, "value": int(gen_count)})
+        revenue_series.append({"date": date_int, "value": int(rev_amount)})
     backlog_stats = {}
     res = await db.execute(
         select(

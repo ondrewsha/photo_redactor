@@ -54,7 +54,7 @@ def _user_summary(user: User, wallet: Wallet | None) -> AdminUserSummary:
         email=user.email,
         role=user.role,
         email_verified=user.email_verified,
-        is_active=user.is_active,
+        is_active=getattr(user, "is_active", True),
         balance=wallet.balance if wallet else 0,
         created_at=user.created_at,
         updated_at=user.updated_at,
@@ -100,18 +100,26 @@ async def list_users(
     limit: int = Query(default=20, ge=1, le=100),
 ) -> AdminUsersResponse:
     offset = (page - 1) * limit
-    base_query = select(User)
+    filters: list = []
     if email:
-        base_query = base_query.where(User.email.ilike(f"%{email}%"))
+        filters.append(User.email.ilike(f"%{email}%"))
     if role:
-        base_query = base_query.where(User.role == role)
-    if is_active is not None:
-        base_query = base_query.where(User.is_active == is_active)
-    query = base_query.outerjoin(Wallet, Wallet.user_id == User.id)
-    res = await db.execute(query.order_by(User.created_at.desc()).offset(offset).limit(limit))
-    results = res.all()
+        filters.append(User.role == role)
+    if is_active is not None and hasattr(User, "is_active"):
+        filters.append(User.is_active == is_active)
+
+    base_query = select(User)
+    for cond in filters:
+        base_query = base_query.where(cond)
+
+    query = select(User, Wallet).outerjoin(Wallet, Wallet.user_id == User.id)
+    for cond in filters:
+        query = query.where(cond)
+
     total_res = await db.execute(select(func.count()).select_from(base_query.subquery()))
     total = total_res.scalar_one()
+    res = await db.execute(query.order_by(User.created_at.desc()).offset(offset).limit(limit))
+    results = res.all()
     return AdminUsersResponse(
         items=[_user_summary(user, wallet) for user, wallet in results],
         total=int(total),
