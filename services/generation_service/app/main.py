@@ -16,9 +16,8 @@ from sqlalchemy.ext.asyncio import AsyncEngine, async_sessionmaker, create_async
 from app.api.router import router
 from app.core.errors import GeneratorConfigurationError, JobNotFoundError, QueueUnavailableError, UnauthorizedError
 from app.core.image_generators.base import ImageGenerator
-from app.core.image_generators.gemini import GeminiImageGenerator
 from app.core.image_generators.mock import MockImageGenerator
-from app.core.image_generators.openai_images import OpenAIImageGenerator
+from app.core.image_generators.openrouter import OpenRouterImageGenerator
 from app.core.settings import Settings
 from app.core.storage.local import LocalStorage
 from app.core.worker import GenerationWorker
@@ -46,11 +45,7 @@ async def _close_redis(client: redis.Redis) -> None:
 def _build_image_generator(settings: Settings) -> ImageGenerator:
     if settings.image_provider == "mock":
         return MockImageGenerator()
-    if settings.image_provider == "gemini":
-        return GeminiImageGenerator(settings=settings)
-    if settings.image_provider == "openai":
-        return OpenAIImageGenerator(settings=settings)
-    raise RuntimeError(f"Unsupported image provider: {settings.image_provider}")
+    return OpenRouterImageGenerator(settings=settings)
 
 
 @asynccontextmanager
@@ -65,7 +60,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     app.state.db_engine = engine
     app.state.db_sessionmaker = sessionmaker
 
-    from app.core.models import Base  # local import to avoid import-order surprises
+    from app.core.models import Base
 
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
@@ -77,7 +72,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     media_root.mkdir(parents=True, exist_ok=True)
     storage = LocalStorage(media_root=media_root)
     app.state.storage = storage
-    # Local media hosting for development (S3 adapter can replace it later).
+    
     if not any(getattr(r, "path", None) == "/media" for r in app.router.routes):
         app.mount("/media", StaticFiles(directory=str(media_root)), name="media")
 
