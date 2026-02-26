@@ -129,9 +129,8 @@ async def register(
         await _send_verification_email(settings=settings, to_email=user.email, token=token)
     except EmailConfigurationError as exc:
         raise HTTPException(status_code=503, detail=str(exc)) from exc
-    except Exception:
-        # Account created: allow user to request resend from profile.
-        pass
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=str(exc)) from exc
 
     session_jwt = create_session_jwt(user_id=user.id, settings=settings)
     csrf_token = new_token(nbytes=16)
