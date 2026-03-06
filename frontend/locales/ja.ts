@@ -61,6 +61,7 @@ export const ja: TranslationSchema = {
     searchStyles: "スタイルを検索...",
     noStylesFound: "スタイルが見つかりません",
     defaultStyle: "スタイルなし",
+    newGeneration: "新しい生成",
     styleNames: jaStyleNames,
     sizeLabels: jaSizeLabels
   },

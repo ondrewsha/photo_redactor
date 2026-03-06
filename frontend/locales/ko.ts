@@ -61,6 +61,7 @@ export const ko: TranslationSchema = {
     searchStyles: "스타일 검색...",
     noStylesFound: "스타일을 찾을 수 없음",
     defaultStyle: "스타일 없음",
+    newGeneration: "새로운 생성",
     styleNames: koStyleNames,
     sizeLabels: koSizeLabels
   },

@@ -65,6 +65,7 @@ export const de: TranslationSchema = {
     searchStyles: "Stile suchen...",
     noStylesFound: "Keine Stile gefunden",
     defaultStyle: "Kein Stil",
+    newGeneration: "Neue Generation",
     styleNames: deStyleNames,
     sizeLabels: deSizeLabels
   },

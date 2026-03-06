@@ -31,6 +31,6 @@ class Settings(BaseSettings):
     worker_poll_timeout_s: int = 1
 
     output_enabled: bool = True
-    output_format: Literal["webp", "png", "jpeg"] = "webp"
+    output_format: Literal["webp", "png", "jpeg"] = "jpeg"
     output_quality: int = Field(85, ge=1, le=100)
     output_max_side: int = Field(1280, ge=0)

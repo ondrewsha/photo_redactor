@@ -61,6 +61,7 @@ export const ru: TranslationSchema = {
     searchStyles: "Поиск стилей...",
     noStylesFound: "Стили не найдены",
     defaultStyle: "Без стиля",
+    newGeneration: "Новая генерация",
     styleNames: ruStyleNames,
     sizeLabels: ruSizeLabels
   },

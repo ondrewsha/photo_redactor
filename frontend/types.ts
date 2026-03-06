@@ -210,6 +210,7 @@ export interface TranslationSchema {
     searchStyles: string;
     noStylesFound: string;
     defaultStyle: string;
+    newGeneration: string;
     styleNames: Record<string, string>;
     sizeLabels: Record<string, string>;
   };

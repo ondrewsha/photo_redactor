@@ -667,31 +667,53 @@ export const Generator: React.FC = () => {
                 )}
               >
                 <img src={resultUrl} className="h-full w-full object-contain" alt="Generated" />
-                <div className="absolute top-6 right-6 flex flex-col gap-3 opacity-0 group-hover:opacity-100 transition-all transform translate-x-4 group-hover:translate-x-0">
-                {downloadHref && (
-                  <button
-                    type="button"
-                    className={actionButtonClasses('save')}
-                    disabled={!currentJobId}
+                
+                {/* ОБНОВЛЕННЫЙ БЛОК С КНОПКАМИ */}
+                <div className="absolute top-6 right-6 flex flex-col items-end gap-3 opacity-0 group-hover:opacity-100 transition-all transform translate-x-4 group-hover:translate-x-0">
+                  
+                  {/* Кнопка "Скачать" с текстом */}
+                  {downloadHref && (
+                    <button
+                      type="button"
+                      className={cn(
+                        "h-12 px-5 rounded-2xl flex items-center gap-2 shadow-xl transition-colors font-bold text-sm",
+                        theme === 'dark'
+                          ? 'bg-white text-zinc-900 hover:bg-indigo-500 hover:text-white'
+                          : 'bg-white text-zinc-900 hover:bg-indigo-600 hover:text-white'
+                      )}
+                      disabled={!currentJobId}
+                      onClick={() => {
+                        if (!currentJobId) return;
+                        void downloadResource(downloadHref, currentJobId);
+                      }}
+                      aria-label={t.history.download}
+                    >
+                      <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a2 2 0 002 2h12a2 2 0 002-2v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                      </svg>
+                      {t.common.download}
+                    </button>
+                  )}
+
+                  {/* Новая кнопка "Новая генерация" вместо корзины */}
+                  <button 
+                    className={cn(
+                      "h-12 px-5 rounded-2xl flex items-center gap-2 shadow-xl transition-colors font-bold text-sm",
+                      theme === 'dark'
+                        ? 'bg-zinc-900 text-white hover:bg-zinc-800 border border-zinc-700'
+                        : 'bg-white text-zinc-900 hover:bg-zinc-50 border border-zinc-200'
+                    )}
                     onClick={() => {
-                      if (!currentJobId) return;
-                      void downloadResource(downloadHref, currentJobId);
+                      setResultUrl(null);
+                      setPhase('idle');
+                      setProgress(0);
+                      setRawResultPath(null);
                     }}
-                    aria-label={t.history.download}
                   >
-                    <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a2 2 0 002 2h12a2 2 0 002-2v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
-                  </button>
-                )}
-              <button 
-                className={actionButtonClasses('cancel')}
-                onClick={() => {
-                  setResultUrl(null);
-                  setPhase('idle');
-                  setProgress(0);
-                  setRawResultPath(null);
-                }}
-              >
-                    <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                    <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                    </svg>
+                    {t.generator.newGeneration}
                   </button>
                 </div>
               </div>

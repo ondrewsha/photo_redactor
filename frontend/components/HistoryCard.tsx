@@ -27,10 +27,10 @@ export const HistoryCard: React.FC<HistoryCardProps> = ({
   const { t } = useTranslation();
 
   const historyCardRoot = cn(
-    "flex flex-col overflow-hidden rounded-[1.75rem] border shadow-lg transition-colors bg-white",
+    "flex flex-col overflow-hidden rounded-[1.75rem] border shadow-lg transition-colors",
     theme === 'dark'
       ? 'border-zinc-800 bg-zinc-900 text-white'
-      : 'border-zinc-200 text-zinc-900',
+      : 'border-zinc-200 bg-white text-zinc-900',
     className,
   );
 

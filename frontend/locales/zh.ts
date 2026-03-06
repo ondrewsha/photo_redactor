@@ -61,6 +61,7 @@ export const zh: TranslationSchema = {
     searchStyles: "搜索风格...",
     noStylesFound: "未找到风格",
     defaultStyle: "无样式",
+    newGeneration: "新生成",
     styleNames: zhStyleNames,
     sizeLabels: zhSizeLabels
   },

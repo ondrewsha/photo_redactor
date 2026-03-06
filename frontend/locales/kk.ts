@@ -65,6 +65,7 @@ export const kk: TranslationSchema = {
     searchStyles: "Стильдерді іздеу...",
     noStylesFound: "Стильдер табылмады",
     defaultStyle: "Стиль жоқ",
+    newGeneration: "Жаңа генерация",
     styleNames: kkStyleNames,
     sizeLabels: kkSizeLabels
   },
