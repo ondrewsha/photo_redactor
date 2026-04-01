@@ -39,7 +39,8 @@ class Settings(BaseSettings):
     smtp_username: str | None = Field(default=None, repr=False)
     smtp_password: str | None = Field(default=None, repr=False)
     smtp_from: str | None = None
-    smtp_use_tls: bool = True
+    smtp_use_tls: bool = False
+    smtp_use_ssl: bool = True
 
     google_client_id: str | None = Field(default=None, repr=False)
     google_client_secret: str | None = Field(default=None, repr=False)
