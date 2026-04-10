@@ -56,6 +56,10 @@ async function request<T>(path: string, options?: RequestInit, mockFallback?: T)
     if (!response.ok) {
       // Если есть мок на случай ошибки сервера (например 404/500), возвращаем его
       if (mockFallback !== undefined) return mockFallback;
+
+      if (response.status === 413) {
+        throw new Error("Размер загружаемых файлов превышает лимит сервера (413).");
+      }
       
       let errorMessage = `Error: ${response.status} ${response.statusText}`;
       try {

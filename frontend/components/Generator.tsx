@@ -18,6 +18,49 @@ import { HistoryCard } from './HistoryCard';
 import { useTheme } from '../context/ThemeContext';
 import { styleBackgroundForStyle } from '../lib/gradients';
 
+// Функция для сжатия картинок на клиенте перед отправкой
+const resizeImageFile = (file: File, maxSide = 1024): Promise<File> => {
+  return new Promise((resolve) => {
+    if (!file.type.match(/image.*/)) return resolve(file);
+    
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+    
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      let { width, height } = img;
+      
+      if (width > maxSide || height > maxSide) {
+        if (width > height) {
+          height = Math.round((height * maxSide) / width);
+          width = maxSide;
+        } else {
+          width = Math.round((width * maxSide) / height);
+          height = maxSide;
+        }
+      }
+      
+      const canvas = document.createElement('canvas');
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return resolve(file);
+      
+      ctx.drawImage(img, 0, 0, width, height);
+      canvas.toBlob(
+        (blob) => {
+          if (blob) resolve(new File([blob], file.name, { type: 'image/jpeg' }));
+          else resolve(file);
+        },
+        'image/jpeg',
+        0.85 // Качество сжатия (85%)
+      );
+    };
+    img.onerror = () => resolve(file);
+    img.src = url;
+  });
+};
+
 export const Generator: React.FC = () => {
   const { t } = useTranslation();
   const { user, refresh } = useAuth();
@@ -304,11 +347,12 @@ export const Generator: React.FC = () => {
   const canUploadPhotos = Boolean(caps?.supports_source_images);
   const photoLimitText = t.generator.photoLimit.replace('{limit}', String(maxPhotos));
 
-  const handlePhotoSelection = (event: ChangeEvent<HTMLInputElement>) => {
+  const handlePhotoSelection = async (event: ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files ? Array.from(event.target.files) : [];
     if (!files.length) return;
+    const resizedFiles = await Promise.all(files.map(f => resizeImageFile(f, 1024)));
     setUploadedPhotos((prev) => {
-      const merged = [...prev, ...files];
+      const merged = [...prev, ...resizedFiles];
       return merged.slice(0, maxPhotos);
     });
     event.target.value = '';
@@ -690,6 +734,9 @@ export const Generator: React.FC = () => {
                       setPhase('idle');
                       setProgress(0);
                       setRawResultPath(null);
+                      setPrompt('');
+                      setSelectedStyles([]);
+                      setUploadedPhotos([]);
                     }}
                   >
                     <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
