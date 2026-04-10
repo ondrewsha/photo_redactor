@@ -44,7 +44,7 @@ export const de: TranslationSchema = {
     step3Desc: "Laden Sie Ihre Kreation in hoher Auflösung herunter und teilen Sie sie mit der Welt.",
   },
   generator: {
-    promptPlaceholder: "Eine Katze im Raumanzug, die in einem Neon-Nebel schwebt...",
+    promptPlaceholder: "Geben Sie hier Ihre Beschreibung dessen ein, was Sie sehen möchten, zum Beispiel: „Stilvoller Damenrucksack aus schwarzem Leder, auf einem Marmorpodest platziert, Studiobeleuchtung, Platz für Text oben lassen“ …",
     helperText: "Beschreibe in einfachen Worten, was du sehen möchtest.",
     styles: "Stile",
     size: "Größe",

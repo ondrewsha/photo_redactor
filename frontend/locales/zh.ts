@@ -41,7 +41,7 @@ export const zh: TranslationSchema = {
     step3Desc: "下载高分辨率的作品并与世界分享。",
   },
   generator: {
-    promptPlaceholder: "一只穿着宇航服的猫漂浮在霓虹星云中...",
+    promptPlaceholder: "請在此輸入您想看到的內容描述，例如：「一款時尚的黑色皮革女士背包，放置在大理石台上，攝影棚燈光照射，頂部留有文字空間」…",
     helperText: "用简单的语言描述你想看到的内容。",
     styles: "风格",
     size: "尺寸",

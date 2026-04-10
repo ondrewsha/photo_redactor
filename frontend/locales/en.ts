@@ -41,7 +41,7 @@ export const en: TranslationSchema = {
     step3Desc: "Download your creation in high resolution and share it with the world.",
   },
   generator: {
-    promptPlaceholder: "A cat in a space suit floating in a neon nebula...",
+    promptPlaceholder: "Enter your description of what you want to see here, for example: 'Stylish women's backpack made of black leather, placed on a marble podium, studio lighting, leave space for text at the top'...",
     helperText: "Describe what you want to see in simple words.",
     styles: "Styles",
     size: "Size",

@@ -41,7 +41,7 @@ export const ko: TranslationSchema = {
     step3Desc: "고해상도로 작품을 다운로드하고 세상과 공유하세요.",
   },
   generator: {
-    promptPlaceholder: "네온 성운 속을 떠다니는 우주복을 입은 고양이...",
+    promptPlaceholder: "원하는 이미지를 여기에 구체적으로 설명해 주세요. 예를 들어, '검은색 가죽으로 제작된 세련된 여성용 백팩을 대리석 받침대 위에 놓고 스튜디오 조명을 비춘 모습. 상단에 텍스트를 넣을 공간을 남겨주세요.'와 같이 작성할 수 있습니다.",
     helperText: "보고 싶은 내용을 간단한 단어로 설명하세요.",
     styles: "스타일",
     size: "크기",

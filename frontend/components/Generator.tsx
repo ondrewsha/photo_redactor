@@ -30,6 +30,7 @@ export const Generator: React.FC = () => {
   const [caps, setCaps] = useState<GenerationCapabilities | null>(null);
   const [selectedStyles, setSelectedStyles] = useState<string[]>([]);
   const [selectedSizeId, setSelectedSizeId] = useState<string>('');
+  const [selectedRatio, setSelectedRatio] = useState<string>('3:4');
   const [selectedAspectRatio, setSelectedAspectRatio] = useState<string>('');
   const [selectedQuality, setSelectedQuality] = useState<string>('');
   
@@ -50,6 +51,13 @@ export const Generator: React.FC = () => {
   const [currentJobId, setCurrentJobId] = useState<string | null>(null);
   const [fullscreenItem, setFullscreenItem] = useState<HistoryItem | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+
+  const ASPECT_RATIOS =[
+    { id: '1:1', label: 'Квадрат (1:1)', width: 2048, height: 2048, icon: 'M4 4h16v16H4z' },
+    { id: '3:4', label: 'Маркетплейсы (3:4)', width: 2000, height: 2656, icon: 'M6 2h12v20H6z' },
+    { id: '16:9', label: 'Пейзаж (16:9)', width: 2560, height: 1440, icon: 'M2 6h20v12H2z' },
+    { id: '9:16', label: 'Сториз (9:16)', width: 1440, height: 2560, icon: 'M6 2h12v20H6z' },
+  ];
 
   const lightPanelShadow = "shadow-[0_30px_70px_rgba(15,23,42,0.08)]";
   const lightPromptShadow = "shadow-[0_35px_75px_rgba(15,23,42,0.1)]";
@@ -327,13 +335,14 @@ export const Generator: React.FC = () => {
     setResultUrl(null);
 
     try {
+      const selectedSetting = ASPECT_RATIOS.find(r => r.id === selectedRatio) || ASPECT_RATIOS[1];
       const preset = selectedPreset;
       const styleIds = selectedStyles.length ? selectedStyles : ['none'];
       const payload = {
         style_ids: styleIds,
         user_input: prompt,
-        width: preset?.width || 1024,
-        height: preset?.height || 1024
+        width: selectedSetting.width,
+        height: selectedSetting.height
       };
       const { job_id } =
         uploadedPhotos.length > 0 && canUploadPhotos
@@ -505,58 +514,35 @@ export const Generator: React.FC = () => {
                <svg className="h-4 w-4 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" /></svg>
                {t.generator.size}
             </h3>
-            {isGemini ? (
-              <div className="grid gap-4 md:grid-cols-2">
-                <div className="space-y-3">
-                  <p className="text-[11px] uppercase tracking-[0.45em] text-zinc-400">{t.generator.aspectRatio}</p>
-                  <div className="space-y-2">
-                    {geminiAspectRatioOptions.map((ratio) => (
-                      <button
-                        key={`ratio-${ratio}`}
-                        onClick={() => setSelectedAspectRatio(ratio)}
-                        className={optionButtonClass(selectedAspectRatio === ratio)}
-                      >
-                        <span className="block leading-snug">{ratio}</span>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-                <div className="space-y-3">
-                  <p className="text-[11px] uppercase tracking-[0.45em] text-zinc-400">{t.generator.quality}</p>
-                  <div className="space-y-2">
-                    {geminiQualityOptions.map((quality) => (
-                      <button
-                        key={`quality-${quality}`}
-                        onClick={() => setSelectedQuality(quality)}
-                        className={optionButtonClass(selectedQuality === quality)}
-                      >
-                        <span className="block leading-snug">{quality}</span>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-                {selectedPreset && (
-                  <p className={selectedPresetLabelClass}>
-                    {getPresetLabel(selectedPreset)} • {selectedPreset.width}×{selectedPreset.height}
-                  </p>
-                )}
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 gap-2">
-                {caps?.size_presets.map((p) => (
+            {/* Блок выбора соотношения сторон */}
+            <div className="grid grid-cols-2 gap-3 mt-4">
+              {ASPECT_RATIOS.map((ratio) => {
+                const isSelected = selectedRatio === ratio.id;
+                return (
                   <button
-                    key={p.id}
-                    onClick={() => setSelectedSizeId(p.id)}
-                    className={sizeButtonClass(selectedSizeId === p.id)}
+                    key={ratio.id}
+                    onClick={() => setSelectedRatio(ratio.id)}
+                    className={cn(
+                      "flex flex-col items-center justify-center p-4 rounded-2xl border transition-all gap-2",
+                      isSelected
+                        ? theme === 'dark'
+                          ? "border-indigo-500 bg-indigo-500/20 text-indigo-300"
+                          : "border-indigo-600 bg-indigo-50 text-indigo-700 shadow-md"
+                        : theme === 'dark'
+                          ? "border-zinc-800 text-zinc-400 hover:bg-zinc-800/50"
+                          : "border-zinc-200 text-zinc-500 hover:bg-zinc-50"
+                    )}
                   >
-                    <span className="font-bold uppercase tracking-tight">{getPresetLabel(p)}</span>
-                    <span className="text-[10px] opacity-60 font-mono">
-                      {p.width}×{p.height}
-                    </span>
+                    <svg className="h-6 w-6 opacity-80" fill="currentColor" viewBox="0 0 24 24">
+                      <path d={ratio.icon} />
+                    </svg>
+                    <div className="text-xs font-bold uppercase tracking-tight text-center">
+                      {ratio.label}
+                    </div>
                   </button>
-                ))}
-              </div>
-            )}
+                );
+              })}
+            </div>
             <div className="mt-10 space-y-3">
               <h3 className={cn("text-sm font-bold uppercase tracking-widest flex items-center gap-2", mutedTone)}>
                 <svg className="h-4 w-4 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M12 4C7.029 4 3 8.029 3 13c0 4.971 4.029 9 9 9s9-4.029 9-9c0-4.971-4.029-9-9-9zM12 6.5v.01M12 11.25a1.25 1.25 0 110 2.5 1.25 1.25 0 010-2.5z" /></svg>

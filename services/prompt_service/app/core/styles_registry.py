@@ -239,6 +239,8 @@ class StyleRegistry:
         cat_market = "Карточки для маркетплейсов"
         cat_design = "Дизайн и графика"
 
+        no_text_prompt = "ОБЯЗАТЕЛЬНО оставить пустое пространство для размещения рекламного текста. НЕ генерировать буквы, слова, логотипы или шрифты на изображении. Товар должен занимать около 2/3 кадра."
+
         templates = [
             _style(
                 id="none",
@@ -1038,11 +1040,44 @@ class StyleRegistry:
                 pattern="grid",
             ),
             _style(
+                id="market_wb",
+                category=cat_market,
+                name="Wildberries (Универсальный)",
+                preview_text="WB Стиль",
+                description=f"Карточка товара для Wildberries: чистый, светлый, однотонный фон без отвлекающих деталей, естественные цвета. Товар целиком в фокусе, не обрезан. {no_text_prompt}",
+                bg="#cb11ab", # Фирменный цвет WB для превью
+                accent="#ffffff",
+                icon="box",
+                pattern="grid",
+            ),
+            _style(
+                id="market_ozon",
+                category=cat_market,
+                name="Ozon (Крупный план)",
+                preview_text="Ozon",
+                description=f"Карточка товара для Ozon: белый или светло-серый фон. Основной товар показан максимально крупно и четко. Никаких баннеров и ценников. {no_text_prompt}",
+                bg="#005bff", # Фирменный цвет Ozon
+                accent="#ffffff",
+                icon="box",
+                pattern="grid",
+            ),
+            _style(
+                id="market_yamarket",
+                category=cat_market,
+                name="Яндекс.Маркет (Минимализм)",
+                preview_text="Я.Маркет",
+                description=f"Карточка для Яндекс.Маркета: идеально белый фон, товар по центру с отступами по краям, без посторонних предметов. {no_text_prompt}",
+                bg="#fc3f1d", # Фирменный цвет Я.Маркета
+                accent="#ffffff",
+                icon="box",
+                pattern="dots",
+            ),
+            _style(
                 id="market_white",
                 category=cat_market,
                 name="Карточка — белый фон",
                 preview_text="Белый фон",
-                description="Карточка товара: белый фон, товар по центру, мягкая тень, чистый и аккуратный вид, без текста.",
+                description=f"Карточка товара: белый фон, товар по центру, мягкая тень, чистый и аккуратный вид, без текста. . {no_text_prompt}",
                 bg="#0b1220",
                 accent="#e5e7eb",
                 icon="box",
@@ -1053,7 +1088,7 @@ class StyleRegistry:
                 category=cat_market,
                 name="Карточка — пастельный фон",
                 preview_text="Пастель",
-                description="Карточка товара: пастельный фон, товар по центру, мягкий свет, немного декоративных форм, без текста.",
+                description=f"Карточка товара: пастельный фон, товар по центру, мягкий свет, немного декоративных форм, без текста. {no_text_prompt}",
                 bg="#0b1220",
                 accent="#fda4af",
                 icon="box",
@@ -1064,7 +1099,7 @@ class StyleRegistry:
                 category=cat_market,
                 name="Карточка — премиум",
                 preview_text="Премиум",
-                description="Карточка товара: тёмный фон, мягкая подсветка, эффектный объём, дорогой вид, аккуратная тень, без текста.",
+                description=f"Карточка товара: тёмный фон, мягкая подсветка, эффектный объём, дорогой вид, аккуратная тень, без текста. {no_text_prompt}",
                 bg="#0a0a0a",
                 accent="#fbbf24",
                 icon="box",
@@ -1075,7 +1110,7 @@ class StyleRegistry:
                 category=cat_market,
                 name="Карточка — набор",
                 preview_text="Набор",
-                description="Карточка товара: набор из нескольких предметов в кадре, аккуратная раскладка, понятная композиция, без текста.",
+                description=f"Карточка товара: набор из нескольких предметов в кадре, аккуратная раскладка, понятная композиция, без текста. {no_text_prompt}",
                 bg="#0b1220",
                 accent="#60a5fa",
                 icon="gift",
@@ -1086,7 +1121,7 @@ class StyleRegistry:
                 category=cat_market,
                 name="Карточка — детали",
                 preview_text="Детали",
-                description="Карточка товара: крупные планы и детали материала, чистый фон, хороший свет, видно качество, без текста.",
+                description=f"Карточка товара: крупные планы и детали материала, чистый фон, хороший свет, видно качество, без текста. {no_text_prompt}",
                 bg="#0b1020",
                 accent="#22c55e",
                 icon="camera",
@@ -1097,7 +1132,7 @@ class StyleRegistry:
                 category=cat_market,
                 name="Карточка — в жизни",
                 preview_text="В жизни",
-                description="Карточка товара: показать товар в использовании, уютная сцена, естественный свет, аккуратный фон, без текста.",
+                description=f"Карточка товара: показать товар в использовании, уютная сцена, естественный свет, аккуратный фон, без текста. {no_text_prompt}",
                 bg="#1b1a16",
                 accent="#fbbf24",
                 icon="camera",
@@ -1108,7 +1143,7 @@ class StyleRegistry:
                 category=cat_market,
                 name="Карточка — с иконками",
                 preview_text="Иконки",
-                description="Карточка товара: место под подписи, простые иконки‑пиктограммы, чистый фон, без читаемого текста.",
+                description=f"Карточка товара: место под подписи, простые иконки‑пиктограммы, чистый фон, без читаемого текста. {no_text_prompt}",
                 bg="#0b1220",
                 accent="#38bdf8",
                 icon="tag",
@@ -1119,7 +1154,7 @@ class StyleRegistry:
                 category=cat_market,
                 name="Карточка — акция",
                 preview_text="Акция",
-                description="Карточка товара: яркие акценты, метки‑наклейки, ощущение скидки, чистая композиция, без читаемого текста.",
+                description=f"Карточка товара: яркие акценты, метки‑наклейки, ощущение скидки, чистая композиция, без читаемого текста. {no_text_prompt}",
                 bg="#0b1220",
                 accent="#f97316",
                 icon="tag",
@@ -1130,7 +1165,7 @@ class StyleRegistry:
                 category=cat_market,
                 name="Карточка — сравнение",
                 preview_text="Сравнение",
-                description="Карточка товара: два варианта рядом, аккуратное сравнение, место под подписи, без читаемого текста.",
+                description=f"Карточка товара: два варианта рядом, аккуратное сравнение, место под подписи, без читаемого текста. {no_text_prompt}",
                 bg="#0b1220",
                 accent="#a78bfa",
                 icon="postcard",
@@ -1141,7 +1176,7 @@ class StyleRegistry:
                 category=cat_market,
                 name="Карточка — размеры",
                 preview_text="Размеры",
-                description="Карточка товара: показать размер и форму, место под стрелки и подписи, чистый фон, без читаемого текста.",
+                description=f"Карточка товара: показать размер и форму, место под стрелки и подписи, чистый фон, без читаемого текста. {no_text_prompt}",
                 bg="#0b1220",
                 accent="#e5e7eb",
                 icon="postcard",
@@ -1152,7 +1187,7 @@ class StyleRegistry:
                 category=cat_market,
                 name="Карточка — вписать в окружение",
                 preview_text="Окружение",
-                description="Карточка товара: показать объект аккуратно вписанным в подбранную сцену, мягкий свет, размытый фон и внимание к контексту вокруг предмета.",
+                description=f"Карточка товара: показать объект аккуратно вписанным в подбранную сцену, мягкий свет, размытый фон и внимание к контексту вокруг предмета. {no_text_prompt}",
                 bg="#0b1220",
                 accent="#38bdf8",
                 icon="spark",
@@ -1195,7 +1230,32 @@ class StyleRegistry:
         return cls(templates=templates)
 
     def list_public(self) -> list[StyleCategoryPublic]:
-        return [t.public() for t in self._templates]
+        # Реализуем сортировку для фронтенда
+        templates = [t.public() for t in self._templates]
+        
+        # 1. Группируем по категориями
+        from collections import defaultdict
+        groups = defaultdict(list)
+        for t in templates:
+            groups[t.category].append(t)
+            
+        # 2. Сортируем стили внутри каждой группы по алфавиту
+        for cat in groups:
+            groups[cat].sort(key=lambda x: x.display_name)
+            
+        # 3. Собираем итоговый список. Маркетплейсы первыми, остальные группы по алфавиту
+        result =[]
+        market_cat = "Карточки для маркетплейсов"
+        
+        if market_cat in groups:
+            result.extend(groups[market_cat])
+            del groups[market_cat]
+            
+        sorted_categories = sorted(groups.keys())
+        for cat in sorted_categories:
+            result.extend(groups[cat])
+
+        return result
 
     def get(self, style_id: str) -> StyleTemplate:
         template = self._by_id.get(style_id)
