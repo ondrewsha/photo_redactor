@@ -34,7 +34,7 @@ def get_llm_client(
     if settings.llm_provider == "mock":
         return MockLLMClient()
     if settings.llm_provider == "openai":
-        return OpenAILLMClient(http=http, settings=settings)
+        return OpenAILLMClient(settings=settings)
     raise RuntimeError(f"Unsupported LLM provider: {settings.llm_provider}")
 
 

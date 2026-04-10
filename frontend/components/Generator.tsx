@@ -65,7 +65,6 @@ export const Generator: React.FC = () => {
   const { t } = useTranslation();
   const { user, refresh } = useAuth();
   const { theme } = useTheme();
-  const HISTORY_INLINE_LIMIT = 3;
   const HISTORY_PAGE_LIMIT = 12;
   
   const [prompt, setPrompt] = useState('');
@@ -783,17 +782,15 @@ export const Generator: React.FC = () => {
                 <h4 className={cn("text-sm font-bold uppercase tracking-[0.4em]", theme === 'dark' ? 'text-zinc-300' : 'text-zinc-500')}>
                   {t.history.title}
                 </h4>
-                {history.length > HISTORY_INLINE_LIMIT && (
-                  <Button variant="ghost" size="sm" className="uppercase tracking-[0.3em]" onClick={() => setHistoryModalOpen(true)}>
-                    {t.history.showMore}
-                  </Button>
-                )}
+                <Button variant="ghost" size="sm" className="uppercase tracking-[0.3em]" onClick={() => setHistoryModalOpen(true)}>
+                  {t.history.showMore}
+                </Button>
               </div>
               {history.length === 0 ? (
                 <p className={cn("text-sm", historyLabelClass)}>{t.history.empty}</p>
               ) : (
                 <div className="mt-3 grid grid-cols-1 gap-4 md:grid-cols-3 justify-center">
-                  {history.slice(0, HISTORY_INLINE_LIMIT).map((entry) => (
+                  {history.slice(0, 3).map((entry) => (
                     <HistoryCard
                       key={entry.job_id}
                       item={entry}

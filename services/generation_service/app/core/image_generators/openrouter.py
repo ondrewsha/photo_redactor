@@ -4,6 +4,7 @@ import base64
 import logging
 import re
 
+import httpx
 from openai import AsyncOpenAI
 
 from app.core.errors import GeneratorConfigurationError
@@ -116,7 +117,6 @@ class OpenRouterImageGenerator:
                         image_bytes = base64.b64decode(b64_data)
                         return GeneratedImage(content=image_bytes, mime_type=mime_type)
                     elif img_url.startswith("http"):
-                        import httpx
                         async with httpx.AsyncClient(timeout=60.0) as http:
                             r = await http.get(img_url)
                             r.raise_for_status()
@@ -138,7 +138,6 @@ class OpenRouterImageGenerator:
         # 3. Сценарий: Обычная ссылка на изображение в тексте
         url_match = re.search(r'(https?://[^\s)\]"\']+)', content)
         if url_match:
-            import httpx
             image_url = url_match.group(1)
             if any(ext in image_url.lower() for ext in ['.png', '.jpg', '.jpeg', '.webp', 'googleusercontent']):
                 async with httpx.AsyncClient(timeout=60.0) as http:
