@@ -41,6 +41,7 @@ class GenerateImageRequest(BaseSchema):
     user_input: str = Field(..., min_length=1)
     width: int = Field(1024, ge=64, le=4096)
     height: int = Field(1024, ge=64, le=4096)
+    project_id: str | None = Field(default=None, description="ID проекта для сохранения")
 
     @model_validator(mode="before")
     @classmethod

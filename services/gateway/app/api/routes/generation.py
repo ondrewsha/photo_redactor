@@ -163,6 +163,7 @@ async def generate(
             style_ids=style_ids,
             width=payload.width,
             height=payload.height,
+            project_id=payload.project_id,
         )
         await _link_job_to_reservation(db, reservation_id=reservation_id, job_id=uuid.UUID(str(job_data.job_id)))
         return GenerateImageResponse(job_id=str(job_data.job_id), status=job_data.status)
@@ -179,6 +180,7 @@ async def generate_with_image(
     style_ids: list[str] | None = Form(None),
     width: int = Form(1024),
     height: int = Form(1024),
+    project_id: str | None = Form(None),
     user: User = Depends(require_verified_user),
     db: AsyncSession = Depends(get_db_session),
     settings: Settings = Depends(get_settings),
@@ -235,6 +237,7 @@ async def generate_with_image(
             style_ids=cleaned_style_ids,
             width=width,
             height=height,
+            project_id=project_id,
         )
         await _link_job_to_reservation(db, reservation_id=reservation_id, job_id=uuid.UUID(str(job_data.job_id)))
         return GenerateImageResponse(job_id=str(job_data.job_id), status=job_data.status)

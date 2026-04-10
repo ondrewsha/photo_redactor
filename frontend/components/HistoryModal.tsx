@@ -24,32 +24,20 @@ interface Props {
   selectedProjectId: string;
   onChangeProject: (id: string) => void;
   onRefreshHistory: () => void;
+  projects: ProjectItem[];
+  onRefreshProjects: () => void;
 }
 
 export const HistoryModal: React.FC<Props> = ({
   isOpen, onClose, items, getStyleLabel, onDownload, onDelete, onOpen,
   page, total, limit, onPageChange, loading = false,
-  selectedProjectId, onChangeProject, onRefreshHistory
+  selectedProjectId, onChangeProject, onRefreshHistory, onRefreshProjects, projects
 }) => {
   const { t } = useTranslation();
   const { theme } = useTheme();
-  const [projects, setProjects] = useState<ProjectItem[]>([]);
   const [newProjectName, setNewProjectName] = useState('');
   const [isCreating, setIsCreating] = useState(false);
   const [moveModalItem, setMoveModalItem] = useState<HistoryItem | null>(null);
-
-  useEffect(() => {
-    if (isOpen) loadProjects();
-  }, [isOpen]);
-
-  const loadProjects = async () => {
-    try {
-      const res = await api.projects.list();
-      setProjects(res.items);
-    } catch (e) {
-      console.error(e);
-    }
-  };
 
   const handleCreateProject = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -58,7 +46,7 @@ export const HistoryModal: React.FC<Props> = ({
       setIsCreating(true);
       await api.projects.create(newProjectName);
       setNewProjectName('');
-      await loadProjects();
+      onRefreshProjects();
     } finally {
       setIsCreating(false);
     }
@@ -69,7 +57,7 @@ export const HistoryModal: React.FC<Props> = ({
     try {
       await api.projects.delete(id);
       if (selectedProjectId === id) onChangeProject('all');
-      await loadProjects();
+      onRefreshProjects();
       onRefreshHistory();
     } catch (e) {
       console.error(e);
@@ -202,11 +190,11 @@ export const HistoryModal: React.FC<Props> = ({
             <h3 className="text-lg font-bold mb-4">В какой проект переместить?</h3>
             <div className="space-y-2 max-h-64 overflow-y-auto">
               <button onClick={() => handleMove(null)} className="w-full text-left px-4 py-3 rounded-xl border hover:bg-indigo-50 dark:hover:bg-zinc-800 border-zinc-200 dark:border-zinc-700">
-                📁 Без проекта
+                Без проекта
               </button>
               {projects.map(p => (
                 <button key={p.id} onClick={() => handleMove(p.id)} className="w-full text-left px-4 py-3 rounded-xl border hover:bg-indigo-50 dark:hover:bg-zinc-800 border-zinc-200 dark:border-zinc-700">
-                  📁 {p.name}
+                  {p.name}
                 </button>
               ))}
             </div>

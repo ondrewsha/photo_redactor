@@ -32,6 +32,7 @@ export type GenerateImageRequest = {
   user_input: string;
   width: number;
   height: number;
+  project_id?: string | null;
 };
 
 export type GenerateImageWithPhotosRequest = GenerateImageRequest & {

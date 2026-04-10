@@ -19,6 +19,7 @@ async def create_history_entry(
     style_ids: list[str],
     width: int,
     height: int,
+    project_id: str | None = None,
 ) -> None:
     doc = {
         "_id": job_id,
@@ -33,6 +34,7 @@ async def create_history_entry(
         "completed_at": None,
         "image_url": None,
         "status": "pending",
+        "project_id": project_id,
     }
     try:
         await collection.insert_one(doc)

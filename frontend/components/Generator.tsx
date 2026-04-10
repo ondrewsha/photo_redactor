@@ -9,7 +9,8 @@ import {
   GenerationCapabilities, 
   JobStatus,
   ImageSizePreset,
-  HistoryItem 
+  HistoryItem, 
+  ProjectItem
 } from '../types';
 import { cn } from '../lib/cn';
 import { StylesLibraryModal } from './StylesLibraryModal';
@@ -84,6 +85,7 @@ export const Generator: React.FC = () => {
   const [historyModalOpen, setHistoryModalOpen] = useState(false);
   const [historyPage, setHistoryPage] = useState(1);
   const [historyProject, setHistoryProject] = useState('all');
+  const [projects, setProjects] = useState<ProjectItem[]>([]);
   const [historyTotal, setHistoryTotal] = useState(0);
   const [historyLoading, setHistoryLoading] = useState(false);
   const [libraryOpen, setLibraryOpen] = useState(false);
@@ -209,6 +211,21 @@ export const Generator: React.FC = () => {
       setSelectedQuality('');
     }
   }, [caps, geminiAspectRatioOptions, geminiQualityOptions]);
+
+  const loadProjects = useCallback(async () => {
+    if (!user) return;
+    try {
+      const res = await api.projects.list();
+      setProjects(res.items);
+    } catch (e) {
+      console.error(e);
+    }
+  }, [user]);
+
+  // Чтобы загрузить проекты при входе:
+  useEffect(() => {
+    loadProjects();
+  }, [loadProjects]);
 
   const loadHistory = useCallback(async (page = 1, projectId = historyProject) => {
     if (!user) return;
@@ -377,11 +394,13 @@ export const Generator: React.FC = () => {
       const selectedSetting = ASPECT_RATIOS.find(r => r.id === selectedRatio) || ASPECT_RATIOS[1];
       const preset = selectedPreset;
       const styleIds = selectedStyles.length ? selectedStyles : ['none'];
+      const actualProjectId = (historyProject === 'all' || historyProject === 'none') ? null : historyProject;
       const payload = {
         style_ids: styleIds,
         user_input: prompt,
         width: selectedSetting.width,
-        height: selectedSetting.height
+        height: selectedSetting.height,
+        project_id: actualProjectId,
       };
       const { job_id } =
         uploadedPhotos.length > 0 && canUploadPhotos
@@ -749,7 +768,64 @@ export const Generator: React.FC = () => {
           </div>
 
           <div className="mt-8 relative flex gap-4 items-end">
-            <div className="flex-1 relative">
+            <div className="flex-1 flex flex-col gap-3 relative">
+              
+              {/* ВЫБОР ПРОЕКТА — Улучшенный дизайн */}
+                {user && (
+                  <div className="flex items-center gap-3 mb-2 px-2 animate-in fade-in slide-in-from-left duration-500">
+                    <span className={cn(
+                      "text-[10px] font-black uppercase tracking-[0.2em]",
+                      theme === 'dark' ? 'text-zinc-500' : 'text-zinc-400'
+                    )}>
+                      Проект:
+                    </span>
+                    
+                    <div className="relative group">
+                      <select
+                        value={historyProject}
+                        onChange={(e) => {
+                          setHistoryProject(e.target.value);
+                          loadHistory(1, e.target.value);
+                        }}
+                        className={cn(
+                          "appearance-none pl-4 pr-10 py-2 rounded-full text-xs font-bold uppercase tracking-wider cursor-pointer transition-all border outline-none",
+                          theme === 'dark'
+                            ? "bg-zinc-800/50 border-zinc-700 text-indigo-400 hover:bg-zinc-800 hover:border-indigo-500/50"
+                            : "bg-white border-zinc-200 text-indigo-600 hover:border-indigo-400 shadow-sm"
+                        )}
+                      >
+                        <option value="all">Все генерации</option>
+                        <option value="none">Без проекта</option>
+                        {projects.map(p => (
+                          <option key={p.id} value={p.id}>{p.name}</option>
+                        ))}
+                      </select>
+                      
+                      {/* Кастомная стрелочка для селекта */}
+                      <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none opacity-50">
+                        <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                        </svg>
+                      </div>
+                    </div>
+
+                    {/* Быстрая кнопка создания проекта прямо здесь (опционально) */}
+                    <button 
+                      onClick={() => setHistoryModalOpen(true)}
+                      className={cn(
+                        "p-2 rounded-full border transition-colors",
+                        theme === 'dark' ? "border-zinc-800 text-zinc-500 hover:text-white" : "border-zinc-200 text-zinc-400 hover:text-indigo-600"
+                      )}
+                      title="Управление проектами"
+                    >
+                      <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+                      </svg>
+                    </button>
+                  </div>
+                )}
+
+              {/* ПОЛЕ ВВОДА ПРОМПТА */}
               <textarea
                 className={cn(
                   "w-full min-h-[140px] rounded-[2.5rem] p-8 pr-12 text-lg font-medium outline-none focus:ring-4 focus:ring-indigo-500/10 transition-all resize-none",
@@ -762,19 +838,19 @@ export const Generator: React.FC = () => {
                 onChange={(e) => setPrompt(e.target.value)}
                 disabled={phase === 'pending' || phase === 'processing'}
               />
+            </div>
+            <div className="flex flex-col gap-2 shrink-0">
+                <Button 
+                  className={generateButtonClass}
+                  onClick={handleGenerate}
+                  isLoading={phase === 'pending' || phase === 'processing'}
+                  disabled={!prompt.trim() || (user?.balance ? user?.balance <= 0 : false)}
+                  size="icon"
+                >
+                  <svg className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M13 5l7 7-7 7M5 5l7 7-7 7" /></svg>
+                </Button>
+            </div>
           </div>
-          <div className="flex flex-col gap-2 shrink-0">
-              <Button 
-                className={generateButtonClass}
-                onClick={handleGenerate}
-                isLoading={phase === 'pending' || phase === 'processing'}
-                disabled={!prompt.trim() || (user?.balance ? user?.balance <= 0 : false)}
-                size="icon"
-              >
-                <svg className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M13 5l7 7-7 7M5 5l7 7-7 7" /></svg>
-              </Button>
-          </div>
-        </div>
         {user && (
           <div className="mt-6">
             <div className={historyPanelClass}>
@@ -834,6 +910,8 @@ export const Generator: React.FC = () => {
         onDownload={handleHistoryDownload}
         onDelete={handleHistoryDelete}
         onOpen={handleHistoryOpen}
+        projects={projects}
+        onRefreshProjects={loadProjects}
         selectedProjectId={historyProject}
         onChangeProject={(id) => {
           setHistoryProject(id);

@@ -135,6 +135,7 @@ export const api = {
       form.append('user_input', p.user_input);
       form.append('width', String(p.width));
       form.append('height', String(p.height));
+      if (p.project_id) form.append('project_id', p.project_id);
       (p.style_ids.length ? p.style_ids : ['none']).forEach((id) => {
         form.append('style_ids', id);
       });
