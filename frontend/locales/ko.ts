@@ -79,7 +79,13 @@ export const ko: TranslationSchema = {
     download: "다운로드",
     delete: "삭제",
     open: "확대",
-    deleteConfirm: "이 기록을 삭제하시겠습니까?"
+    deleteConfirm: "이 기록을 삭제하시겠습니까?",
+    projectsTitle: "프로젝트",
+    allGenerations: "모든 생성물",
+    unsorted: "프로젝트 없음",
+    newProject: "새 프로젝트...",
+    moveTo: "이동",
+    create: "생성"
   },
   profile: {
     balance: "잔액",

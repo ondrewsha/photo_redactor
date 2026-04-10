@@ -79,7 +79,13 @@ export const en: TranslationSchema = {
     download: "Download",
     delete: "Delete",
     open: "Open",
-    deleteConfirm: "Remove this entry from history?"
+    deleteConfirm: "Remove this entry from history?",
+    projectsTitle: "Projects",
+    allGenerations: "All generations",
+    unsorted: "Unsorted",
+    newProject: "New project...",
+    moveTo: "Move to",
+    create: "Create"
   },
   profile: {
     balance: "Balance",

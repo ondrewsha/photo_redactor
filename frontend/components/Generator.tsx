@@ -41,6 +41,7 @@ export const Generator: React.FC = () => {
   const [history, setHistory] = useState<HistoryItem[]>([]);
   const [historyModalOpen, setHistoryModalOpen] = useState(false);
   const [historyPage, setHistoryPage] = useState(1);
+  const [historyProject, setHistoryProject] = useState('all');
   const [historyTotal, setHistoryTotal] = useState(0);
   const [historyLoading, setHistoryLoading] = useState(false);
   const [libraryOpen, setLibraryOpen] = useState(false);
@@ -167,25 +168,20 @@ export const Generator: React.FC = () => {
     }
   }, [caps, geminiAspectRatioOptions, geminiQualityOptions]);
 
-  const loadHistory = useCallback(async (page = 1) => {
-    if (!user) {
-      setHistory([]);
-      setHistoryTotal(0);
-      setHistoryPage(1);
-      return;
-    }
+  const loadHistory = useCallback(async (page = 1, projectId = historyProject) => {
+    if (!user) return;
     setHistoryLoading(true);
     try {
-      const data = await api.history.list(HISTORY_PAGE_LIMIT, page);
+      const data = await api.history.list(HISTORY_PAGE_LIMIT, page, projectId);
       setHistory(data.items);
       setHistoryTotal(data.total);
       setHistoryPage(data.page);
     } catch (err) {
-      console.error('Не удалось загрузить историю генераций', err);
+      console.error(err);
     } finally {
       setHistoryLoading(false);
     }
-  }, [user]);
+  }, [user, historyProject]);
 
   const handleHistoryPageChange = useCallback((newPage: number) => {
     if (!newPage) return;
@@ -362,7 +358,7 @@ export const Generator: React.FC = () => {
           if (status.status === 'completed') {
             if (status.result) {
               setRawResultPath(status.result.image_url);
-              setResultUrl(resolveAssetUrl(status.result.image_url));
+              setResultUrl(resolveAssetUrl(status.result.image_url) || null);
               void loadHistory();
             } else {
               setError('No image result');
@@ -726,7 +722,7 @@ export const Generator: React.FC = () => {
                 className={generateButtonClass}
                 onClick={handleGenerate}
                 isLoading={phase === 'pending' || phase === 'processing'}
-                disabled={!prompt.trim() || user.balance <= 0}
+                disabled={!prompt.trim() || (user?.balance ? user?.balance <= 0 : false)}
                 size="icon"
               >
                 <svg className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M13 5l7 7-7 7M5 5l7 7-7 7" /></svg>
@@ -766,7 +762,7 @@ export const Generator: React.FC = () => {
             </div>
           </div>
         )}
-        {user.balance <= 0 && (
+        {(user?.balance ? user?.balance <= 0 : false) && (
            <div className={outOfBalanceClass}>
               {t.generator.outOfBalance}
            </div>
@@ -789,11 +785,17 @@ export const Generator: React.FC = () => {
         page={historyPage}
         total={historyTotal}
         limit={HISTORY_PAGE_LIMIT}
-        onPageChange={handleHistoryPageChange}
+        onPageChange={(p) => loadHistory(p, historyProject)}
         loading={historyLoading}
         onDownload={handleHistoryDownload}
         onDelete={handleHistoryDelete}
         onOpen={handleHistoryOpen}
+        selectedProjectId={historyProject}
+        onChangeProject={(id) => {
+          setHistoryProject(id);
+          loadHistory(1, id);
+        }}
+        onRefreshHistory={() => loadHistory(historyPage, historyProject)}
       />
       {fullscreenItem && (
         <div className="fixed inset-0 z-50 flex items-center justify-center px-4 py-6">
@@ -811,7 +813,7 @@ export const Generator: React.FC = () => {
           >
           <div className="relative h-96 overflow-hidden pt-4">
               <img
-                src={resolveAssetUrl(fullscreenItem.image_url)}
+                src={resolveAssetUrl(fullscreenItem.image_url) || undefined}
                 alt={t.history.promptLabel}
                 className="h-full w-full object-contain"
               />

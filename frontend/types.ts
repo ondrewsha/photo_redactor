@@ -64,6 +64,7 @@ export type HistoryItem = {
   width: number;
   height: number;
   created_at: string;
+  project_id?: string | null;
 };
 
 export type HistoryListResponse = {
@@ -229,6 +230,12 @@ export interface TranslationSchema {
     pageLabel: string;
     prev: string;
     next: string;
+    projectsTitle?: string;
+    allGenerations?: string;
+    unsorted?: string;
+    newProject?: string;
+    moveTo?: string;
+    create?: string;
   };
   promo: {
     tagline: string;
@@ -374,3 +381,13 @@ export interface TranslationSchema {
     };
   };
 }
+
+export type ProjectItem = {
+  id: string;
+  name: string;
+  created_at: string;
+};
+
+export type ProjectListResponse = {
+  items: ProjectItem[];
+};

@@ -83,7 +83,13 @@ export const kk: TranslationSchema = {
     download: "Жүктеу",
     delete: "Өшіру",
     open: "Толық ашу",
-    deleteConfirm: "Бұл жазбаны тарихтан алып тастау керек пе?"
+    deleteConfirm: "Бұл жазбаны тарихтан алып тастау керек пе?",
+    projectsTitle: "Жобалар",
+    allGenerations: "Барлық генерациялар",
+    unsorted: "Жобасыз",
+    newProject: "Жаңа жоба...",
+    moveTo: "Қозғалыс",
+    create: "Жасау"
   },
   profile: {
     balance: "Баланс",

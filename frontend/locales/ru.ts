@@ -79,7 +79,13 @@ export const ru: TranslationSchema = {
     download: "Скачать",
     delete: "Удалить",
     open: "Развернуть",
-    deleteConfirm: "Удалить запись из истории?"
+    deleteConfirm: "Удалить запись из истории?",
+    projectsTitle: "Проекты",
+    allGenerations: "Все картинки",
+    unsorted: "Без проекта",
+    newProject: "Новый проект...",
+    moveTo: "Переместить",
+    create: "Создать"
   },
   profile: {
     balance: "Баланс",

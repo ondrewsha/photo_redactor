@@ -79,7 +79,13 @@ export const zh: TranslationSchema = {
     download: "下载",
     delete: "删除",
     open: "展开",
-    deleteConfirm: "确认从历史中删除该记录？"
+    deleteConfirm: "确认从历史中删除该记录？",
+    projectsTitle: "项目",
+    allGenerations: "所有生成",
+    unsorted: "未分类",
+    newProject: "新建项目...",
+    moveTo: "移动到",
+    create: "创建"
   },
   profile: {
     balance: "余额",

@@ -109,6 +109,7 @@ class HistoryItem(BaseSchema):
     width: int
     height: int
     created_at: datetime
+    project_id: str | None = None
 
 
 class HistoryListResponse(BaseSchema):
@@ -193,3 +194,17 @@ class AdminMetricsResponse(BaseSchema):
     webhooks: dict[str, int] = Field(default_factory=dict)
     api_errors: int
     failure_rate: float
+
+class ProjectItem(BaseSchema):
+    id: str
+    name: str
+    created_at: datetime
+
+class ProjectListResponse(BaseSchema):
+    items: list[ProjectItem] = Field(default_factory=list)
+
+class CreateProjectRequest(BaseSchema):
+    name: str = Field(..., min_length=1, max_length=100)
+
+class MoveHistoryRequest(BaseSchema):
+    project_id: str | None = Field(default=None, description="ID проекта или null для удаления из проекта")

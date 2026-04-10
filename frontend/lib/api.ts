@@ -9,6 +9,8 @@ import {
   GenerationCapabilities,
   HistoryListResponse,
   MessageResponse,
+  ProjectItem,
+  ProjectListResponse,
 } from '../types';
 
 const BASE_URL = import.meta.env.VITE_GATEWAY_URL || '/api';
@@ -143,12 +145,20 @@ export const api = {
     status: (id: string) => request<JobStatusResponse>(`/jobs/${id}`),
   },
   history: {
-    list: (limit = 12, page = 1) => request<HistoryListResponse>(`/history?limit=${limit}&page=${page}`),
+    list: (limit = 12, page = 1, projectId = "all") => 
+      request<HistoryListResponse>(`/history?limit=${limit}&page=${page}&project_id=${projectId}`),
     delete: (jobId: string) => request<MessageResponse>(`/history/${jobId}`, { method: 'DELETE' }),
+    moveToProject: (jobId: string, projectId: string | null) => 
+      request<MessageResponse>(`/history/${jobId}/project`, { method: 'PUT', body: JSON.stringify({ project_id: projectId }) }),
   },
   billing: {
     quote: (count: number) => request<any>(`/billing/quote?count=${count}`),
     pay: (p: any) => request<any>('/billing/pay', { method: 'POST', body: JSON.stringify(p) }),
     history: (limit = 20, page = 1) => request<BillingHistoryResponse>(`/billing/history?limit=${limit}&page=${page}`),
+  },
+  projects: {
+    list: () => request<ProjectListResponse>('/projects'),
+    create: (name: string) => request<ProjectItem>('/projects', { method: 'POST', body: JSON.stringify({ name }) }),
+    delete: (id: string) => request<MessageResponse>(`/projects/${id}`, { method: 'DELETE' }),
   },
 };

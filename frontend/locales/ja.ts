@@ -79,7 +79,13 @@ export const ja: TranslationSchema = {
     download: "ダウンロード",
     delete: "削除",
     open: "拡大",
-    deleteConfirm: "この履歴を削除しますか？"
+    deleteConfirm: "この履歴を削除しますか？",
+    projectsTitle: "プロジェクト",
+    allGenerations: "すべての生成",
+    unsorted: "未分類",
+    newProject: "新しいプロジェクト...",
+    moveTo: "移動先",
+    create: "作成"
   },
   profile: {
     balance: "残高",
