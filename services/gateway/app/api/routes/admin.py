@@ -399,7 +399,15 @@ async def create_gallery_item(
         "created_at": datetime.utcnow()
     }
     res = await gallery_collection.insert_one(doc)
-    return GalleryItem(id=str(res.inserted_id), **doc)
+    
+    return GalleryItem(
+        id=str(res.inserted_id),
+        prompt=payload.prompt,
+        style_ids=payload.style_ids,
+        result_images=payload.result_images,
+        input_image=payload.input_image,
+        created_at=doc["created_at"]
+    )
 
 @router.delete("/gallery/{item_id}", response_model=MessageResponse)
 async def delete_gallery_item(

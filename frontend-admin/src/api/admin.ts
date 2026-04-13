@@ -150,4 +150,5 @@ export const adminApi = {
     formData.append('file', file);
     return request<{file_name: string}>('/admin/gallery/upload', { method: 'POST', body: formData });
   },
+  fetchCategories: () => request<any[]>('/categories'),
 };

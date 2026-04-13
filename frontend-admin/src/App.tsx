@@ -18,6 +18,7 @@ import {
   Divider,
   Tabs,
   Upload,
+  Select,
 } from 'antd';
 import { LogoutOutlined, UserOutlined, DollarOutlined, UploadOutlined } from '@ant-design/icons';
 import {
@@ -322,10 +323,15 @@ const AdjustModal: React.FC<{
 
 const GallerySection: React.FC = () => {
   const [items, setItems] = useState<any[]>([]);
-  const[open, setOpen] = useState(false);
+  const[stylesList, setStylesList] = useState<any[]>([]);
+  const [open, setOpen] = useState(false);
   const [form] = Form.useForm();
+  const [uploading, setUploading] = useState(false);
 
-  const load = () => adminApi.fetchGallery().then(r => setItems(r.items)).catch(console.error);
+  const load = () => {
+    adminApi.fetchGallery().then(r => setItems(r.items)).catch(console.error);
+    adminApi.fetchCategories().then(res => setStylesList(res)).catch(console.error);
+  };
   useEffect(() => { load(); },[]);
 
   const handleUpload = async (options: any) => {
@@ -337,28 +343,46 @@ const GallerySection: React.FC = () => {
     }
   };
 
-  const normFile = (e: any) => (Array.isArray(e) ? e : e?.fileList);
+  const normFile = (e: any) => {
+    if (Array.isArray(e)) return e;
+    return e?.fileList;
+  };
 
   const handleAdd = async (vals: any) => {
-    const manualUrls = vals.result_images ? vals.result_images.split('\n').filter(Boolean) :[];
-    const uploadedUrls = (vals.upload_images ||[]).map((f: any) => `/media/${f.response.file_name}`);
-    const finalImages = [...manualUrls, ...uploadedUrls];
-
-    const payload = {
-      prompt: vals.prompt,
-      style_ids: vals.style_ids ? vals.style_ids.split(',').map((s: string) => s.trim()) :[],
-      result_images: finalImages,
-      input_image: vals.input_image || null
-    };
-
+    setUploading(true);
     try {
+      // Достаем URL исходного фото, если оно загружено
+      const inputUrl = vals.input_image_upload?.[0]?.response?.file_name
+        ? `/media/${vals.input_image_upload[0].response.file_name}`
+        : null;
+
+      // Достаем URL результирующих фото
+      const resultUrls = (vals.result_images_upload ||[])
+        .map((f: any) => f.response?.file_name ? `/media/${f.response.file_name}` : null)
+        .filter(Boolean);
+
+      if (resultUrls.length === 0) {
+        message.error('Загрузите хотя бы одно фото-результат!');
+        setUploading(false);
+        return;
+      }
+
+      const payload = {
+        prompt: vals.prompt,
+        style_ids: vals.style_ids ||[],
+        result_images: resultUrls,
+        input_image: inputUrl
+      };
+
       await adminApi.createGalleryItem(payload);
       setOpen(false);
       form.resetFields();
       load();
-      message.success('Добавлено');
-    } catch {
+      message.success('Пример добавлен');
+    } catch (err) {
       message.error('Ошибка добавления');
+    } finally {
+      setUploading(false);
     }
   };
 
@@ -379,22 +403,56 @@ const GallerySection: React.FC = () => {
           { title: 'Действия', render: (_, r) => <Button danger onClick={() => handleDelete(r.id)}>Удалить</Button> }
         ]} 
       />
-      <Modal title="Новый пример" open={open} onCancel={() => setOpen(false)} onOk={() => form.submit()} width={600}>
+      <Modal 
+        title="Новый пример для галереи" 
+        open={open} 
+        onCancel={() => setOpen(false)} 
+        onOk={() => form.submit()} 
+        width={700}
+        okText="Сохранить"
+        cancelText="Отмена"
+        confirmLoading={uploading}
+      >
         <Form form={form} layout="vertical" onFinish={handleAdd}>
-          <Form.Item name="prompt" label="Промпт" rules={[{ required: true }]}><Input.TextArea rows={3} /></Form.Item>
-          
-          <Form.Item name="upload_images" label="Загрузить картинки с компьютера" valuePropName="fileList" getValueFromEvent={normFile}>
-            <Upload customRequest={handleUpload} listType="picture" multiple>
-              <Button icon={<UploadOutlined />}>Выбрать файлы</Button>
-            </Upload>
+          <Form.Item name="prompt" label="Промпт (описание, которое увидит пользователь)" rules={[{ required: true, message: 'Введите промпт' }]}>
+            <Input.TextArea rows={3} placeholder="Пример: Студийная съемка, макро..." />
           </Form.Item>
 
-          <Form.Item name="result_images" label="ИЛИ Вставить готовые ссылки (каждая с новой строки)">
-            <Input.TextArea rows={2} placeholder="/media/example.jpg" />
-          </Form.Item>
+          <div className="p-4 border rounded-xl bg-slate-50 mb-6">
+            <Form.Item 
+              name="input_image_upload" 
+              label={<b>1. Исходное фото (Опционально. То, что загрузил пользователь)</b>} 
+              valuePropName="fileList" 
+              getValueFromEvent={normFile}
+            >
+              <Upload customRequest={handleUpload} listType="picture" maxCount={1}>
+                <Button icon={<UploadOutlined />}>Загрузить исходник</Button>
+              </Upload>
+            </Form.Item>
 
-          <Form.Item name="style_ids" label="Стиль ID (через запятую, например: market_wb)"><Input /></Form.Item>
-          <Form.Item name="input_image" label="Ссылка на исходное фото (опционально)"><Input /></Form.Item>
+            <Form.Item 
+              name="result_images_upload" 
+              label={<b>2. Результат генерации (Обязательно. То, что выдала нейронка)</b>} 
+              valuePropName="fileList" 
+              getValueFromEvent={normFile} 
+              rules={[{ required: true, message: 'Загрузите хотя бы одно фото' }]}
+              className="mb-0"
+            >
+              <Upload customRequest={handleUpload} listType="picture" multiple>
+                <Button icon={<UploadOutlined />}>Загрузить результаты</Button>
+              </Upload>
+            </Form.Item>
+          </div>
+
+          <Form.Item name="style_ids" label="Примененный стиль (Опционально)">
+            <Select
+              mode="multiple"
+              showSearch
+              placeholder="Выберите стиль (можно вписать поиск)"
+              optionFilterProp="label"
+              options={stylesList.map(s => ({ value: s.id, label: s.display_name }))}
+            />
+          </Form.Item>
         </Form>
       </Modal>
     </Card>
