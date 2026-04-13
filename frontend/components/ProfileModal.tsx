@@ -242,9 +242,26 @@ export const ProfileModal: React.FC<Props> = ({ isOpen, onClose }) => {
               </div>
             </div>
 
-            <Button className="w-full" size="lg" isLoading={loading} onClick={handlePay}>
-              {t.profile.pay}
-            </Button>
+            <div className="group relative w-full">
+              <Button
+                className="w-full"
+                size="lg"
+                isLoading={loading}
+                onClick={handlePay}
+                disabled={true}
+              >
+                {t.profile.pay}
+              </Button>
+              <div className={cn(
+                "absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-4 py-3 rounded-lg text-sm font-semibold whitespace-normal pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity shadow-lg border",
+                theme === 'dark'
+                  ? 'bg-amber-900 text-amber-100 border-amber-700'
+                  : 'bg-amber-100 text-amber-900 border-amber-300'
+                )}>
+                <div>Сейчас покупка доступна только через администратора.</div>
+                <div>Если вы хотите пополнить баланс, пожалуйста, свяжитесь с поддержкой.</div>
+              </div>
+            </div>
           </div>
 
           <div className="pt-4 flex flex-col gap-2">

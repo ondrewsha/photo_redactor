@@ -38,6 +38,7 @@ export const HistoryModal: React.FC<Props> = ({
   const [newProjectName, setNewProjectName] = useState('');
   const [isCreating, setIsCreating] = useState(false);
   const [moveModalItem, setMoveModalItem] = useState<HistoryItem | null>(null);
+  const [projectToDelete, setProjectToDelete] = useState<{id: string, name: string} | null>(null);
 
   const handleCreateProject = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -52,15 +53,17 @@ export const HistoryModal: React.FC<Props> = ({
     }
   };
 
-  const handleDeleteProject = async (id: string) => {
-    if (!window.confirm("Удалить проект? Картинки перейдут в 'Без проекта'")) return;
+  const confirmDeleteProject = async () => {
+    if (!projectToDelete) return;
     try {
-      await api.projects.delete(id);
-      if (selectedProjectId === id) onChangeProject('all');
+      await api.projects.delete(projectToDelete.id);
+      if (selectedProjectId === projectToDelete.id) onChangeProject('all');
       onRefreshProjects();
       onRefreshHistory();
     } catch (e) {
       console.error(e);
+    } finally {
+      setProjectToDelete(null);
     }
   };
 
@@ -117,12 +120,18 @@ export const HistoryModal: React.FC<Props> = ({
           <div className="flex-1 overflow-y-auto px-6 py-2 space-y-1">
             {projects.map(p => (
               <button key={p.id} onClick={() => onChangeProject(p.id)} className={folderClass(selectedProjectId === p.id)}>
-                <span className="truncate">{p.name}</span>
+                <span className="truncate pr-2">{p.name}</span>
                 <div 
-                  onClick={(e) => { e.stopPropagation(); handleDeleteProject(p.id); }}
-                  className="opacity-0 group-hover:opacity-100 p-1 hover:text-red-400 transition-opacity"
+                  onClick={(e) => { 
+                    e.stopPropagation(); 
+                    setProjectToDelete({ id: p.id, name: p.name });
+                  }}
+                  className="opacity-0 group-hover:opacity-100 p-1.5 hover:bg-red-500 hover:text-white rounded-md transition-all text-zinc-400"
+                  title="Удалить проект"
                 >
-                  ✕
+                  <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                  </svg>
                 </div>
               </button>
             ))}
@@ -199,6 +208,28 @@ export const HistoryModal: React.FC<Props> = ({
               ))}
             </div>
             <Button variant="ghost" className="w-full mt-4" onClick={() => setMoveModalItem(null)}>Отмена</Button>
+          </div>
+        </div>
+      )}
+
+      {/* МОДАЛКА УДАЛЕНИЯ ПРОЕКТА */}
+      {projectToDelete && (
+        <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" onClick={() => setProjectToDelete(null)}>
+          <div className={cn("w-full max-w-sm rounded-3xl p-6 shadow-2xl border", theme === 'dark' ? 'bg-zinc-900 border-zinc-800 text-white' : 'bg-white border-zinc-200 text-zinc-900')} onClick={e => e.stopPropagation()}>
+            <div className="w-12 h-12 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center mb-4 text-red-500">
+              <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+            </div>
+            <h3 className="text-xl font-bold mb-2">Удалить проект?</h3>
+            <p className="text-sm mb-6 text-zinc-500 dark:text-zinc-400">
+              Проект <b>«{projectToDelete.name}»</b> будет удалён навсегда. Все изображения, находящиеся в нём, не пропадут, а будут перемещены в папку «Без проекта».
+            </p>
+            <div className="flex justify-end gap-3">
+              <Button variant="ghost" onClick={() => setProjectToDelete(null)}>Отмена</Button>
+              {/* Убедитесь, что у вас в Button.tsx есть variant="danger" (он там есть по дефолту) */}
+              <Button variant="danger" onClick={confirmDeleteProject}>Удалить</Button>
+            </div>
           </div>
         </div>
       )}

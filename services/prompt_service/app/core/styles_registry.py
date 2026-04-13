@@ -239,7 +239,7 @@ class StyleRegistry:
         cat_market = "Карточки для маркетплейсов"
         cat_design = "Дизайн и графика"
 
-        no_text_prompt = "ОБЯЗАТЕЛЬНО оставить пустое пространство для размещения рекламного текста. НЕ генерировать буквы, слова, логотипы или шрифты на изображении. Товар должен занимать около 2/3 кадра."
+        no_text_prompt = "ОБЯЗАТЕЛЬНО оставить пустое пространство для размещения рекламного текста. Товар должен занимать около 2/3 кадра."
 
         templates = [
             _style(
@@ -1077,7 +1077,7 @@ class StyleRegistry:
                 category=cat_market,
                 name="Карточка — белый фон",
                 preview_text="Белый фон",
-                description=f"Карточка товара: белый фон, товар по центру, мягкая тень, чистый и аккуратный вид, без текста. . {no_text_prompt}",
+                description=f"Карточка товара: белый фон, товар по центру, мягкая тень, чистый и аккуратный вид. {no_text_prompt}",
                 bg="#0b1220",
                 accent="#e5e7eb",
                 icon="box",
@@ -1088,7 +1088,7 @@ class StyleRegistry:
                 category=cat_market,
                 name="Карточка — пастельный фон",
                 preview_text="Пастель",
-                description=f"Карточка товара: пастельный фон, товар по центру, мягкий свет, немного декоративных форм, без текста. {no_text_prompt}",
+                description=f"Карточка товара: пастельный фон, товар по центру, мягкий свет, немного декоративных форм. {no_text_prompt}",
                 bg="#0b1220",
                 accent="#fda4af",
                 icon="box",
@@ -1099,7 +1099,7 @@ class StyleRegistry:
                 category=cat_market,
                 name="Карточка — премиум",
                 preview_text="Премиум",
-                description=f"Карточка товара: тёмный фон, мягкая подсветка, эффектный объём, дорогой вид, аккуратная тень, без текста. {no_text_prompt}",
+                description=f"Карточка товара: тёмный фон, мягкая подсветка, эффектный объём, дорогой вид, аккуратная тень. {no_text_prompt}",
                 bg="#0a0a0a",
                 accent="#fbbf24",
                 icon="box",
@@ -1110,7 +1110,7 @@ class StyleRegistry:
                 category=cat_market,
                 name="Карточка — набор",
                 preview_text="Набор",
-                description=f"Карточка товара: набор из нескольких предметов в кадре, аккуратная раскладка, понятная композиция, без текста. {no_text_prompt}",
+                description=f"Карточка товара: набор из нескольких предметов в кадре, аккуратная раскладка, понятная композиция. {no_text_prompt}",
                 bg="#0b1220",
                 accent="#60a5fa",
                 icon="gift",
@@ -1121,7 +1121,7 @@ class StyleRegistry:
                 category=cat_market,
                 name="Карточка — детали",
                 preview_text="Детали",
-                description=f"Карточка товара: крупные планы и детали материала, чистый фон, хороший свет, видно качество, без текста. {no_text_prompt}",
+                description=f"Карточка товара: крупные планы и детали материала, чистый фон, хороший свет, видно качество. {no_text_prompt}",
                 bg="#0b1020",
                 accent="#22c55e",
                 icon="camera",
@@ -1132,7 +1132,7 @@ class StyleRegistry:
                 category=cat_market,
                 name="Карточка — в жизни",
                 preview_text="В жизни",
-                description=f"Карточка товара: показать товар в использовании, уютная сцена, естественный свет, аккуратный фон, без текста. {no_text_prompt}",
+                description=f"Карточка товара: показать товар в использовании, уютная сцена, естественный свет, аккуратный фон. {no_text_prompt}",
                 bg="#1b1a16",
                 accent="#fbbf24",
                 icon="camera",
@@ -1143,7 +1143,7 @@ class StyleRegistry:
                 category=cat_market,
                 name="Карточка — с иконками",
                 preview_text="Иконки",
-                description=f"Карточка товара: место под подписи, простые иконки‑пиктограммы, чистый фон, без читаемого текста. {no_text_prompt}",
+                description=f"Карточка товара: место под подписи, простые иконки‑пиктограммы, чистый фон. {no_text_prompt}",
                 bg="#0b1220",
                 accent="#38bdf8",
                 icon="tag",
@@ -1154,7 +1154,7 @@ class StyleRegistry:
                 category=cat_market,
                 name="Карточка — акция",
                 preview_text="Акция",
-                description=f"Карточка товара: яркие акценты, метки‑наклейки, ощущение скидки, чистая композиция, без читаемого текста. {no_text_prompt}",
+                description=f"Карточка товара: яркие акценты, метки‑наклейки, ощущение скидки, чистая композиция. {no_text_prompt}",
                 bg="#0b1220",
                 accent="#f97316",
                 icon="tag",
@@ -1165,7 +1165,7 @@ class StyleRegistry:
                 category=cat_market,
                 name="Карточка — сравнение",
                 preview_text="Сравнение",
-                description=f"Карточка товара: два варианта рядом, аккуратное сравнение, место под подписи, без читаемого текста. {no_text_prompt}",
+                description=f"Карточка товара: два варианта рядом, аккуратное сравнение, место под подписи. {no_text_prompt}",
                 bg="#0b1220",
                 accent="#a78bfa",
                 icon="postcard",
@@ -1176,7 +1176,7 @@ class StyleRegistry:
                 category=cat_market,
                 name="Карточка — размеры",
                 preview_text="Размеры",
-                description=f"Карточка товара: показать размер и форму, место под стрелки и подписи, чистый фон, без читаемого текста. {no_text_prompt}",
+                description=f"Карточка товара: показать размер и форму, место под стрелки и подписи, чистый фон. {no_text_prompt}",
                 bg="#0b1220",
                 accent="#e5e7eb",
                 icon="postcard",

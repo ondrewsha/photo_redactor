@@ -16,8 +16,10 @@ import {
   Spin,
   message,
   Divider,
+  Tabs,
+  Upload,
 } from 'antd';
-import { LogoutOutlined, UserOutlined, DollarOutlined } from '@ant-design/icons';
+import { LogoutOutlined, UserOutlined, DollarOutlined, UploadOutlined } from '@ant-design/icons';
 import {
   adminApi,
   JobSummary,
@@ -318,6 +320,87 @@ const AdjustModal: React.FC<{
   );
 };
 
+const GallerySection: React.FC = () => {
+  const [items, setItems] = useState<any[]>([]);
+  const[open, setOpen] = useState(false);
+  const [form] = Form.useForm();
+
+  const load = () => adminApi.fetchGallery().then(r => setItems(r.items)).catch(console.error);
+  useEffect(() => { load(); },[]);
+
+  const handleUpload = async (options: any) => {
+    try {
+      const res = await adminApi.uploadGalleryImage(options.file);
+      options.onSuccess(res, options.file);
+    } catch (err) {
+      options.onError(err);
+    }
+  };
+
+  const normFile = (e: any) => (Array.isArray(e) ? e : e?.fileList);
+
+  const handleAdd = async (vals: any) => {
+    const manualUrls = vals.result_images ? vals.result_images.split('\n').filter(Boolean) :[];
+    const uploadedUrls = (vals.upload_images ||[]).map((f: any) => `/media/${f.response.file_name}`);
+    const finalImages = [...manualUrls, ...uploadedUrls];
+
+    const payload = {
+      prompt: vals.prompt,
+      style_ids: vals.style_ids ? vals.style_ids.split(',').map((s: string) => s.trim()) :[],
+      result_images: finalImages,
+      input_image: vals.input_image || null
+    };
+
+    try {
+      await adminApi.createGalleryItem(payload);
+      setOpen(false);
+      form.resetFields();
+      load();
+      message.success('Добавлено');
+    } catch {
+      message.error('Ошибка добавления');
+    }
+  };
+
+  const handleDelete = async (id: string) => {
+    if (window.confirm('Удалить?')) {
+      await adminApi.deleteGalleryItem(id);
+      load();
+    }
+  };
+
+  return (
+    <Card title="Галерея промптов" extra={<Button onClick={() => setOpen(true)}>Добавить пример</Button>}>
+      <Table 
+        rowKey="id" dataSource={items} 
+        columns={[
+          { title: 'Промпт', dataIndex: 'prompt', width: '50%' },
+          { title: 'Картинки', dataIndex: 'result_images', render: (imgs: string[]) => `${imgs.length} шт.` },
+          { title: 'Действия', render: (_, r) => <Button danger onClick={() => handleDelete(r.id)}>Удалить</Button> }
+        ]} 
+      />
+      <Modal title="Новый пример" open={open} onCancel={() => setOpen(false)} onOk={() => form.submit()} width={600}>
+        <Form form={form} layout="vertical" onFinish={handleAdd}>
+          <Form.Item name="prompt" label="Промпт" rules={[{ required: true }]}><Input.TextArea rows={3} /></Form.Item>
+          
+          <Form.Item name="upload_images" label="Загрузить картинки с компьютера" valuePropName="fileList" getValueFromEvent={normFile}>
+            <Upload customRequest={handleUpload} listType="picture" multiple>
+              <Button icon={<UploadOutlined />}>Выбрать файлы</Button>
+            </Upload>
+          </Form.Item>
+
+          <Form.Item name="result_images" label="ИЛИ Вставить готовые ссылки (каждая с новой строки)">
+            <Input.TextArea rows={2} placeholder="/media/example.jpg" />
+          </Form.Item>
+
+          <Form.Item name="style_ids" label="Стиль ID (через запятую, например: market_wb)"><Input /></Form.Item>
+          <Form.Item name="input_image" label="Ссылка на исходное фото (опционально)"><Input /></Form.Item>
+        </Form>
+      </Modal>
+    </Card>
+  );
+};
+
 const App: React.FC = () => {
   const [adminUser, setAdminUser] = useState<{ email: string } | null>(null);
   const [authError, setAuthError] = useState<string | undefined>();
@@ -494,14 +577,7 @@ const App: React.FC = () => {
   return (
     <Layout className="min-h-screen">
       <Content className="p-6">
-        <div
-          style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            flexWrap: 'wrap',
-          }}
-        >
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', marginBottom: '24px' }}>
           <Title level={3} style={{ margin: 0 }}>
             Панель администратора
           </Title>
@@ -509,101 +585,75 @@ const App: React.FC = () => {
             Выйти ({adminUser.email})
           </Button>
         </div>
-        <section className="mt-6">
-          <Title level={4}>Общее состояние</Title>
-          <AdminStats metrics={metrics} />
-        </section>
-        <section className="mt-6 space-y-6">
-          <UsersSection
-            users={users}
-            loading={usersLoading}
-            page={usersPage}
-            total={usersTotal}
-            onPageChange={(page) => loadUsers(page)}
-            onRefresh={() => loadUsers(usersPage)}
-            onAdjust={(user) => setAdjustModalUser(user)}
-            onToggle={handleToggleStatus}
-          />
-          <TransactionsSection
-            data={transactions}
-            loading={transactionsLoading}
-            onRefresh={loadTransactions}
-          />
-          <Card title="Задачи">
-            <Form layout="inline" className="mb-4">
-              <Form.Item label="Статус">
-                <Input
-                  placeholder="status"
-                  value={jobStatusFilter}
-                  onChange={(event) => setJobStatusFilter(event.target.value)}
-                />
-              </Form.Item>
-              <Form.Item>
-                <Button type="primary" onClick={() => loadJobs(1, jobStatusFilter)}>
-                  Подобрать
-                </Button>
-              </Form.Item>
-              <Form.Item>
-                <Button onClick={() => { setJobStatusFilter(''); loadJobs(); }}>
-                  Сбросить
-                </Button>
-              </Form.Item>
-            </Form>
-            <Table
-              rowKey="reservation_id"
-              dataSource={jobs}
-              loading={jobsLoading}
-              pagination={{
-                current: jobsPage,
-                total: jobsTotal,
-                pageSize: 20,
-                onChange: (page) => loadJobs(page, jobStatusFilter || undefined),
-              }}
-              columns={[
-                {
-                  title: 'Job / Reservation',
-                  dataIndex: 'job_id',
-                  key: 'job',
-                  render: (_: string | null, record: JobSummary) => (
-                    <span>{record.job_id ?? record.reservation_id}</span>
-                  ),
-                },
-                { title: 'Статус', dataIndex: 'status', key: 'status' },
-                { title: 'Пользователь', dataIndex: 'user_email', key: 'user' },
-                {
-                  title: 'Дата обновления',
-                  dataIndex: 'updated_at',
-                  key: 'updated',
-                  render: (value: string) => new Date(value).toLocaleString(),
-                },
-                {
-                  title: 'Действия',
-                  key: 'actions',
-                  render: (_: unknown, record: JobSummary) => (
-                    <div className="flex gap-2">
-                      <Button size="small" onClick={() => handleRerun(record.job_id ?? record.reservation_id)}>
-                        Повторить
-                      </Button>
-                      <Button
-                        size="small"
-                        danger
-                        onClick={() => handleCancel(record.job_id ?? record.reservation_id)}
-                      >
-                        Отменить
-                      </Button>
-                    </div>
-                  ),
-                },
-              ]}
-            />
-          </Card>
-        </section>
-        <AdjustModal
-          user={adjustModalUser}
-          open={Boolean(adjustModalUser)}
-          onClose={() => setAdjustModalUser(null)}
-          onSubmit={handleAdjust}
+
+        <Tabs
+          defaultActiveKey="1"
+          items={[
+            {
+              key: '1',
+              label: 'Пользователи и Финансы',
+              children: (
+                <div className="space-y-6 mt-4">
+                  <section>
+                    <Title level={4}>Общее состояние</Title>
+                    <AdminStats metrics={metrics} />
+                  </section>
+                  <UsersSection
+                    users={users} loading={usersLoading} page={usersPage} total={usersTotal}
+                    onPageChange={(page) => loadUsers(page)} onRefresh={() => loadUsers(usersPage)}
+                    onAdjust={(user) => setAdjustModalUser(user)} onToggle={handleToggleStatus}
+                  />
+                  <TransactionsSection data={transactions} loading={transactionsLoading} onRefresh={loadTransactions} />
+                </div>
+              ),
+            },
+            {
+              key: '2',
+              label: 'Задачи',
+              children: (
+                <div className="mt-4">
+                  <Card title="Задачи">
+                    <Form layout="inline" className="mb-4">
+                      <Form.Item label="Статус">
+                        <Input placeholder="status" value={jobStatusFilter} onChange={(event) => setJobStatusFilter(event.target.value)} />
+                      </Form.Item>
+                      <Form.Item><Button type="primary" onClick={() => loadJobs(1, jobStatusFilter)}>Подобрать</Button></Form.Item>
+                      <Form.Item><Button onClick={() => { setJobStatusFilter(''); loadJobs(); }}>Сбросить</Button></Form.Item>
+                    </Form>
+                    <Table
+                      rowKey="reservation_id" dataSource={jobs} loading={jobsLoading}
+                      pagination={{ current: jobsPage, total: jobsTotal, pageSize: 20, onChange: (page) => loadJobs(page, jobStatusFilter || undefined) }}
+                      columns={[
+                        { title: 'Job / Reservation', dataIndex: 'job_id', key: 'job', render: (_: string | null, record: JobSummary) => (<span>{record.job_id ?? record.reservation_id}</span>) },
+                        { title: 'Статус', dataIndex: 'status', key: 'status' },
+                        { title: 'Пользователь', dataIndex: 'user_email', key: 'user' },
+                        { title: 'Дата обновления', dataIndex: 'updated_at', key: 'updated', render: (value: string) => new Date(value).toLocaleString() },
+                        { title: 'Действия', key: 'actions', render: (_: unknown, record: JobSummary) => (
+                            <div className="flex gap-2">
+                              <Button size="small" onClick={() => handleRerun(record.job_id ?? record.reservation_id)}>Повторить</Button>
+                              <Button size="small" danger onClick={() => handleCancel(record.job_id ?? record.reservation_id)}>Отменить</Button>
+                            </div>
+                          )
+                        },
+                      ]}
+                    />
+                  </Card>
+                </div>
+              ),
+            },
+            {
+              key: '3',
+              label: 'Галерея промптов',
+              children: (
+                <div className="mt-4">
+                  <GallerySection />
+                </div>
+              ),
+            },
+          ]}
         />
+
+        <AdjustModal user={adjustModalUser} open={Boolean(adjustModalUser)} onClose={() => setAdjustModalUser(null)} onSubmit={handleAdjust} />
       </Content>
       <Footer className="text-center">© 2025 NanoVisual Admin</Footer>
     </Layout>

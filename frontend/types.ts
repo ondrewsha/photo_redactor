@@ -392,3 +392,13 @@ export type ProjectItem = {
 export type ProjectListResponse = {
   items: ProjectItem[];
 };
+
+export type GalleryItem = {
+  id: string;
+  prompt: string;
+  style_ids: string[];
+  result_images: string[];
+  input_image?: string | null;
+  created_at: string;
+};
+export type GalleryListResponse = { items: GalleryItem[] };

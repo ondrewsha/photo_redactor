@@ -15,13 +15,20 @@ const defaultHeaders = (includeContentType = true): HeadersInit => ({
 });
 
 const request = async <T>(path: string, options: RequestInit = {}): Promise<T> => {
+  const isFormData = options.body instanceof FormData;
+  const headers: HeadersInit = {
+    'x-csrf-token': getCookie('nv_csrf') || '',
+    ...(options.headers ?? {}),
+  };
+  
+  if (!isFormData && options.method?.toUpperCase() !== 'GET') {
+    (headers as Record<string, string>)['Content-Type'] = 'application/json';
+  }
+
   const response = await fetch(`${API_BASE}${path}`, {
     credentials: 'include',
     ...options,
-    headers: {
-      ...(options.headers ?? {}),
-      ...defaultHeaders(options.method?.toUpperCase() !== 'GET'),
-    },
+    headers,
   });
   if (!response.ok) {
     const text = await response.text();
@@ -135,4 +142,12 @@ export const adminApi = {
       method: 'POST',
     }),
   fetchSession: () => request<{ email: string }>('/auth/me'),
+  fetchGallery: () => request<{ items: any[] }>('/gallery'),
+  createGalleryItem: (payload: any) => request('/admin/gallery', { method: 'POST', body: JSON.stringify(payload) }),
+  deleteGalleryItem: (id: string) => request(`/admin/gallery/${id}`, { method: 'DELETE' }),
+  uploadGalleryImage: (file: File) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    return request<{file_name: string}>('/admin/gallery/upload', { method: 'POST', body: formData });
+  },
 };

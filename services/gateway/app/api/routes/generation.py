@@ -9,6 +9,7 @@ from fastapi.responses import Response, StreamingResponse
 from redis.asyncio import Redis
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+from motor.motor_asyncio import AsyncIOMotorCollection
 
 from nanovisual_shared.schemas import ComposePromptRequest, ComposePromptResponse, CreateJobRequest, CreateJobResponse, JobStatusResponse, PromptMode
 

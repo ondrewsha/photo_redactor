@@ -18,6 +18,7 @@ import { HistoryModal } from './HistoryModal';
 import { HistoryCard } from './HistoryCard';
 import { useTheme } from '../context/ThemeContext';
 import { styleBackgroundForStyle } from '../lib/gradients';
+import { GalleryModal } from './GalleryModal'
 
 // Функция для сжатия картинок на клиенте перед отправкой
 const resizeImageFile = (file: File, maxSide = 1024): Promise<File> => {
@@ -96,6 +97,8 @@ export const Generator: React.FC = () => {
   const [currentJobId, setCurrentJobId] = useState<string | null>(null);
   const [fullscreenItem, setFullscreenItem] = useState<HistoryItem | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const [galleryOpen, setGalleryOpen] = useState(false);
+  const [projectToDelete, setProjectToDelete] = useState<{id: string, name: string} | null>(null);
 
   const ASPECT_RATIOS =[
     { id: '1:1', label: 'Квадрат (1:1)', width: 2048, height: 2048, icon: 'M4 4h16v16H4z' },
@@ -147,6 +150,20 @@ export const Generator: React.FC = () => {
     (id: string) => styleLabelMap.get(id) || id,
     [styleLabelMap]
   );
+
+  const confirmDeleteProject = async () => {
+    if (!projectToDelete) return;
+    try {
+      await api.projects.delete(projectToDelete.id);
+      setHistoryProject('none');
+      await loadProjects();
+      loadHistory(1, 'none');
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setProjectToDelete(null);
+    }
+  };
 
   const historyStyleLabels = useCallback(
     (entry: HistoryItem) => {
@@ -770,16 +787,13 @@ export const Generator: React.FC = () => {
           <div className="mt-8 relative flex gap-4 items-end">
             <div className="flex-1 flex flex-col gap-3 relative">
               
-              {/* ВЫБОР ПРОЕКТА — Улучшенный дизайн */}
-                {user && (
-                  <div className="flex items-center gap-3 mb-2 px-2 animate-in fade-in slide-in-from-left duration-500">
-                    <span className={cn(
-                      "text-[10px] font-black uppercase tracking-[0.2em]",
-                      theme === 'dark' ? 'text-zinc-500' : 'text-zinc-400'
-                    )}>
+              {/* ВЫБОР ПРОЕКТА */}
+              {user && (
+                <div className="flex items-center justify-between w-full mb-2 px-2 animate-in fade-in slide-in-from-left duration-500">
+                  <div className="flex items-center gap-3">
+                    <span className={cn("text-[10px] font-black uppercase tracking-[0.2em]", theme === 'dark' ? 'text-zinc-500' : 'text-zinc-400')}>
                       Проект:
                     </span>
-                    
                     <div className="relative group">
                       <select
                         value={historyProject}
@@ -796,18 +810,30 @@ export const Generator: React.FC = () => {
                       >
                         <option value="all">Все генерации</option>
                         <option value="none">Без проекта</option>
-                        {projects.map(p => (
-                          <option key={p.id} value={p.id}>{p.name}</option>
-                        ))}
+                        {projects.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
                       </select>
-                      
-                      {/* Кастомная стрелочка для селекта */}
                       <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none opacity-50">
                         <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
                           <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
                         </svg>
                       </div>
                     </div>
+
+                    {/* КНОПКА УДАЛЕНИЯ ПРОЕКТА (показывается только если выбран конкретный проект) */}
+                    {historyProject !== 'all' && historyProject !== 'none' && (
+                      <button 
+                        onClick={() => {
+                          const proj = projects.find(p => p.id === historyProject);
+                          if (proj) setProjectToDelete({ id: proj.id, name: proj.name });
+                        }}
+                        className="p-2 rounded-full border border-red-200 text-red-500 hover:bg-red-50 dark:border-red-900/30 dark:hover:bg-red-900/20 transition-colors"
+                        title="Удалить проект"
+                      >
+                        <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        </svg>
+                      </button>
+                    )}
 
                     {/* Быстрая кнопка создания проекта прямо здесь (опционально) */}
                     <button 
@@ -823,7 +849,14 @@ export const Generator: React.FC = () => {
                       </svg>
                     </button>
                   </div>
-                )}
+
+                  {/* КНОПКА ГАЛЕРЕИ ПРОМПТОВ */}
+                  <Button variant="ghost" size="sm" onClick={() => setGalleryOpen(true)} className="text-indigo-500 hover:text-indigo-600 gap-2">
+                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" /></svg>
+                    Примеры и Идеи
+                  </Button>
+                </div>
+              )}
 
               {/* ПОЛЕ ВВОДА ПРОМПТА */}
               <textarea
@@ -890,6 +923,11 @@ export const Generator: React.FC = () => {
         </div>
       </div>
 
+      <GalleryModal 
+        isOpen={galleryOpen} 
+        onClose={() => setGalleryOpen(false)} 
+        onCopyPrompt={(p) => setPrompt(p)} 
+      />
       <StylesLibraryModal 
         isOpen={libraryOpen} 
         onClose={() => setLibraryOpen(false)}
@@ -897,6 +935,26 @@ export const Generator: React.FC = () => {
         selectedStyleIds={selectedStyles}
         onToggleStyle={toggleStyle}
       />
+      {/* МОДАЛКА УДАЛЕНИЯ ПРОЕКТА ИЗ ГЕНЕРАТОРА */}
+      {projectToDelete && (
+        <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" onClick={() => setProjectToDelete(null)}>
+          <div className={cn("w-full max-w-sm rounded-3xl p-6 shadow-2xl border", theme === 'dark' ? 'bg-zinc-900 border-zinc-800 text-white' : 'bg-white border-zinc-200 text-zinc-900')} onClick={e => e.stopPropagation()}>
+            <div className="w-12 h-12 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center mb-4 text-red-500">
+              <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+            </div>
+            <h3 className="text-xl font-bold mb-2">Удалить проект?</h3>
+            <p className="text-sm mb-6 text-zinc-500 dark:text-zinc-400">
+              Проект <b>«{projectToDelete.name}»</b> будет удалён навсегда. Все изображения из него будут сохранены и перемещены в папку «Без проекта».
+            </p>
+            <div className="flex justify-end gap-3">
+              <Button variant="ghost" onClick={() => setProjectToDelete(null)}>Отмена</Button>
+              <Button variant="danger" onClick={confirmDeleteProject}>Удалить</Button>
+            </div>
+          </div>
+        </div>
+      )}
       <HistoryModal
         isOpen={historyModalOpen}
         onClose={() => setHistoryModalOpen(false)}

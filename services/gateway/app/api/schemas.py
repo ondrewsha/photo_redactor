@@ -209,3 +209,20 @@ class CreateProjectRequest(BaseSchema):
 
 class MoveHistoryRequest(BaseSchema):
     project_id: str | None = Field(default=None, description="ID проекта или null для удаления из проекта")
+
+class GalleryItem(BaseSchema):
+    id: str
+    prompt: str
+    style_ids: list[str] = Field(default_factory=list)
+    result_images: list[str] = Field(default_factory=list)
+    input_image: str | None = None
+    created_at: datetime
+
+class GalleryListResponse(BaseSchema):
+    items: list[GalleryItem] = Field(default_factory=list)
+
+class AdminCreateGalleryRequest(BaseSchema):
+    prompt: str
+    style_ids: list[str] = Field(default_factory=list)
+    result_images: list[str] = Field(default_factory=list)
+    input_image: str | None = None

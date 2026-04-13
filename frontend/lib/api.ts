@@ -11,6 +11,7 @@ import {
   MessageResponse,
   ProjectItem,
   ProjectListResponse,
+  GalleryListResponse,
 } from '../types';
 
 const BASE_URL = import.meta.env.VITE_GATEWAY_URL || '/api';
@@ -165,5 +166,8 @@ export const api = {
     list: () => request<ProjectListResponse>('/projects'),
     create: (name: string) => request<ProjectItem>('/projects', { method: 'POST', body: JSON.stringify({ name }) }),
     delete: (id: string) => request<MessageResponse>(`/projects/${id}`, { method: 'DELETE' }),
+  },
+  gallery: {
+    list: () => request<GalleryListResponse>('/gallery'),
   },
 };
