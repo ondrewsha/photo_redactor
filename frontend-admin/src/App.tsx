@@ -39,6 +39,36 @@ type LoginPayload = {
   password: string;
 };
 
+const resizeGalleryImage = (file: File): Promise<File> => {
+  return new Promise((resolve) => {
+    const img = new window.Image();
+    img.src = URL.createObjectURL(file);
+    img.onload = () => {
+      URL.revokeObjectURL(img.src);
+      const MAX_SIDE = 1600; // Для галереи 1600px более чем достаточно
+      let { width, height } = img;
+      if (width > MAX_SIDE || height > MAX_SIDE) {
+        if (width > height) {
+          height = (height * MAX_SIDE) / width;
+          width = MAX_SIDE;
+        } else {
+          width = (width * MAX_SIDE) / height;
+          height = MAX_SIDE;
+        }
+      }
+      const canvas = document.createElement('canvas');
+      canvas.width = width;
+      canvas.height = height;
+      canvas.getContext('2d')?.drawImage(img, 0, 0, width, height);
+      canvas.toBlob((blob) => {
+        if (blob) resolve(new File([blob], file.name, { type: 'image/jpeg' }));
+        else resolve(file);
+      }, 'image/jpeg', 0.85);
+    };
+    img.onerror = () => resolve(file);
+  });
+};
+
 const LoginForm: React.FC<{ onLogin: (data: LoginPayload) => Promise<void>; error?: string }> = ({
   onLogin,
   error,
@@ -338,9 +368,11 @@ const GallerySection: React.FC = () => {
 
   const handleUpload = async (options: any) => {
     try {
+      const resized = await resizeGalleryImage(options.file);
       const res = await adminApi.uploadGalleryImage(options.file);
-      options.onSuccess(res, options.file);
+      options.onSuccess(res, resized);
     } catch (err) {
+      message.error("Ошибка при загрузке файла");
       options.onError(err);
     }
   };

@@ -85,47 +85,38 @@ export const GalleryModal: React.FC<Props> = ({ isOpen, onClose, onCopyPrompt, g
                 {items.map(item => (
                   <div key={item.id} className={cn("break-inside-avoid rounded-2xl border p-4 flex flex-col gap-3 group", theme === 'dark' ? 'border-zinc-800 bg-zinc-900/50' : 'border-zinc-200 bg-white')}>
                     
-                    {/* Вывод исходных фото */}
+                    {/* Исходники: Всегда маленькие в ряд */}
                     {item.input_images && item.input_images.length > 0 && (
-                      <div className="mb-2">
-                        <div className="text-[10px] font-bold uppercase text-indigo-500 mb-1 flex items-center justify-between">
-                          <span>Исходники</span>
-                        </div>
-                        {/* Если исходник один - по центру, без сжатия */}
-                        {item.input_images.length === 1 ? (
-                          <div className="flex justify-center bg-black/5 dark:bg-black/20 rounded-xl p-2 border border-zinc-100 dark:border-zinc-800">
+                      <div className="mb-1">
+                        <div className="text-[10px] font-bold uppercase text-indigo-500 mb-1.5">Исходные фото</div>
+                        <div className="flex flex-wrap gap-2">
+                          {item.input_images.map((img, i) => (
                             <img 
-                              src={resolveAssetUrl(item.input_images[0]) || undefined} 
-                              className="max-h-32 object-contain cursor-pointer hover:scale-105 transition-transform" 
+                              key={i} 
+                              src={resolveAssetUrl(img) || undefined} 
+                              className="rounded-lg w-12 h-12 object-cover border border-zinc-200 dark:border-zinc-700 cursor-pointer hover:scale-110 transition-transform shadow-sm" 
                               alt="Исходник" 
-                              onClick={() => setFullscreenImage(item.input_images[0])}
+                              onClick={() => setFullscreenImage(img)}
                             />
-                          </div>
-                        ) : (
-                          /* Если несколько - миниатюры в ряд */
-                          <div className="flex flex-wrap gap-2">
-                            {item.input_images.map((img, i) => (
-                              <img 
-                                key={i} 
-                                src={resolveAssetUrl(img) || undefined} 
-                                className="rounded-lg w-12 h-12 object-cover border border-zinc-200 dark:border-zinc-700 cursor-pointer hover:scale-110 transition-transform" 
-                                alt="Исходник" 
-                                onClick={() => setFullscreenImage(img)}
-                              />
-                            ))}
-                          </div>
-                        )}
+                          ))}
+                        </div>
                       </div>
                     )}
                     
-                    {/* Вывод результатов */}
+                    {/* Результат: Центрирование, если фото одно */}
                     <div className="text-[10px] font-bold uppercase text-emerald-500 mb-[-4px]">Результат</div>
-                    <div className="grid grid-cols-2 gap-2">
+                    <div className={cn(
+                      "grid gap-2",
+                      item.result_images.length === 1 ? "flex justify-center" : "grid-cols-2"
+                    )}>
                       {item.result_images.map((img, i) => (
                         <img 
                           key={i} 
                           src={resolveAssetUrl(img) || undefined} 
-                          className="rounded-xl w-full object-cover aspect-[3/4] cursor-pointer hover:opacity-90 transition-opacity" 
+                          className={cn(
+                            "rounded-xl object-cover cursor-pointer hover:opacity-90 transition-opacity shadow-md",
+                            item.result_images.length === 1 ? "max-h-80 w-auto" : "w-full aspect-[3/4]"
+                          )} 
                           alt="Пример" 
                           onClick={() => setFullscreenImage(img)}
                         />
@@ -133,11 +124,13 @@ export const GalleryModal: React.FC<Props> = ({ isOpen, onClose, onCopyPrompt, g
                     </div>
                     
                     {/* Промпт */}
-                    <p className="text-xs text-zinc-500 dark:text-zinc-400 italic line-clamp-3 group-hover:line-clamp-none transition-all">"{item.prompt}"</p>
+                    <p className="text-xs text-zinc-500 dark:text-zinc-400 italic line-clamp-3 group-hover:line-clamp-none transition-all leading-relaxed">
+                      "{item.prompt}"
+                    </p>
                     
-                    {/* Стили (Теги) */}
+                    {/* Стили */}
                     {item.style_ids && item.style_ids.length > 0 && (
-                      <div className="flex flex-wrap gap-1.5 mt-1">
+                      <div className="flex flex-wrap gap-1.5">
                         {item.style_ids.map(id => (
                           <span key={id} className={cn("px-2 py-0.5 rounded-md text-[9px] uppercase tracking-wider font-bold border", theme === 'dark' ? 'bg-zinc-800 border-zinc-700 text-zinc-400' : 'bg-slate-100 border-slate-200 text-slate-500')}>
                             {getStyleLabel(id)}
@@ -146,7 +139,9 @@ export const GalleryModal: React.FC<Props> = ({ isOpen, onClose, onCopyPrompt, g
                       </div>
                     )}
 
-                    <Button size="sm" variant="secondary" onClick={() => { onCopyPrompt(item.prompt); onClose(); }}>Скопировать промпт</Button>
+                    <Button size="sm" variant="secondary" onClick={() => { onCopyPrompt(item.prompt); onClose(); }}>
+                      Скопировать промпт
+                    </Button>
                   </div>
                 ))}
                 {items.length === 0 && <p className="text-zinc-500 text-sm">Галерея пока пуста.</p>}
