@@ -441,6 +441,18 @@ const GallerySection: React.FC = () => {
         dataSource={items} 
         columns={[
           { title: 'Промпт', dataIndex: 'prompt', width: '40%' },
+          {
+            title: 'Стили',
+            dataIndex: 'style_ids',
+            render: (ids: string[]) => (
+              <div className="flex gap-1 flex-wrap">
+                {ids?.length > 0 ? ids.map(id => {
+                  const styleName = stylesList.find(s => s.id === id)?.display_name || id;
+                  return <span key={id} className="text-xs bg-slate-100 border border-slate-200 px-2 py-1 rounded text-slate-600">{styleName}</span>;
+                }) : <span className="text-gray-400 text-xs">Нет</span>}
+              </div>
+            )
+          },
           { 
             title: 'Исходники', 
             dataIndex: 'input_images', 

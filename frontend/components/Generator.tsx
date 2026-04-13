@@ -927,6 +927,7 @@ export const Generator: React.FC = () => {
         isOpen={galleryOpen} 
         onClose={() => setGalleryOpen(false)} 
         onCopyPrompt={(p) => setPrompt(p)} 
+        getStyleLabel={getStyleLabelById}
       />
       <StylesLibraryModal 
         isOpen={libraryOpen} 
