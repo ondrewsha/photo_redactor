@@ -30,6 +30,7 @@ from app.api.schemas import (
     MessageResponse,
     AdminCreateGalleryRequest,
     GalleryItem,
+    AdminUpdateGalleryRequest,
 )
 from app.core.admin_metrics import collect_metrics
 from app.core.models import (
@@ -434,3 +435,36 @@ async def upload_gallery_image(
     )
     resp.raise_for_status()
     return resp.json()
+
+@router.put("/gallery/{item_id}", response_model=GalleryItem)
+async def update_gallery_item(
+    item_id: str,
+    payload: AdminUpdateGalleryRequest,
+    gallery_collection: AsyncIOMotorCollection = Depends(get_gallery_collection),
+):
+    try:
+        obj_id = ObjectId(item_id)
+    except Exception:
+        raise HTTPException(status_code=400, detail="Неверный ID примера")
+
+    update_data = {
+        "prompt": payload.prompt,
+        "style_ids": payload.style_ids,
+        "result_images": payload.result_images,
+        "input_images": payload.input_images,
+    }
+    
+    res = await gallery_collection.update_one({"_id": obj_id}, {"$set": update_data})
+    if res.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Пример не найден")
+
+    # Получаем обновленный документ для ответа
+    updated_doc = await gallery_collection.find_one({"_id": obj_id})
+    return GalleryItem(
+        id=str(updated_doc["_id"]),
+        prompt=updated_doc["prompt"],
+        style_ids=updated_doc.get("style_ids",[]),
+        result_images=updated_doc.get("result_images",[]),
+        input_images=updated_doc.get("input_images", []),
+        created_at=updated_doc["created_at"]
+    )

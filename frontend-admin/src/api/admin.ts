@@ -144,6 +144,7 @@ export const adminApi = {
   fetchSession: () => request<{ email: string }>('/auth/me'),
   fetchGallery: () => request<{ items: any[] }>('/gallery'),
   createGalleryItem: (payload: any) => request('/admin/gallery', { method: 'POST', body: JSON.stringify(payload) }),
+  updateGalleryItem: (id: string, payload: any) => request(`/admin/gallery/${id}`, { method: 'PUT', body: JSON.stringify(payload) }),
   deleteGalleryItem: (id: string) => request(`/admin/gallery/${id}`, { method: 'DELETE' }),
   uploadGalleryImage: (file: File) => {
     const formData = new FormData();

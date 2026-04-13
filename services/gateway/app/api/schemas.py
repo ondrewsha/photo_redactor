@@ -226,3 +226,9 @@ class AdminCreateGalleryRequest(BaseSchema):
     style_ids: list[str] = Field(default_factory=list)
     result_images: list[str] = Field(default_factory=list)
     input_images: list[str] = Field(default_factory=list)
+
+class AdminUpdateGalleryRequest(BaseSchema):
+    prompt: str
+    style_ids: list[str] = Field(default_factory=list)
+    result_images: list[str] = Field(default_factory=list)
+    input_images: list[str] = Field(default_factory=list)

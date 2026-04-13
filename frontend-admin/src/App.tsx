@@ -325,7 +325,8 @@ const AdjustModal: React.FC<{
 const GallerySection: React.FC = () => {
   const [items, setItems] = useState<any[]>([]);
   const [stylesList, setStylesList] = useState<any[]>([]);
-  const[open, setOpen] = useState(false);
+  const [open, setOpen] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [form] = Form.useForm();
   const[uploading, setUploading] = useState(false);
 
@@ -349,18 +350,52 @@ const GallerySection: React.FC = () => {
     return e?.fileList;
   };
 
-  const handleAdd = async (vals: any) => {
+  const openForCreate = () => {
+    setEditingId(null);
+    form.resetFields();
+    setOpen(true);
+  };
+
+  const openForEdit = (record: any) => {
+    setEditingId(record.id);
+    
+    // Форматируем URL картинок в объекты FileList для Antd Upload
+    const formatFiles = (urls: string[]) => urls?.map((url, idx) => ({
+      uid: `-${idx}`,
+      name: url.split('/').pop(),
+      status: 'done',
+      url: `/api${url}` // добавляем /api для предпросмотра
+    })) ||[];
+
+    form.setFieldsValue({
+      prompt: record.prompt,
+      style_ids: record.style_ids,
+      input_images_upload: formatFiles(record.input_images),
+      result_images_upload: formatFiles(record.result_images)
+    });
+    setOpen(true);
+  };
+
+  const handleClose = () => {
+    setOpen(false);
+    setEditingId(null);
+    form.resetFields();
+  };
+
+  const handleAddOrEdit = async (vals: any) => {
     setUploading(true);
     try {
-      // Собираем все URL исходных фото
-      const inputUrls = (vals.input_images_upload ||[])
-        .map((f: any) => f.response?.file_name ? `/media/${f.response.file_name}` : null)
-        .filter(Boolean);
+      // Функция для парсинга картинок (старых и новых)
+      const parseUrls = (fileList: any[]) => {
+        return (fileList ||[]).map((f: any) => {
+          if (f.url) return f.url.replace(/^\/api/, ''); // Если это старая картинка (уже была на сервере)
+          if (f.response?.file_name) return `/media/${f.response.file_name}`; // Если это новая только что загруженная картинка
+          return null;
+        }).filter(Boolean);
+      };
 
-      // Собираем все URL результатов
-      const resultUrls = (vals.result_images_upload ||[])
-        .map((f: any) => f.response?.file_name ? `/media/${f.response.file_name}` : null)
-        .filter(Boolean);
+      const inputUrls = parseUrls(vals.input_images_upload);
+      const resultUrls = parseUrls(vals.result_images_upload);
 
       if (resultUrls.length === 0) {
         message.error('Загрузите хотя бы одно фото-результат!');
@@ -372,16 +407,21 @@ const GallerySection: React.FC = () => {
         prompt: vals.prompt,
         style_ids: vals.style_ids ||[],
         result_images: resultUrls,
-        input_images: inputUrls // Теперь это массив
+        input_images: inputUrls
       };
 
-      await adminApi.createGalleryItem(payload);
-      setOpen(false);
-      form.resetFields();
+      if (editingId) {
+        await adminApi.updateGalleryItem(editingId, payload);
+        message.success('Пример обновлен');
+      } else {
+        await adminApi.createGalleryItem(payload);
+        message.success('Пример добавлен');
+      }
+      
+      handleClose();
       load();
-      message.success('Пример добавлен');
     } catch (err) {
-      message.error('Ошибка добавления');
+      message.error('Ошибка сохранения');
     } finally {
       setUploading(false);
     }
@@ -395,7 +435,7 @@ const GallerySection: React.FC = () => {
   };
 
   return (
-    <Card title="Галерея промптов" extra={<Button type="primary" onClick={() => setOpen(true)}>Добавить пример</Button>}>
+    <Card title="Галерея промптов" extra={<Button type="primary" onClick={openForCreate}>Добавить пример</Button>}>
       <Table 
         rowKey="id" 
         dataSource={items} 
@@ -423,13 +463,21 @@ const GallerySection: React.FC = () => {
               </div>
             ) 
           },
-          { title: 'Действия', render: (_, r) => <Button size="small" danger onClick={() => handleDelete(r.id)}>Удалить</Button> }
+          { 
+            title: 'Действия', 
+            render: (_, r) => (
+              <div className="flex gap-2">
+                <Button size="small" onClick={() => openForEdit(r)}>Редактировать</Button>
+                <Button size="small" danger onClick={() => handleDelete(r.id)}>Удалить</Button>
+              </div>
+            ) 
+          }
         ]} 
       />
       <Modal 
-        title="Новый пример для галереи" 
+        title={editingId ? "Редактировать пример" : "Новый пример для галереи"} 
         open={open} 
-        onCancel={() => setOpen(false)} 
+        onCancel={handleClose} 
         onOk={() => form.submit()} 
         width={700}
         okText="Сохранить"
