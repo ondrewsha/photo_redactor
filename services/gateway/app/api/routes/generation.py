@@ -308,18 +308,20 @@ async def media_proxy(
 ) -> Response:
     file_name = path.rsplit("/", 1)[-1]
     stem = file_name.split(".", 1)[0]
-    try:
-        job_uuid = parse_uuid(stem)
-    except HTTPException:
-        raise HTTPException(status_code=404, detail="Файл не найден.") from None
-    res = await db.execute(
-        select(UserJobReservation.id).where(
-            UserJobReservation.user_id == user.id,
-            UserJobReservation.job_id == job_uuid,
+
+    if not stem.startswith("gallery_"):
+        try:
+            job_uuid = parse_uuid(stem)
+        except HTTPException:
+            raise HTTPException(status_code=404, detail="Файл не найден.") from None
+        res = await db.execute(
+            select(UserJobReservation.id).where(
+                UserJobReservation.user_id == user.id,
+                UserJobReservation.job_id == job_uuid,
+            )
         )
-    )
-    if res.scalar_one_or_none() is None:
-        raise HTTPException(status_code=404, detail="Файл не найден.")
+        if res.scalar_one_or_none() is None:
+            raise HTTPException(status_code=404, detail="Файл не найден.")
 
     upstream = f"{settings.generation_service_url.rstrip('/')}/media/{path}"
     upstream_stream = http.stream("GET", upstream, headers=forward_headers(request, settings))

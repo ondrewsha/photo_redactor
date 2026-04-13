@@ -215,7 +215,7 @@ class GalleryItem(BaseSchema):
     prompt: str
     style_ids: list[str] = Field(default_factory=list)
     result_images: list[str] = Field(default_factory=list)
-    input_image: str | None = None
+    input_images: list[str] = Field(default_factory=list)
     created_at: datetime
 
 class GalleryListResponse(BaseSchema):
@@ -225,4 +225,4 @@ class AdminCreateGalleryRequest(BaseSchema):
     prompt: str
     style_ids: list[str] = Field(default_factory=list)
     result_images: list[str] = Field(default_factory=list)
-    input_image: str | None = None
+    input_images: list[str] = Field(default_factory=list)

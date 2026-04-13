@@ -395,7 +395,7 @@ async def create_gallery_item(
         "prompt": payload.prompt,
         "style_ids": payload.style_ids,
         "result_images": payload.result_images,
-        "input_image": payload.input_image,
+        "input_images": payload.input_images,
         "created_at": datetime.utcnow()
     }
     res = await gallery_collection.insert_one(doc)

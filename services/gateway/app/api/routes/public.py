@@ -56,12 +56,16 @@ async def get_gallery(
     cursor = gallery_collection.find().sort("created_at", -1)
     items =[]
     async for doc in cursor:
+        in_imgs = doc.get("input_images",[])
+        if not in_imgs and doc.get("input_image"):
+            in_imgs = [doc["input_image"]]
+
         items.append(GalleryItem(
             id=str(doc["_id"]),
             prompt=doc["prompt"],
             style_ids=doc.get("style_ids",[]),
             result_images=doc.get("result_images",[]),
-            input_image=doc.get("input_image"),
+            input_images=in_imgs, # Изменили
             created_at=doc["created_at"]
         ))
     return GalleryListResponse(items=items)

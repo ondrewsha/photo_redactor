@@ -19,6 +19,7 @@ import {
   Tabs,
   Upload,
   Select,
+  Image,
 } from 'antd';
 import { LogoutOutlined, UserOutlined, DollarOutlined, UploadOutlined } from '@ant-design/icons';
 import {
@@ -323,10 +324,10 @@ const AdjustModal: React.FC<{
 
 const GallerySection: React.FC = () => {
   const [items, setItems] = useState<any[]>([]);
-  const[stylesList, setStylesList] = useState<any[]>([]);
-  const [open, setOpen] = useState(false);
+  const [stylesList, setStylesList] = useState<any[]>([]);
+  const[open, setOpen] = useState(false);
   const [form] = Form.useForm();
-  const [uploading, setUploading] = useState(false);
+  const[uploading, setUploading] = useState(false);
 
   const load = () => {
     adminApi.fetchGallery().then(r => setItems(r.items)).catch(console.error);
@@ -351,12 +352,12 @@ const GallerySection: React.FC = () => {
   const handleAdd = async (vals: any) => {
     setUploading(true);
     try {
-      // Достаем URL исходного фото, если оно загружено
-      const inputUrl = vals.input_image_upload?.[0]?.response?.file_name
-        ? `/media/${vals.input_image_upload[0].response.file_name}`
-        : null;
+      // Собираем все URL исходных фото
+      const inputUrls = (vals.input_images_upload ||[])
+        .map((f: any) => f.response?.file_name ? `/media/${f.response.file_name}` : null)
+        .filter(Boolean);
 
-      // Достаем URL результирующих фото
+      // Собираем все URL результатов
       const resultUrls = (vals.result_images_upload ||[])
         .map((f: any) => f.response?.file_name ? `/media/${f.response.file_name}` : null)
         .filter(Boolean);
@@ -371,7 +372,7 @@ const GallerySection: React.FC = () => {
         prompt: vals.prompt,
         style_ids: vals.style_ids ||[],
         result_images: resultUrls,
-        input_image: inputUrl
+        input_images: inputUrls // Теперь это массив
       };
 
       await adminApi.createGalleryItem(payload);
@@ -387,20 +388,42 @@ const GallerySection: React.FC = () => {
   };
 
   const handleDelete = async (id: string) => {
-    if (window.confirm('Удалить?')) {
+    if (window.confirm('Удалить этот пример из галереи?')) {
       await adminApi.deleteGalleryItem(id);
       load();
     }
   };
 
   return (
-    <Card title="Галерея промптов" extra={<Button onClick={() => setOpen(true)}>Добавить пример</Button>}>
+    <Card title="Галерея промптов" extra={<Button type="primary" onClick={() => setOpen(true)}>Добавить пример</Button>}>
       <Table 
-        rowKey="id" dataSource={items} 
+        rowKey="id" 
+        dataSource={items} 
         columns={[
-          { title: 'Промпт', dataIndex: 'prompt', width: '50%' },
-          { title: 'Картинки', dataIndex: 'result_images', render: (imgs: string[]) => `${imgs.length} шт.` },
-          { title: 'Действия', render: (_, r) => <Button danger onClick={() => handleDelete(r.id)}>Удалить</Button> }
+          { title: 'Промпт', dataIndex: 'prompt', width: '40%' },
+          { 
+            title: 'Исходники', 
+            dataIndex: 'input_images', 
+            render: (imgs: string[]) => (
+              <div className="flex gap-2 flex-wrap">
+                {imgs?.length > 0 ? imgs.map((img, i) => (
+                  <Image key={i} width={40} height={40} src={`/api${img}`} className="object-cover rounded" />
+                )) : <span className="text-gray-400 text-xs">Нет</span>}
+              </div>
+            ) 
+          },
+          { 
+            title: 'Результаты', 
+            dataIndex: 'result_images', 
+            render: (imgs: string[]) => (
+              <div className="flex gap-2 flex-wrap">
+                {imgs?.map((img, i) => (
+                  <Image key={i} width={50} height={50} src={`/api${img}`} className="object-cover rounded" />
+                ))}
+              </div>
+            ) 
+          },
+          { title: 'Действия', render: (_, r) => <Button size="small" danger onClick={() => handleDelete(r.id)}>Удалить</Button> }
         ]} 
       />
       <Modal 
@@ -412,6 +435,7 @@ const GallerySection: React.FC = () => {
         okText="Сохранить"
         cancelText="Отмена"
         confirmLoading={uploading}
+        maskClosable={false}
       >
         <Form form={form} layout="vertical" onFinish={handleAdd}>
           <Form.Item name="prompt" label="Промпт (описание, которое увидит пользователь)" rules={[{ required: true, message: 'Введите промпт' }]}>
@@ -420,13 +444,13 @@ const GallerySection: React.FC = () => {
 
           <div className="p-4 border rounded-xl bg-slate-50 mb-6">
             <Form.Item 
-              name="input_image_upload" 
-              label={<b>1. Исходное фото (Опционально. То, что загрузил пользователь)</b>} 
+              name="input_images_upload" 
+              label={<b>1. Исходные фото (Опционально. Максимум 4 шт.)</b>} 
               valuePropName="fileList" 
               getValueFromEvent={normFile}
             >
-              <Upload customRequest={handleUpload} listType="picture" maxCount={1}>
-                <Button icon={<UploadOutlined />}>Загрузить исходник</Button>
+              <Upload customRequest={handleUpload} listType="picture-card" multiple maxCount={4}>
+                <div><UploadOutlined /><div style={{ marginTop: 8 }}>Загрузить</div></div>
               </Upload>
             </Form.Item>
 
@@ -438,8 +462,8 @@ const GallerySection: React.FC = () => {
               rules={[{ required: true, message: 'Загрузите хотя бы одно фото' }]}
               className="mb-0"
             >
-              <Upload customRequest={handleUpload} listType="picture" multiple>
-                <Button icon={<UploadOutlined />}>Загрузить результаты</Button>
+              <Upload customRequest={handleUpload} listType="picture-card" multiple>
+                <div><UploadOutlined /><div style={{ marginTop: 8 }}>Загрузить</div></div>
               </Upload>
             </Form.Item>
           </div>

@@ -398,7 +398,7 @@ export type GalleryItem = {
   prompt: string;
   style_ids: string[];
   result_images: string[];
-  input_image?: string | null;
+  input_images: string[];
   created_at: string;
 };
 export type GalleryListResponse = { items: GalleryItem[] };

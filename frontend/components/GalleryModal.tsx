@@ -80,15 +80,27 @@ export const GalleryModal: React.FC<Props> = ({ isOpen, onClose, onCopyPrompt })
           ) : (
             <div className="columns-1 sm:columns-2 gap-4 space-y-4">
               {items.map(item => (
-                <div key={item.id} className={cn("break-inside-avoid rounded-2xl border p-3 flex flex-col gap-3 group", theme === 'dark' ? 'border-zinc-800 bg-zinc-900/50' : 'border-zinc-200 bg-white')}>
-                  {item.input_image && (
-                    <div className="text-[10px] font-bold uppercase text-indigo-500 mb-1">Использовано входное фото</div>
+                <div key={item.id} className={cn("break-inside-avoid rounded-2xl border p-4 flex flex-col gap-3 group", theme === 'dark' ? 'border-zinc-800 bg-zinc-900/50' : 'border-zinc-200 bg-white')}>
+                  
+                  {/* Вывод исходных фото */}
+                  {item.input_images && item.input_images.length > 0 && (
+                    <div className="mb-2">
+                      <div className="text-[10px] font-bold uppercase text-indigo-500 mb-1">Исходники</div>
+                      <div className="flex flex-wrap gap-2">
+                        {item.input_images.map((img, i) => (
+                          <img key={i} src={resolveAssetUrl(img) || undefined} className="rounded-lg w-12 h-12 object-cover border border-zinc-200 dark:border-zinc-700" alt="Исходник" />
+                        ))}
+                      </div>
+                    </div>
                   )}
+                  
+                  <div className="text-[10px] font-bold uppercase text-emerald-500 mb-[-4px]">Результат</div>
                   <div className="grid grid-cols-2 gap-2">
                     {item.result_images.map((img, i) => (
                       <img key={i} src={resolveAssetUrl(img) || undefined} className="rounded-xl w-full object-cover aspect-[3/4]" alt="Пример" />
                     ))}
                   </div>
+                  
                   <p className="text-xs text-zinc-500 dark:text-zinc-400 italic line-clamp-3 group-hover:line-clamp-none transition-all">"{item.prompt}"</p>
                   <Button size="sm" variant="secondary" onClick={() => { onCopyPrompt(item.prompt); onClose(); }}>Скопировать промпт</Button>
                 </div>
