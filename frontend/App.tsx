@@ -12,6 +12,7 @@ import { Button } from './components/ui/Button';
 import { cn } from './lib/cn';
 import { useTheme } from './context/ThemeContext';
 import { SupportModal } from './components/SupportModal';
+import { PricingSection } from './components/PricingSection'
 
 const PromoCTA: React.FC<{ onAuthClick: (tab: 'login' | 'register') => void }> = ({ onAuthClick }) => {
   const { t } = useTranslation();
@@ -177,6 +178,8 @@ const AppContent: React.FC = () => {
                 </div>
               </div>
             </section>
+
+            <PricingSection />
             
             <PromoCTA onAuthClick={handleAuth} />
           </>
@@ -197,47 +200,61 @@ const AppContent: React.FC = () => {
             : 'border-zinc-200/70 bg-white/70 text-zinc-900'
         )}
       >
-        <div className="mx-auto max-w-7xl px-6 lg:px-8 flex flex-col md:flex-row justify-between items-center gap-10">
-          <div className="flex items-center gap-3">
-             <div className="h-10 w-10 bg-indigo-600 rounded-xl flex items-center justify-center text-white font-black">NV</div>
-             <span className={cn("font-black uppercase tracking-tighter", theme === 'dark' ? 'text-white' : 'text-zinc-900')}>{t.footer.brand}</span>
-          </div>
-          <div className="flex gap-10 items-center">
-            {footerLinks.map(link => (
-              <a
-                key={link.label}
-                href={link.href}
-                target="_blank"
-                rel="noreferrer noopener"
-                className={cn(
-                  "text-xs font-bold uppercase tracking-widest transition-colors",
-                  theme === 'dark' ? 'text-zinc-400 hover:text-indigo-400' : 'text-zinc-500 hover:text-indigo-600'
-                )}
+        <div className="mx-auto max-w-7xl px-6 lg:px-8">
+          <div className="flex flex-col md:flex-row justify-between items-start gap-12 mb-16">
+            {/* Блок бренда с иконкой */}
+            <div className="space-y-6 max-w-xs">
+              <div className="flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-600 text-white shadow-xl">
+                  <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                  </svg>
+                </div>
+                <span className={cn("text-xl font-black uppercase tracking-tighter", theme === 'dark' ? 'text-white' : 'text-zinc-900')}>
+                  NanoVisual
+                </span>
+              </div>
+              <p className="text-sm text-zinc-500 leading-relaxed">
+                Профессиональный инструмент для создания контента с помощью нейросетей.
+              </p>
+            </div>
+
+            {/* Ссылки */}
+            <div className="grid grid-cols-2 gap-x-12 gap-y-4">
+              {footerLinks.map(link => (
+                <a
+                  key={link.label}
+                  href={link.href}
+                  className="text-xs font-bold uppercase tracking-widest text-zinc-500 hover:text-indigo-600 transition-colors"
+                >
+                  {link.label}
+                </a>
+              ))}
+              <button
+                onClick={() => setSupportModalOpen(true)}
+                className="text-xs font-bold uppercase tracking-widest text-zinc-500 hover:text-indigo-600 transition-colors text-left"
               >
-                {link.label}
-              </a>
-            ))}
-            <button
-              onClick={() => setSupportModalOpen(true)}
-              className={cn(
-                "text-xs font-bold uppercase tracking-widest transition-colors",
-                theme === 'dark' ? 'text-zinc-400 hover:text-indigo-400' : 'text-zinc-500 hover:text-indigo-600'
-              )}
-            >
-              {t.footer.support}
-            </button>
+                {t.footer.support}
+              </button>
+            </div>
+
+            {/* Реквизиты (Для ЮKassa) */}
+            <div className="space-y-2">
+              <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-indigo-500">Реквизиты</h4>
+              <div className="text-[11px] text-zinc-500 space-y-1 font-medium">
+                <p>Самозанятый: [ВАШЕ ФИО]</p>
+                <p>ИНН: [ВАШ ИНН]</p>
+                <p>E-mail: support@nanovi.ru</p>
+                <p>Адрес: [ВАШ ГОРОД]</p>
+              </div>
+            </div>
           </div>
-          <a
-            href="https://ndk-ai.ru"
-            target="_blank"
-            rel="noreferrer noopener"
-            className={cn(
-              "text-[10px] font-bold uppercase tracking-[0.2em] transition-colors hover:text-indigo-500",
-              theme === 'dark' ? 'text-zinc-500' : 'text-zinc-400'
-            )}
-          >
-            © 2025 NDK-AI
-          </a>
+
+          <div className="pt-8 border-t border-zinc-100 dark:border-zinc-900 flex justify-between items-center">
+            <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">© 2025 NanoVisual</p>
+            <a href="https://ndk-ai.ru" className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest hover:text-indigo-500">NDK-AI Group</a>
+          </div>
         </div>
       </footer>
 
