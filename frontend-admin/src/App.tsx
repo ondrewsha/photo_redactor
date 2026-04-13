@@ -485,7 +485,7 @@ const GallerySection: React.FC = () => {
         confirmLoading={uploading}
         maskClosable={false}
       >
-        <Form form={form} layout="vertical" onFinish={handleAdd}>
+        <Form form={form} layout="vertical" onFinish={handleAddOrEdit}>
           <Form.Item name="prompt" label="Промпт (описание, которое увидит пользователь)" rules={[{ required: true, message: 'Введите промпт' }]}>
             <Input.TextArea rows={3} placeholder="Пример: Студийная съемка, макро..." />
           </Form.Item>
