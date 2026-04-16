@@ -978,96 +978,120 @@ export const Generator: React.FC = () => {
         }}
         onRefreshHistory={() => loadHistory(historyPage, historyProject)}
       />
+      {/* ПОЛНОЭКРАННЫЙ ПРОСМОТР КАРТИНКИ ИЗ ИСТОРИИ */}
       {fullscreenItem && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center px-4 py-6">
+        <div className="fixed inset-0 z-[80] flex items-center justify-center px-4 py-6">
+          {/* Темный фон */}
           <div
             className="absolute inset-0 bg-black/70 backdrop-blur-sm"
             onClick={closeFullscreen}
           />
+          
+          {/* Контейнер модалки. max-h-[90vh] не дает вылезти за экран, а flex-col позволяет скроллить внутри */}
           <div
             className={cn(
-              "relative w-full max-w-4xl overflow-hidden rounded-[2rem] border shadow-2xl transition-colors",
+              "relative w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden rounded-[2rem] border shadow-2xl transition-colors",
               theme === 'dark'
                 ? 'border-zinc-800 bg-zinc-900 text-white'
                 : 'border-zinc-200 bg-white text-zinc-900'
             )}
+            onClick={e => e.stopPropagation()}
           >
-          <div className="relative h-96 overflow-hidden pt-4">
-              <img
-                src={resolveAssetUrl(fullscreenItem.image_url) || undefined}
-                alt={t.history.promptLabel}
-                className="h-full w-full object-contain"
-              />
-              <button
-                type="button"
-                className={cn(
-                  "absolute top-4 right-4 h-12 w-12 rounded-2xl flex items-center justify-center border transition-colors",
-                  theme === 'dark'
-                    ? 'border-white/30 bg-black/30 text-white hover:border-white hover:bg-white/10'
-                    : 'border-zinc-200 bg-white text-zinc-900 hover:border-indigo-500 hover:bg-indigo-50'
-                )}
-                onClick={closeFullscreen}
-                aria-label={t.common.close}
-              >
-                <svg className="h-6 w-6" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} fill="none">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
-            <div className="space-y-4 p-6">
-              <p className="text-[10px] uppercase tracking-[0.45em] text-zinc-400">{t.history.promptLabel}</p>
-              <p className="text-lg font-semibold leading-snug">{fullscreenItem.user_prompt}</p>
-              <div className="flex flex-wrap gap-2">
-                {historyStyleLabels(fullscreenItem).map((name) => (
-                  <span
-                    key={name}
-                    className="rounded-full border border-current px-3 py-1 text-[11px] uppercase tracking-[0.3em]"
-                  >
-                    {name}
-                  </span>
-                ))}
+            {/* Блок, который скроллится (overflow-y-auto) */}
+            <div className="flex-1 overflow-y-auto">
+              
+              {/* Блок с картинкой */}
+              <div className="relative bg-black/5 dark:bg-black/40 p-4 flex justify-center border-b border-zinc-200 dark:border-zinc-800/50">
+                <img
+                  src={resolveAssetUrl(fullscreenItem.image_url) || undefined}
+                  alt={t.history.promptLabel}
+                  className="max-h-[55vh] w-auto object-contain rounded-xl shadow-lg"
+                />
+                
+                {/* Кнопка закрыть */}
+                <button
+                  type="button"
+                  className={cn(
+                    "absolute top-4 right-4 h-10 w-10 rounded-xl flex items-center justify-center border transition-colors",
+                    "bg-black/50 text-white hover:bg-black/70 border-white/20 z-10 backdrop-blur-md"
+                  )}
+                  onClick={closeFullscreen}
+                  title={t.common.close}
+                >
+                  <svg className="h-5 w-5" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5} fill="none">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
               </div>
-              <div className="flex items-center justify-between">
-                <p className="text-[11px] uppercase tracking-[0.4em] text-zinc-400">
-                  {new Date(fullscreenItem.created_at).toLocaleString()}
-                </p>
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    className={cn(
-                      "h-10 w-10 rounded-2xl flex items-center justify-center border transition-colors",
-                      theme === 'dark'
-                        ? 'border-white/30 bg-black/30 text-white hover:border-white hover:bg-white/10'
-                        : 'border-zinc-200 bg-white text-zinc-900 hover:border-indigo-500 hover:bg-indigo-50'
-                    )}
-                    onClick={() => handleHistoryDownload(fullscreenItem)}
-                    aria-label={t.history.download}
-                  >
-                    <svg className="h-5 w-5" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} fill="none">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a2 2 0 002 2h12a2 2 0 002-2v-1" />
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M7 10l5 5 5-5" />
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 15V4" />
-                    </svg>
-                  </button>
-                  <button
-                    type="button"
-                    className={cn(
-                      "h-10 w-10 rounded-2xl flex items-center justify-center border transition-colors",
-                      theme === 'dark'
-                        ? 'border-white/30 bg-black/30 text-white hover:border-white hover:bg-white/10'
-                        : 'border-zinc-200 bg-white text-zinc-900 hover:border-rose-500 hover:bg-rose-50'
-                    )}
-                    onClick={() => handleHistoryDelete(fullscreenItem)}
-                    aria-label={t.history.delete}
-                  >
-                    <svg className="h-5 w-5" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} fill="none">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M6 7h12" />
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M11 11v6" />
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M15 11v6" />
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 7l1 12a2 2 0 002 2h8a2 2 0 002-2l1-12" />
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 7V5a2 2 0 012-2h2a2 2 0 012 2v2" />
-                    </svg>
-                  </button>
+
+              {/* Блок с текстами (промпт полностью, без обрезки) */}
+              <div className="space-y-4 p-6">
+                <div>
+                  <p className="text-[10px] uppercase tracking-[0.45em] text-zinc-400 mb-1">{t.history.promptLabel}</p>
+                  <p className="text-lg font-semibold leading-relaxed whitespace-pre-wrap">
+                    {fullscreenItem.user_prompt || fullscreenItem.final_prompt}
+                  </p>
+                </div>
+                
+                {historyStyleLabels(fullscreenItem).length > 0 && (
+                  <div>
+                    <p className="text-[10px] uppercase tracking-[0.45em] text-zinc-400 mb-2">{t.history.stylesLabel}</p>
+                    <div className="flex flex-wrap gap-2">
+                      {historyStyleLabels(fullscreenItem).map((name) => (
+                        <span
+                          key={name}
+                          className="rounded-full border border-current px-3 py-1 text-[11px] uppercase tracking-[0.3em]"
+                        >
+                          {name}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                
+                {/* Подвал с датой и кнопками действий */}
+                <div className="flex items-center justify-between mt-6 pt-4 border-t border-zinc-200 dark:border-zinc-800">
+                  <p className="text-[11px] uppercase tracking-[0.4em] text-zinc-400">
+                    {new Date(fullscreenItem.created_at).toLocaleString()}
+                  </p>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      className={cn(
+                        "h-10 w-10 rounded-2xl flex items-center justify-center border transition-colors",
+                        theme === 'dark'
+                          ? 'border-white/30 bg-black/30 text-white hover:border-white hover:bg-white/10'
+                          : 'border-zinc-200 bg-white text-zinc-900 hover:border-indigo-500 hover:bg-indigo-50'
+                      )}
+                      onClick={() => handleHistoryDownload(fullscreenItem)}
+                      title={t.history.download}
+                    >
+                      <svg className="h-5 w-5" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} fill="none">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a2 2 0 002 2h12a2 2 0 002-2v-1" />
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M7 10l5 5 5-5" />
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 15V4" />
+                      </svg>
+                    </button>
+                    <button
+                      type="button"
+                      className={cn(
+                        "h-10 w-10 rounded-2xl flex items-center justify-center border transition-colors",
+                        theme === 'dark'
+                          ? 'border-white/30 bg-black/30 text-white hover:border-white hover:bg-white/10'
+                          : 'border-zinc-200 bg-white text-zinc-900 hover:border-rose-500 hover:bg-rose-50'
+                      )}
+                      onClick={() => handleHistoryDelete(fullscreenItem)}
+                      title={t.history.delete}
+                    >
+                      <svg className="h-5 w-5" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} fill="none">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M6 7h12" />
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M11 11v6" />
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M15 11v6" />
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 7l1 12a2 2 0 002 2h8a2 2 0 002-2l1-12" />
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M9 7V5a2 2 0 012-2h2a2 2 0 012 2v2" />
+                      </svg>
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>

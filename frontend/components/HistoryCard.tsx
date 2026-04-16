@@ -48,6 +48,11 @@ export const HistoryCard: React.FC<HistoryCardProps> = ({
       ? 'linear-gradient(135deg, rgba(15,23,42,0.9), rgba(59,56,72,0.95))'
       : 'linear-gradient(135deg, rgba(248,250,252,0.9), rgba(226,232,240,0.9))';
 
+  // Логика обрезки стилей (показываем максимум 2, остальные прячем за счетчиком)
+  const MAX_STYLES = 2;
+  const visibleStyles = styleNames.slice(0, MAX_STYLES);
+  const hiddenStylesCount = styleNames.length - MAX_STYLES;
+
   return (
     <div className={historyCardRoot}>
       <div
@@ -64,7 +69,7 @@ export const HistoryCard: React.FC<HistoryCardProps> = ({
             type="button"
             className={iconButtonClass}
             onClick={() => onDownload(item)}
-            aria-label={t.history.download}
+            title={t.history.download}
           >
             <svg className="h-5 w-5" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} fill="none">
               <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a2 2 0 002 2h12a2 2 0 002-2v-1" />
@@ -76,7 +81,7 @@ export const HistoryCard: React.FC<HistoryCardProps> = ({
             type="button"
             className={iconButtonClass}
             onClick={() => onDelete(item)}
-            aria-label={t.history.delete}
+            title={t.history.delete}
           >
             <svg className="h-5 w-5" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} fill="none">
               <path strokeLinecap="round" strokeLinejoin="round" d="M6 7h12" />
@@ -102,7 +107,7 @@ export const HistoryCard: React.FC<HistoryCardProps> = ({
             type="button"
             className={iconButtonClass}
             onClick={() => onOpen(item)}
-            aria-label={t.history.open}
+            title={t.history.open}
           >
             <svg className="h-5 w-5" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} fill="none">
               <path strokeLinecap="round" strokeLinejoin="round" d="M4 12h3m7 0h3m-5-5V4m0 16v-3" />
@@ -116,21 +121,40 @@ export const HistoryCard: React.FC<HistoryCardProps> = ({
       </div>
       <div className="flex flex-col gap-2 p-4 flex-1">
         <p className="text-[10px] uppercase tracking-[0.45em] text-zinc-400">{t.history.promptLabel}</p>
-        <p className="text-sm font-semibold leading-snug break-words">{item.user_prompt || item.final_prompt || '—'}</p>
+        
+        {/* Добавили line-clamp-2 для обрезки длинного промпта */}
+        <p 
+          className="text-sm font-semibold leading-snug break-words line-clamp-2" 
+          title={item.user_prompt || item.final_prompt || '—'}
+        >
+          {item.user_prompt || item.final_prompt || '—'}
+        </p>
+        
         {styleNames.length > 0 && (
-          <div className="flex flex-col gap-2">
+          <div className="flex flex-col gap-2 mt-auto pt-2">
             <p className="text-[10px] uppercase tracking-[0.45em] text-zinc-400">
               {t.history.stylesLabel}
             </p>
             <div className="flex flex-wrap gap-2">
-              {styleNames.map((name) => (
+              {/* Показываем только первые MAX_STYLES */}
+              {visibleStyles.map((name) => (
                 <span
                   key={name}
-                  className="rounded-full border border-current px-3 py-1 text-[11px] uppercase tracking-[0.3em]"
+                  title={name}
+                  className="rounded-full border border-current px-3 py-1 text-[11px] uppercase tracking-[0.3em] truncate max-w-[140px]"
                 >
                   {name}
                 </span>
               ))}
+              {/* Показываем "+X", если есть скрытые стили */}
+              {hiddenStylesCount > 0 && (
+                <span
+                  className="rounded-full border border-current px-3 py-1 text-[11px] uppercase tracking-[0.3em] cursor-help"
+                  title={styleNames.slice(MAX_STYLES).join(', ')}
+                >
+                  +{hiddenStylesCount}
+                </span>
+              )}
             </div>
           </div>
         )}
