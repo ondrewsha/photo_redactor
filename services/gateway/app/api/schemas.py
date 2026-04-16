@@ -22,6 +22,7 @@ class AuthMeResponse(BaseSchema):
 class RegisterRequest(BaseSchema):
     email: str = Field(..., min_length=3, max_length=320)
     password: str = Field(..., min_length=8, max_length=200)
+    referral_code: str | None = None
 
 
 class LoginRequest(BaseSchema):
@@ -232,3 +233,17 @@ class AdminUpdateGalleryRequest(BaseSchema):
     style_ids: list[str] = Field(default_factory=list)
     result_images: list[str] = Field(default_factory=list)
     input_images: list[str] = Field(default_factory=list)
+
+class ReferralItem(BaseSchema):
+    email: str
+    registered_at: datetime
+    bonus_granted: bool
+
+class ReferralResponse(BaseSchema):
+    referral_code: str
+    referral_link: str
+    invited_by: str | None = None
+    items: list[ReferralItem] = Field(default_factory=list)
+    total: int
+    page: int
+    limit: int

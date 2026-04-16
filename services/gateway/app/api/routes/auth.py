@@ -2,12 +2,13 @@ from __future__ import annotations
 
 from datetime import datetime, timedelta, timezone
 from typing import Annotated
+import secrets
 
 import redis.asyncio as redis
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response, status
 from fastapi.responses import JSONResponse
 from fastapi.responses import RedirectResponse
-from sqlalchemy import select
+from sqlalchemy import select, func
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -19,6 +20,8 @@ from app.api.schemas import (
     LoginRequest,
     MessageResponse,
     RegisterRequest,
+    ReferralItem,
+    ReferralResponse,
 )
 from app.core.cookies import clear_session_cookies, set_session_cookies
 from app.core.email import EmailConfigurationError, send_email
@@ -112,15 +115,35 @@ async def register(
 
     email = _normalize_email(payload.email)
     password_hash_value = hash_password(payload.password)
-    user = User(email=email, password_hash=password_hash_value, email_verified=False)
+
+    ref_user_id = None
+    if payload.referral_code:
+        res_ref = await db.execute(select(User).where(User.referral_code == payload.referral_code))
+        ref_user = res_ref.scalar_one_or_none()
+        if ref_user:
+            ref_user_id = ref_user.id
+            
+    new_ref_code = secrets.token_hex(4)
+    
+    user = User(
+        email=email, 
+        password_hash=password_hash_value, 
+        email_verified=False,
+        referral_code=new_ref_code,
+        referred_by=ref_user_id
+    )
     try:
-        async with db.begin():
-            db.add(user)
-            await db.flush()
-            db.add(Wallet(user_id=user.id, balance=0, trial_granted=False))
+        db.add(user)
+        await db.flush() # Получаем ID пользователя для кошелька
+        db.add(Wallet(user_id=user.id, balance=0, trial_granted=False))
+        
+        await db.commit() # Явно подтверждаем транзакцию
     except IntegrityError:
-        await db.rollback()
+        await db.rollback() # В случае ошибки откатываем
         raise HTTPException(status_code=409, detail="Эта почта уже зарегистрирована.") from None
+    except Exception as exc:
+        await db.rollback()
+        raise HTTPException(status_code=500, detail=f"Ошибка БД: {str(exc)}")
 
     await db.refresh(user)
 
@@ -288,3 +311,54 @@ async def change_password(
     user.password_hash = hash_password(payload.new_password)
     await db.commit()
     return MessageResponse(message="Пароль обновлён.")
+
+@router.get("/referrals", response_model=ReferralResponse)
+async def get_referrals(
+    request: Request,
+    user: Annotated[User, Depends(require_user)],
+    db: Annotated[AsyncSession, Depends(get_db_session)],
+    settings: Annotated[Settings, Depends(get_settings)],
+    limit: int = Query(10, ge=1, le=100),
+    page: int = Query(1, ge=1),
+) -> ReferralResponse:
+    import secrets
+    # Если это старый юзер и у него нет кода, сгенерируем на лету
+    if not user.referral_code:
+        user.referral_code = secrets.token_hex(4)
+        await db.commit()
+
+    invited_by_email = None
+    if user.referred_by:
+        res_inviter = await db.execute(select(User.email).where(User.id == user.referred_by))
+        email_raw = res_inviter.scalar_one_or_none()
+        if email_raw:
+            parts = email_raw.split("@")
+            invited_by_email = f"{parts[0][:2]}***@{parts[1]}" if len(parts[0]) > 2 else "*@*"
+
+    offset = (page - 1) * limit
+    res_items = await db.execute(
+        select(User).where(User.referred_by == user.id).order_by(User.created_at.desc()).offset(offset).limit(limit)
+    )
+    users_invited = res_items.scalars().all()
+    
+    total_res = await db.execute(select(func.count()).select_from(select(User).where(User.referred_by == user.id).subquery()))
+    total = total_res.scalar_one()
+
+    items =[]
+    for u in users_invited:
+        parts = u.email.split("@")
+        masked = f"{parts[0][:2]}***@{parts[1]}" if len(parts[0]) > 2 else "*@*"
+        items.append(ReferralItem(email=masked, registered_at=u.created_at, bonus_granted=u.referral_bonus_granted))
+
+    base = settings.frontend_base_url.rstrip("/")
+    link = f"{base}/?ref={user.referral_code}"
+
+    return ReferralResponse(
+        referral_code=user.referral_code,
+        referral_link=link,
+        invited_by=invited_by_email,
+        items=items,
+        total=total,
+        page=page,
+        limit=limit
+    )

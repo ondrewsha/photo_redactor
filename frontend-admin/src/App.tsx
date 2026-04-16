@@ -358,7 +358,7 @@ const GallerySection: React.FC = () => {
   const [open, setOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form] = Form.useForm();
-  const[uploading, setUploading] = useState(false);
+  const [uploading, setUploading] = useState(false);
 
   const load = () => {
     adminApi.fetchGallery().then(r => setItems(r.items)).catch(console.error);

@@ -12,6 +12,7 @@ import {
   ProjectItem,
   ProjectListResponse,
   GalleryListResponse,
+  ReferralResponse,
 } from '../types';
 
 const BASE_URL = import.meta.env.VITE_GATEWAY_URL || '/api';
@@ -117,6 +118,7 @@ export const api = {
     me: () => request<AuthMeResponse>('/auth/me'),
     login: (p: any) => request<any>('/auth/login', { method: 'POST', body: JSON.stringify(p) }),
     register: (p: any) => request<any>('/auth/register', { method: 'POST', body: JSON.stringify(p) }),
+    referrals: (page = 1) => request<ReferralResponse>(`/auth/referrals?page=${page}&limit=10`),
     logout: () => request<any>('/auth/logout', { method: 'POST' }),
     changePassword: (payload: { current_password: string; new_password: string }) =>
       request<MessageResponse>('/auth/change-password', {

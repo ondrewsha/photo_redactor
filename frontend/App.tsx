@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { ThemeProvider } from './context/ThemeContext';
 import { I18nProvider, useTranslation } from './context/I18nContext';
 import { AuthProvider, useAuth } from './context/AuthContext';
@@ -98,6 +98,14 @@ const AppContent: React.FC = () => {
   });
   const [profileModalOpen, setProfileModalOpen] = useState(false);
   const [supportModalOpen, setSupportModalOpen] = useState(false);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const refCode = params.get('ref');
+    if (refCode) {
+      localStorage.setItem('nv_ref', refCode);
+    }
+  },[]);
 
   const scrollToTarget = () => {
     const targetId = user ? 'generator' : 'cta-promo';

@@ -402,3 +402,19 @@ export type GalleryItem = {
   created_at: string;
 };
 export type GalleryListResponse = { items: GalleryItem[] };
+
+export type ReferralItem = {
+  email: string;
+  registered_at: string;
+  bonus_granted: boolean;
+};
+
+export type ReferralResponse = {
+  referral_code: string;
+  referral_link: string;
+  invited_by: string | null;
+  items: ReferralItem[];
+  total: number;
+  page: number;
+  limit: number;
+};

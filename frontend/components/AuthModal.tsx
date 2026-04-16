@@ -31,7 +31,9 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialTa
       if (tab === 'login') {
         await api.auth.login({ email, password });
       } else {
-        await api.auth.register({ email, password });
+        const refCode = localStorage.getItem('nv_ref'); // Достаем код из кэша
+        await api.auth.register({ email, password, referral_code: refCode || undefined });
+        localStorage.removeItem('nv_ref');
       }
       await refresh();
       onClose();

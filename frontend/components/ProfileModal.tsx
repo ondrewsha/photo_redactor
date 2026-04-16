@@ -1,12 +1,12 @@
 
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from '../context/I18nContext';
 import { useAuth } from '../context/AuthContext';
 import { Button } from './ui/Button';
 import { api } from '../lib/api';
 import { cn } from '../lib/cn';
 import { useTheme } from '../context/ThemeContext';
-import { BillingHistoryItem } from '../types';
+import { BillingHistoryItem, ReferralResponse } from '../types';
 import { TranslationSchema } from '../types';
 import { calculateUnitPrice, calculateTotalPrice } from '../lib/pricing';
 
@@ -35,6 +35,7 @@ export const ProfileModal: React.FC<Props> = ({ isOpen, onClose }) => {
   const [count, setCount] = useState(10);
   const [loading, setLoading] = useState(false);
   const suggestions = [10, 20, 50, 70, 90, 100];
+  const [referralOpen, setReferralOpen] = useState(false);
 
   const unitPrice = useMemo(() => calculateUnitPrice(count), [count]);
   const totalPrice = useMemo(() => calculateTotalPrice(count), [count]);
@@ -265,6 +266,13 @@ export const ProfileModal: React.FC<Props> = ({ isOpen, onClose }) => {
           </div>
 
           <div className="pt-4 flex flex-col gap-2">
+            <Button 
+              variant="outline"
+              className={outlineButtonClass}
+              onClick={() => setReferralOpen(true)}
+            >
+              Реферальная система
+            </Button>
             <Button
               variant="outline"
               className={outlineButtonClass}
@@ -293,6 +301,11 @@ export const ProfileModal: React.FC<Props> = ({ isOpen, onClose }) => {
           </div>
         </div>
       </div>
+      <ReferralModal 
+        isOpen={referralOpen}
+        onClose={() => setReferralOpen(false)}
+        theme={theme} t={t}
+      />
       <BillingHistoryModal
         isOpen={billingHistoryOpen}
         onClose={() => setBillingHistoryOpen(false)}
@@ -566,6 +579,105 @@ const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({
           <Button className="w-full" onClick={onSubmit} isLoading={loading}>
             {t.profile.changePasswordSubmit}
           </Button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+type ReferralModalProps = { 
+  isOpen: boolean; onClose: () => void;
+  theme: string;
+  t: any
+};
+
+const ReferralModal: React.FC<ReferralModalProps> = ({ isOpen, onClose, theme }) => {
+  const [data, setData] = useState<ReferralResponse | null>(null);
+  const [loading, setLoading] = useState(false);
+  const[copied, setCopied] = useState(false);
+
+  const load = async (page = 1) => {
+    setLoading(true);
+    try {
+      const res = await api.auth.referrals(page);
+      setData(res);
+    } catch (e) { console.error(e); } finally { setLoading(false); }
+  };
+
+  useEffect(() => { if (isOpen) load(); }, [isOpen]);
+
+  const handleCopy = () => {
+    if (data?.referral_link) {
+      navigator.clipboard.writeText(data.referral_link);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div className={cn("absolute inset-0 transition-colors", theme === 'dark' ? 'bg-black/80' : 'bg-white/80')} onClick={onClose} />
+      <div className={cn("relative w-full max-w-2xl max-h-[80vh] flex flex-col overflow-hidden rounded-[1.5rem] border shadow-2xl transition-colors", theme === 'dark' ? 'border-zinc-800 bg-zinc-900 text-white' : 'border-zinc-200 bg-white text-zinc-900')}>
+        
+        <div className="flex items-center justify-between px-6 py-4 border-b dark:border-zinc-700 border-zinc-200">
+          <h3 className="text-lg font-bold uppercase tracking-[0.4em]">Реферальная программа</h3>
+          <Button variant="ghost" size="icon" onClick={onClose}>✕</Button>
+        </div>
+
+        <div className="p-6 overflow-y-auto space-y-6">
+          <div className={cn("p-5 rounded-2xl border", theme === 'dark' ? 'bg-indigo-900/10 border-indigo-900/30' : 'bg-indigo-50 border-indigo-100')}>
+            <h4 className="text-xs font-bold uppercase tracking-widest text-indigo-500 mb-2">🎁 Бонус для вас и друзей</h4>
+            <p className="text-sm font-medium leading-relaxed">
+              Приглашайте друзей и получайте по <b>5 бесплатных генераций</b> каждый! Бонус начисляется обоим сразу после того, как приглашенный друг купит пакет от 20 генераций.
+            </p>
+          </div>
+
+          <div>
+            <label className="text-[10px] font-bold uppercase tracking-[0.35em] text-zinc-500">Ваша ссылка для приглашения</label>
+            <div className="flex mt-2 gap-2">
+              <input type="text" readOnly value={data?.referral_link || ''} className={cn("w-full px-4 py-3 rounded-xl border text-sm font-medium outline-none", theme === 'dark' ? 'bg-zinc-800 border-zinc-700' : 'bg-zinc-50 border-zinc-200')} />
+              <Button onClick={handleCopy} className="whitespace-nowrap px-6">{copied ? "Скопировано!" : "Скопировать"}</Button>
+            </div>
+            {data?.invited_by && (
+              <p className="text-xs mt-3 text-emerald-500 font-medium">Вас пригласил: {data.invited_by}</p>
+            )}
+          </div>
+
+          <div>
+            <h4 className="text-xs font-bold uppercase tracking-[0.35em] text-zinc-500 mb-4">Кого вы пригласили</h4>
+            {!data || data.items.length === 0 ? (
+              <div className="text-center py-8 text-sm uppercase tracking-widest text-zinc-500">Вы пока никого не пригласили</div>
+            ) : (
+              <div className="space-y-3">
+                {data.items.map((item, idx) => (
+                  <div key={idx} className={cn("flex items-center justify-between p-4 rounded-xl border", theme === 'dark' ? 'bg-zinc-900/50 border-zinc-800' : 'bg-white border-zinc-200')}>
+                    <div>
+                      <p className="text-sm font-bold">{item.email}</p>
+                      <p className="text-[10px] text-zinc-500 uppercase tracking-widest mt-1">{new Date(item.registered_at).toLocaleDateString()}</p>
+                    </div>
+                    <div>
+                      {item.bonus_granted ? (
+                        <span className="px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-emerald-100 text-emerald-700">Бонус получен</span>
+                      ) : (
+                        <span className="px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-amber-100 text-amber-700">Ждём покупку</span>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+            
+            {/* Пагинация (если больше 10 человек) */}
+            {data && data.total > data.limit && (
+              <div className="flex justify-between items-center mt-4 text-[10px] font-bold uppercase tracking-widest text-zinc-500">
+                <Button variant="ghost" size="sm" disabled={data.page === 1} onClick={() => load(data.page - 1)}>Назад</Button>
+                <span>Стр {data.page} из {Math.ceil(data.total / data.limit)}</span>
+                <Button variant="ghost" size="sm" disabled={data.page >= Math.ceil(data.total / data.limit)} onClick={() => load(data.page + 1)}>Дальше</Button>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>

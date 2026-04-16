@@ -97,6 +97,22 @@ async def _apply_success_payment(
             comment="Покупка генераций",
         )
     )
+
+    res_user = await db.execute(select(User).where(User.id == payment.user_id))
+    payer_user = res_user.scalar_one()
+    
+    if payment.generation_count >= 20 and payer_user.referred_by and not payer_user.referral_bonus_granted:
+        payer_user.referral_bonus_granted = True
+        
+        # Начисляем 5 штук плательщику
+        wallet.balance += 5
+        db.add(WalletTransaction(user_id=payer_user.id, delta=5, kind="referral", comment="Бонус: реферальная программа (покупка от 20 шт)"))
+        
+        # Начисляем 5 штук пригласившему
+        inviter_wallet = await _get_or_create_wallet_for_update(db, user_id=payer_user.referred_by)
+        inviter_wallet.balance += 5
+        db.add(WalletTransaction(user_id=payer_user.referred_by, delta=5, kind="referral", comment="Бонус: ваш друг совершил покупку"))
+    
     await db.commit()
     await db.refresh(payment)
     amount_rub = int(payment.amount_kopecks // 100)

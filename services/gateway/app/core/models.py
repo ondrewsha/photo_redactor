@@ -24,6 +24,10 @@ class User(Base):
     email_verified: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     role: Mapped[str] = mapped_column(String(32), nullable=False, default="user")
 
+    referral_code: Mapped[str | None] = mapped_column(String(20), unique=True, nullable=True, index=True)
+    referred_by: Mapped[uuid.UUID | None] = mapped_column(PG_UUID(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    referral_bonus_granted: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=func.false(), default=False)
+
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         nullable=False,
