@@ -2,8 +2,8 @@ from __future__ import annotations
 
 import math
 
-MAX_UNIT_PRICE = 35.0
-MIN_UNIT_PRICE = 13
+MAX_UNIT_PRICE = 37.77
+MIN_UNIT_PRICE = 20
 DISCOUNT_FACTOR = 4.0
 
 
