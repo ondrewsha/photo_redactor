@@ -86,6 +86,51 @@ const PromoCTA: React.FC<{ onAuthClick: (tab: 'login' | 'register') => void }> =
   );
 };
 
+const EmailVerification: React.FC = () => {
+  const { t } = useTranslation();
+  const { theme } = useTheme();
+  const { user } = useAuth();
+  
+  return (
+    <section id="email-verification" className="py-24 px-6">
+      <div
+        className={cn(
+          "mx-auto max-w-5xl overflow-hidden rounded-[3rem] relative transition-colors duration-300",
+          theme === 'dark'
+            ? 'bg-zinc-900 text-white shadow-2xl'
+            : 'bg-white text-zinc-900 shadow-[0_40px_80px_rgba(15,23,42,0.12)]'
+        )}
+      >
+        {/* Декоративные градиенты */}
+        <div className="absolute -top-24 -right-24 h-64 w-64 rounded-full bg-indigo-600/30 blur-3xl"></div>
+        <div className="absolute -bottom-24 -left-24 h-64 w-64 rounded-full bg-purple-600/20 blur-3xl"></div>
+        
+        <div className="relative px-8 py-16 sm:px-16 sm:py-24 flex flex-col items-center text-center space-y-8">
+          <div className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-indigo-600 text-white shadow-xl">
+             <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width={2}>
+              <path stroke-linecap="round" stroke-linejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+            </svg>
+          </div>
+          
+          <div className="space-y-4 max-w-2xl">
+            <h2
+              className={cn(
+                "text-3xl font-black tracking-tighter sm:text-5xl uppercase transition-colors",
+                theme === 'dark' ? 'text-white' : 'text-zinc-900'
+              )}
+            >
+              Остался один шаг!
+            </h2>
+            <p className={cn("text-lg font-medium transition-colors", theme === 'dark' ? 'text-zinc-400' : 'text-zinc-500')}>
+              Подтвердите почту, чтобы получить 3 бесплатные генерации и начать творить. Отправили письмо на {user?.email}
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+};
+
 const AppContent: React.FC = () => {
   const { user, loading } = useAuth();
   const { t } = useTranslation();
@@ -193,10 +238,12 @@ const AppContent: React.FC = () => {
           </>
         )}
 
-        {user && (
+        {user && user.email_verified ? (
           <section id="generator" className="pt-12 pb-24 animate-in fade-in duration-700">
             <Generator />
           </section>
+        ) : (
+            <EmailVerification />
         )}
       </main>
 
