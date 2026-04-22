@@ -125,6 +125,9 @@ export const api = {
         method: 'POST',
         body: JSON.stringify(payload),
       }),
+    forgotPassword: (p: { email: string }) => request('/auth/forgot-password', { method: 'POST', body: JSON.stringify(p) }),
+    resetPassword: (p: { token: string; new_password: string }) => request('/auth/reset-password', { method: 'POST', body: JSON.stringify(p) }),
+    completeOnboarding: () => request<MessageResponse>('/auth/complete-onboarding', { method: 'POST' }),
   },
   generation: {
     capabilities: () => request<GenerationCapabilities>('/capabilities', undefined, MOCK_CAPS),

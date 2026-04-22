@@ -19,6 +19,7 @@ import { HistoryCard } from './HistoryCard';
 import { useTheme } from '../context/ThemeContext';
 import { styleBackgroundForStyle } from '../lib/gradients';
 import { GalleryModal } from './GalleryModal'
+import { Onboarding } from './Onboarding';
 
 // Функция для сжатия картинок на клиенте перед отправкой
 const resizeImageFile = (file: File, maxSide = 1024): Promise<File> => {
@@ -70,6 +71,9 @@ export const Generator: React.FC = () => {
   const HISTORY_PAGE_LIMIT = 12;
   
   const [prompt, setPrompt] = useState('');
+  const [isListening, setIsListening] = useState(false);
+  const [speechSupported, setSpeechSupported] = useState(false);
+  const recognitionRef = useRef<any>(null);
   const [styles, setStyles] = useState<StyleCategoryPublic[]>([]);
   const [caps, setCaps] = useState<GenerationCapabilities | null>(null);
   const [selectedStyles, setSelectedStyles] = useState<string[]>([]);
@@ -99,6 +103,18 @@ export const Generator: React.FC = () => {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [galleryOpen, setGalleryOpen] = useState(false);
   const [projectToDelete, setProjectToDelete] = useState<{id: string, name: string} | null>(null);
+  const showOnboarding = Boolean(user && !user.onboarding_completed);
+
+  const handleOnboardingComplete = async () => {
+    try {
+        // 1. Сохраняем в БД
+        await api.auth.completeOnboarding();
+        // 2. Обновляем данные пользователя (чтобы флаг onboarding_completed стал true)
+        await refresh();
+    } catch (e) {
+        console.error("Failed to save onboarding status", e);
+    }
+  };
 
   const ASPECT_RATIOS =[
     { id: '1:1', label: 'Квадрат (1:1)', width: 2048, height: 2048, icon: 'M4 4h16v16H4z' },
@@ -205,6 +221,33 @@ export const Generator: React.FC = () => {
     });
     return Array.from(seen.keys());
   }, [caps]);
+
+  useEffect(() => {
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (SpeechRecognition) {
+      setSpeechSupported(true);
+      const recognition = new SpeechRecognition();
+      recognition.lang = 'ru-RU';
+      recognition.continuous = false;
+      recognition.interimResults = false;
+      recognition.onresult = (event: any) => {
+        const transcript = event.results[0][0].transcript;
+        setPrompt(prev => prev ? `${prev.trim()} ${transcript}`.trim() : transcript);
+      };
+      recognition.onend = () => setIsListening(false);
+      recognition.onerror = () => setIsListening(false);
+      recognitionRef.current = recognition;
+    }
+  }, []);
+
+  const toggleListening = () => {
+    if (!recognitionRef.current) return;
+    if (isListening) recognitionRef.current.stop();
+    else {
+      recognitionRef.current.start();
+      setIsListening(true);
+    }
+  };
 
   useEffect(() => {
     if (!caps) return;
@@ -550,7 +593,7 @@ export const Generator: React.FC = () => {
       <div className="grid grid-cols-1 gap-12 lg:grid-cols-12">
         
         <div className="lg:col-span-4 space-y-8">
-          <div className={sidePanelClasses}>
+          <div className={sidePanelClasses} id="onb-styles">
             <h3 className={cn("text-sm font-bold uppercase tracking-widest mb-6 flex items-center gap-2", mutedTone)}>
               <svg className="h-4 w-4 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" /></svg>
               {t.generator.styles}
@@ -859,21 +902,44 @@ export const Generator: React.FC = () => {
               )}
 
               {/* ПОЛЕ ВВОДА ПРОМПТА */}
-              <textarea
-                className={cn(
-                  "w-full min-h-[140px] rounded-[2.5rem] p-8 pr-12 text-lg font-medium outline-none focus:ring-4 focus:ring-indigo-500/10 transition-all resize-none",
-                  theme === 'dark'
-                    ? 'border-zinc-800 bg-zinc-900 text-white shadow-2xl'
-                    : `border-zinc-200 bg-white text-zinc-900 ${lightPromptShadow}`
+              <div className="relative flex-1 flex flex-col gap-3" id="onb-prompt">
+                <textarea
+                  className={cn(
+                    "w-full min-h-[140px] rounded-[2.5rem] p-8 pr-16 text-lg font-medium outline-none focus:ring-4 focus:ring-indigo-500/10 transition-all resize-none ",
+                    theme === 'dark' ? 'border-zinc-800 bg-zinc-900 text-white shadow-2xl' : `border-zinc-200 bg-white text-zinc-900 ${lightPromptShadow}`
+                  )}
+                  placeholder={t.generator.promptPlaceholder}
+                  value={prompt}
+                  onChange={(e) => setPrompt(e.target.value)}
+                  disabled={phase === 'pending' || phase === 'processing'}
+                />
+                
+                {speechSupported && (
+                  <button
+                    type="button"
+                    onClick={toggleListening}
+                    disabled={phase === 'pending' || phase === 'processing'}
+                    className={cn(
+                      "absolute right-4 top-4 p-3 rounded-2xl border transition-all",
+                      isListening
+                        ? "bg-rose-500 text-white border-rose-500 animate-pulse shadow-lg"
+                        : theme === 'dark' ? "border-zinc-700 text-zinc-400 hover:text-white hover:bg-zinc-800" : "border-zinc-200 text-zinc-500 hover:text-zinc-900 hover:bg-zinc-50"
+                    )}
+                    title="Голосовой ввод"
+                  >
+                    <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M19 10v2a7 7 0 01-14 0v-2" />
+                      <line x1="12" y1="19" x2="12" y2="23" />
+                      <line x1="8" y1="23" x2="16" y2="23" />
+                    </svg>
+                  </button>
                 )}
-                placeholder={t.generator.promptPlaceholder}
-                value={prompt}
-                onChange={(e) => setPrompt(e.target.value)}
-                disabled={phase === 'pending' || phase === 'processing'}
-              />
+              </div>
             </div>
             <div className="flex flex-col gap-2 shrink-0">
                 <Button 
+                  id="onb-generate"
                   className={generateButtonClass}
                   onClick={handleGenerate}
                   isLoading={phase === 'pending' || phase === 'processing'}
@@ -1098,6 +1164,7 @@ export const Generator: React.FC = () => {
           </div>
         </div>
       )}
+      {showOnboarding && <Onboarding onComplete={handleOnboardingComplete} />}
     </div>
   );
 };

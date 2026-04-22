@@ -84,6 +84,7 @@ export type AuthMeResponse = {
   email_verified: boolean;
   balance: number;
   role: string;
+  onboarding_completed: boolean;
 };
 
 export type BillingHistoryItem = {

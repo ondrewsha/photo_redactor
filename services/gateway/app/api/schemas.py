@@ -17,6 +17,7 @@ class AuthMeResponse(BaseSchema):
     email_verified: bool
     balance: int = Field(..., ge=0)
     role: str
+    onboarding_completed: bool = Field(default=False)
 
 
 class RegisterRequest(BaseSchema):

@@ -14,7 +14,7 @@ import { useTheme } from './context/ThemeContext';
 import { SupportModal } from './components/SupportModal';
 import { PricingSection } from './components/PricingSection'
 
-const PromoCTA: React.FC<{ onAuthClick: (tab: 'login' | 'register') => void }> = ({ onAuthClick }) => {
+const PromoCTA: React.FC<{ onAuthClick: (tab: 'login' | 'register' | 'reset') => void }> = ({ onAuthClick }) => {
   const { t } = useTranslation();
   const { theme } = useTheme();
   
@@ -137,9 +137,10 @@ const AppContent: React.FC = () => {
   const { theme } = useTheme();
   const featuresTitleTone = theme === 'dark' ? 'text-white' : 'text-zinc-900';
   const featuresDescTone = theme === 'dark' ? 'text-zinc-400' : 'text-zinc-500';
-  const [authModal, setAuthModal] = useState<{ open: boolean; tab: 'login' | 'register' }>({
+  const [authModal, setAuthModal] = useState<{ open: boolean; tab: 'login' | 'register' | 'reset'; token?: string | null }>({
     open: false,
-    tab: 'login'
+    tab: 'login',
+    token: null
   });
   const [profileModalOpen, setProfileModalOpen] = useState(false);
   const [supportModalOpen, setSupportModalOpen] = useState(false);
@@ -147,10 +148,21 @@ const AppContent: React.FC = () => {
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const refCode = params.get('ref');
-    if (refCode) {
-      localStorage.setItem('nv_ref', refCode);
+    const resetParam = params.get('reset');
+    const resetToken = params.get('token');
+
+    if (refCode) localStorage.setItem('nv_ref', refCode);
+
+    // Если есть ссылка на сброс пароля
+    if (resetParam === '1' && resetToken) {
+      sessionStorage.setItem('nv_reset_token', resetToken);
+      // Очищаем URL, чтобы не срабатывало при обновлении страницы
+      const cleanUrl = window.location.pathname + (window.location.search.replace(/[?&](?:reset|token)=[^&]+/g, '') || '');
+      window.history.replaceState({}, '', cleanUrl);
+      // Открываем модалку на вкладке восстановления
+      setAuthModal({ open: true, tab: 'reset' });
     }
-  },[]);
+  }, []);
 
   const scrollToTarget = () => {
     const targetId = user ? 'generator' : 'cta-promo';
@@ -158,7 +170,7 @@ const AppContent: React.FC = () => {
     if (el) el.scrollIntoView({ behavior: 'smooth' });
   };
 
-  const handleAuth = (tab: 'login' | 'register') => {
+  const handleAuth = (tab: 'login' | 'register' | 'reset') => {
     setAuthModal({ open: true, tab });
   };
 
@@ -317,6 +329,7 @@ const AppContent: React.FC = () => {
         isOpen={authModal.open} 
         onClose={() => setAuthModal({ ...authModal, open: false })}
         initialTab={authModal.tab}
+        resetTokenFromUrl={authModal.token}
       />
 
       <ProfileModal 

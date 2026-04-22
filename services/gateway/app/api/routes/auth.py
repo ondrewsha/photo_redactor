@@ -1,8 +1,11 @@
 from __future__ import annotations
 
 from datetime import datetime, timedelta, timezone
+import time
 from typing import Annotated
 import secrets
+import jwt as pyjwt
+import uuid
 
 import redis.asyncio as redis
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response, status
@@ -207,6 +210,7 @@ async def me(
         email_verified=user.email_verified,
         balance=wallet.balance,
         role=user.role,
+        onboarding_completed=user.onboarding_completed,
     )
 
 
@@ -362,3 +366,77 @@ async def get_referrals(
         page=page,
         limit=limit
     )
+
+@router.post("/forgot-password")
+async def forgot_password(
+    payload: dict,
+    db: Annotated[AsyncSession, Depends(get_db_session)],
+    settings: Annotated[Settings, Depends(get_settings)],
+):
+    email = payload.get("email", "").strip().lower()
+    if not email:
+        raise HTTPException(status_code=400, detail="Email обязателен")
+    
+    res = await db.execute(select(User).where(User.email == email))
+    user = res.scalar_one_or_none()
+    if not user:
+        # Не раскрываем наличие почты для безопасности
+        return MessageResponse(message="Если почта найдена, мы отправили инструкцию.")
+
+    # Генерируем токен на 30 минут
+    reset_token = pyjwt.encode(
+        {"sub": str(user.id), "purpose": "reset", "exp": int(time.time()) + 1800},
+        settings.jwt_secret,
+        algorithm="HS256"
+    )
+    
+    # Формируем ссылку. Предполагаем, что фронт откроет модалку по query ?reset=1&token=...
+    reset_url = f"{settings.frontend_base_url.rstrip('/')}/?reset=1&token={reset_token}"
+    
+    subject = "Восстановление пароля NanoVisual"
+    text = f"Перейдите по ссылке для сброса пароля: {reset_url}\n\nСсылка действует 30 минут."
+    html = f"""<div style="font-family:system-ui"><h2>Сброс пароля</h2><p><a href="{reset_url}" style="display:inline-block;padding:10px 14px;border-radius:10px;background:#4f46e5;color:#fff;text-decoration:none">Сменить пароль</a></p><p style="color:#6b7280;font-size:12px;margin-top:16px">Ссылка действует 30 минут.</p></div>"""
+    
+    try:
+        await send_email(settings=settings, to_email=email, subject=subject, text=text, html=html)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail="Ошибка отправки письма")
+
+    return MessageResponse(message="Если почта найдена, мы отправили инструкцию.")
+
+@router.post("/reset-password")
+async def reset_password(
+    payload: dict,
+    db: Annotated[AsyncSession, Depends(get_db_session)],
+    settings: Annotated[Settings, Depends(get_settings)],
+):
+    token = payload.get("token")
+    new_pw = payload.get("new_password")
+    if not token or not new_pw or len(new_pw) < 8:
+        raise HTTPException(status_code=400, detail="Некорректный запрос")
+    
+    try:
+        data = pyjwt.decode(token, settings.jwt_secret, algorithms=["HS256"])
+        if data.get("purpose") != "reset":
+            raise ValueError
+        user_id = uuid.UUID(data["sub"])
+    except Exception:
+        raise HTTPException(status_code=401, detail="Ссылка устарела или недействительна")
+
+    res = await db.execute(select(User).where(User.id == user_id))
+    user = res.scalar_one_or_none()
+    if not user:
+        raise HTTPException(status_code=404, detail="Пользователь не найден")
+
+    user.password_hash = hash_password(new_pw)
+    await db.commit()
+    return MessageResponse(message="Пароль успешно обновлён. Теперь войдите в аккаунт.")
+
+@router.post("/complete-onboarding", response_model=MessageResponse, dependencies=[Depends(require_csrf)])
+async def complete_onboarding(
+    user: Annotated[User, Depends(require_user)],
+    db: Annotated[AsyncSession, Depends(get_db_session)],
+) -> MessageResponse:
+    user.onboarding_completed = True
+    await db.commit()
+    return MessageResponse(message="Онбординг завершен")
