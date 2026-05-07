@@ -2,39 +2,58 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Button } from './ui/Button';
 import { cn } from '../lib/cn';
 
-interface Step {
+export interface OnboardingStep {
   targetId: string;
   title: string;
   description: string;
   offset?: { x?: number; y?: number };
 }
 
-const STEPS: Step[] = [
-  { targetId: 'onb-prompt', title: 'Шаг 1. Промпт', description: 'Опишите, что хотите создать. Или нажмите 🎤 для голосового ввода.', offset: { y: 8 } },
-  { targetId: 'onb-styles', title: 'Шаг 2. Стили и размер', description: 'Выберите художественный стиль и формат изображения.', offset: { x: -20 } },
-  { targetId: 'onb-generate', title: 'Шаг 3. Генерация', description: 'Нажмите кнопку, и нейросеть создаст изображение. Стоимость: 1 NV.', offset: { x: -40, y: -20 } },
-];
+interface Props {
+  steps: OnboardingStep[];
+  onComplete: () => void;
+}
 
 const VIEWPORT_MARGIN = 20;
 const TOOLTIP_W = 288;
 const TOOLTIP_H = 180;
 const GAP = 16;
 
-export const Onboarding: React.FC<{ onComplete: () => void }> = ({ onComplete }) => {
+export const Onboarding: React.FC<Props> = ({ steps, onComplete }) => {
   const [step, setStep] = useState(0);
   const [visible, setVisible] = useState(false);
-  const [pos, setPos] = useState({ top: 0, left: 0, placement: 'bottom' as 'top' | 'bottom' });
+  const [pos, setPos] = useState({ top: 0, left: 0, placement: 'bottom' as 'top' | 'bottom', arrowLeft: 144 });
   const [highlightPos, setHighlightPos] = useState({ top: 0, left: 0, width: 0, height: 0 });
   const tooltipRef = useRef<HTMLDivElement>(null);
+  const scrollTargetRef = useRef<number | null>(null);
 
   const calculatePosition = () => {
-    const target = document.getElementById(STEPS[step].targetId);
+    if (!steps || steps.length === 0) return;
+    
+    const target = document.getElementById(steps[step].targetId);
     if (!target || !tooltipRef.current) return;
 
     const rect = target.getBoundingClientRect();
-    const offset = STEPS[step].offset || {};
+    
+    // Если элемент далеко за пределами видимости экрана
+    const isOut = rect.top < 80 || rect.bottom > window.innerHeight - 80;
+    
+    if (isOut && scrollTargetRef.current !== step) {
+      scrollTargetRef.current = step; // Помечаем, что скролл уже запущен для этого шага
+      target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      // Даем браузеру время докрутить и пересчитываем позицию
+      setTimeout(() => {
+        const freshTarget = document.getElementById(steps[step].targetId);
+        if (freshTarget) updatePosition(freshTarget.getBoundingClientRect());
+      }, 500);
+    } else {
+      updatePosition(rect);
+    }
+  };
 
-    // Для highlight используем viewport coordinates (без scroll)
+  const updatePosition = (rect: DOMRect) => {
+    const offset = steps[step].offset || {};
+
     setHighlightPos({
       top: rect.top,
       left: rect.left,
@@ -42,11 +61,11 @@ export const Onboarding: React.FC<{ onComplete: () => void }> = ({ onComplete })
       height: rect.height,
     });
 
-    // Расчёт позиции тултипа (тоже viewport coordinates)
     let top = rect.bottom + GAP + (offset.y || 0);
     let left = rect.left + rect.width / 2 - TOOLTIP_W / 2 + (offset.x || 0);
     let placement: 'top' | 'bottom' = 'bottom';
 
+    // Проверяем границы экрана для тултипа
     if (top + TOOLTIP_H > window.innerHeight - VIEWPORT_MARGIN) {
       top = rect.top - TOOLTIP_H - GAP + (offset.y || 0);
       placement = 'top';
@@ -58,7 +77,13 @@ export const Onboarding: React.FC<{ onComplete: () => void }> = ({ onComplete })
     }
     if (left < VIEWPORT_MARGIN) left = VIEWPORT_MARGIN;
 
-    setPos({ top, left, placement });
+    // Высчитываем, где должна быть стрелочка (чтобы на мобилке она указывала на элемент, а не в воздух)
+    let arrowLeft = (rect.left + rect.width / 2) - left;
+    // Ограничиваем стрелочку краями тултипа
+    if (arrowLeft < 20) arrowLeft = 20;
+    if (arrowLeft > TOOLTIP_W - 20) arrowLeft = TOOLTIP_W - 20;
+
+    setPos({ top, left, placement, arrowLeft });
     setVisible(true);
   };
 
@@ -79,15 +104,18 @@ export const Onboarding: React.FC<{ onComplete: () => void }> = ({ onComplete })
       window.removeEventListener('scroll', handleScroll, true);
       window.removeEventListener('resize', handleResize);
     };
-  }, [step]);
+  }, [step, steps]);
 
-  const next = () => step < STEPS.length - 1 ? setStep(s => s + 1) : finish();
+  if (!steps || steps.length === 0) return null;
+
+  const next = () => step < steps.length - 1 ? setStep(s => s + 1) : finish();
+  
   const finish = () => {
-    localStorage.setItem('nv_onboarding_done', 'true');
+    setVisible(false);
     onComplete();
   };
 
-  const currentStep = STEPS[step];
+  const currentStep = steps[step];
   const isDark = document.documentElement.classList.contains('dark');
   const arrowColor = isDark ? '#18181b' : '#ffffff';
 
@@ -131,7 +159,7 @@ export const Onboarding: React.FC<{ onComplete: () => void }> = ({ onComplete })
           className="absolute w-0 h-0 border-8 border-transparent"
           style={{
             [pos.placement === 'bottom' ? 'bottom' : 'top']: '100%',
-            left: '50%',
+            left: `${pos.arrowLeft}px`,
             transform: 'translateX(-50%)',
             ...(pos.placement === 'bottom' ? { borderTopColor: arrowColor } : { borderBottomColor: arrowColor }),
           }}
@@ -146,7 +174,7 @@ export const Onboarding: React.FC<{ onComplete: () => void }> = ({ onComplete })
 
         <div className="flex justify-between items-center relative z-10">
           <div className="flex gap-1.5">
-            {STEPS.map((_, i) => (
+            {steps.map((_, i) => (
               <div
                 key={i}
                 className={`h-1.5 w-5 rounded-full transition-all duration-300 ${
@@ -156,9 +184,11 @@ export const Onboarding: React.FC<{ onComplete: () => void }> = ({ onComplete })
             ))}
           </div>
           <div className="flex gap-2">
-            <Button variant="ghost" size="sm" onClick={finish} className="text-xs">Пропустить</Button>
+            {steps.length > 1 && (
+              <Button variant="ghost" size="sm" onClick={finish} className="text-xs">Пропустить</Button>
+            )}
             <Button size="sm" onClick={next} className="text-xs">
-              {step === STEPS.length - 1 ? 'Начать' : 'Далее'}
+              {step === steps.length - 1 ? 'OK' : 'Далее'}
             </Button>
           </div>
         </div>

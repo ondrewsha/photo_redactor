@@ -37,6 +37,7 @@ export type GenerateImageRequest = {
 
 export type GenerateImageWithPhotosRequest = GenerateImageRequest & {
   photos: File[];
+  preserve_face?: boolean;
 };
 
 export type JobStatus = "pending" | "processing" | "completed" | "failed";
@@ -85,6 +86,7 @@ export type AuthMeResponse = {
   balance: number;
   role: string;
   onboarding_completed: boolean;
+  face_onboarding_completed: boolean;
 };
 
 export type BillingHistoryItem = {

@@ -211,6 +211,7 @@ async def me(
         balance=wallet.balance,
         role=user.role,
         onboarding_completed=user.onboarding_completed,
+        face_onboarding_completed=user.face_onboarding_completed,
     )
 
 
@@ -440,3 +441,12 @@ async def complete_onboarding(
     user.onboarding_completed = True
     await db.commit()
     return MessageResponse(message="Онбординг завершен")
+
+@router.post("/complete-face-onboarding", response_model=MessageResponse, dependencies=[Depends(require_csrf)])
+async def complete_face_onboarding(
+    user: Annotated[User, Depends(require_user)],
+    db: Annotated[AsyncSession, Depends(get_db_session)],
+) -> MessageResponse:
+    user.face_onboarding_completed = True
+    await db.commit()
+    return MessageResponse(message="Обучение по лицу пройдено")

@@ -10,10 +10,23 @@ interface AuthModalProps {
   isOpen: boolean;
   onClose: () => void;
   initialTab: 'login' | 'register' | 'reset';
-  resetTokenFromUrl?: string | null; // Добавляем пропс для токена
+  resetTokenFromUrl?: string | null;
 }
 
 type AuthTab = 'login' | 'register' | 'reset';
+
+const EyeIcon = ({ className }: { className?: string }) => (
+  <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+    <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+    <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+  </svg>
+);
+
+const EyeOffIcon = ({ className }: { className?: string }) => (
+  <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+    <path strokeLinecap="round" strokeLinejoin="round" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l18 18" />
+  </svg>
+);
 
 export const AuthModal: React.FC<AuthModalProps> = ({ 
   isOpen, 
@@ -30,6 +43,10 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   const [resetToken, setResetToken] = useState<string | null>(null);
   const [resetSent, setResetSent] = useState(false);
   
+  // Состояния для показа пароля
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  
   const { t } = useTranslation();
   const { refresh } = useAuth();
   const { theme } = useTheme();
@@ -41,7 +58,9 @@ export const AuthModal: React.FC<AuthModalProps> = ({
       setPassword('');
       setConfirmPassword('');
       setError('');
-      setResetSent(false); // Сбрасываем состояние при каждом открытии
+      setResetSent(false);
+      setShowPassword(false);
+      setShowConfirmPassword(false);
       
       const storedToken = sessionStorage.getItem('nv_reset_token');
       if (initialTab === 'reset' && storedToken) {
@@ -64,9 +83,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
         await api.auth.register({ email, password, referral_code: refCode || undefined });
         localStorage.removeItem('nv_ref');
       } else {
-        // Сброс пароля
         if (resetToken) {
-          // Шаг 2: Установка нового пароля
           if (password !== confirmPassword) {
             setError('Пароли не совпадают');
             setLoading(false);
@@ -76,11 +93,10 @@ export const AuthModal: React.FC<AuthModalProps> = ({
           sessionStorage.removeItem('nv_reset_token');
           setResetToken(null);
           setError('');
-          setTab('login'); // Переключаем на вход после успеха
+          setTab('login');
         } else {
-          // Шаг 1: Отправка ссылки
           await api.auth.forgotPassword({ email });
-          setResetSent(true); // Показываем экран успеха
+          setResetSent(true);
         }
       }
       if (tab !== 'reset') {
@@ -150,8 +166,18 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                     <p className={cn("text-sm", theme === 'dark' ? 'text-zinc-400' : 'text-zinc-500')}>
                       Придумайте надёжный пароль для вашего аккаунта.
                     </p>
-                    <input type="password" placeholder="Новый пароль (мин. 8 символов)" required minLength={8} value={password} onChange={e => setPassword(e.target.value)} className={cn("w-full rounded-2xl border p-4 text-sm outline-none focus:ring-2 focus:ring-indigo-500 transition-colors", theme === 'dark' ? 'border-zinc-800 bg-zinc-800 text-white' : 'border-zinc-200 bg-zinc-50 text-zinc-900')} />
-                    <input type="password" placeholder="Повторите пароль" required minLength={8} value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} className={cn("w-full rounded-2xl border p-4 text-sm outline-none focus:ring-2 focus:ring-indigo-500 transition-colors", theme === 'dark' ? 'border-zinc-800 bg-zinc-800 text-white' : 'border-zinc-200 bg-zinc-50 text-zinc-900')} />
+                    <div className="relative">
+                      <input type={showPassword ? "text" : "password"} placeholder="Новый пароль (мин. 8 символов)" required minLength={8} value={password} onChange={e => setPassword(e.target.value)} className={cn("w-full rounded-2xl border p-4 pr-12 text-sm outline-none focus:ring-2 focus:ring-indigo-500 transition-colors", theme === 'dark' ? 'border-zinc-800 bg-zinc-800 text-white' : 'border-zinc-200 bg-zinc-50 text-zinc-900')} />
+                      <button type="button" className="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300" onClick={() => setShowPassword(!showPassword)}>
+                        {showPassword ? <EyeOffIcon className="h-5 w-5" /> : <EyeIcon className="h-5 w-5" />}
+                      </button>
+                    </div>
+                    <div className="relative">
+                      <input type={showConfirmPassword ? "text" : "password"} placeholder="Повторите пароль" required minLength={8} value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} className={cn("w-full rounded-2xl border p-4 pr-12 text-sm outline-none focus:ring-2 focus:ring-indigo-500 transition-colors", theme === 'dark' ? 'border-zinc-800 bg-zinc-800 text-white' : 'border-zinc-200 bg-zinc-50 text-zinc-900')} />
+                      <button type="button" className="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300" onClick={() => setShowConfirmPassword(!showConfirmPassword)}>
+                        {showConfirmPassword ? <EyeOffIcon className="h-5 w-5" /> : <EyeIcon className="h-5 w-5" />}
+                      </button>
+                    </div>
                   </>
                 )}
                 
@@ -173,7 +199,13 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
             <div className="space-y-4 pt-4">
               <input type="email" placeholder={t.auth.email} required className={cn("w-full rounded-2xl border p-4 text-sm outline-none focus:ring-2 focus:ring-indigo-500 transition-colors", theme === 'dark' ? 'border-zinc-800 bg-zinc-800 text-white' : 'border-zinc-200 bg-zinc-50 text-zinc-900')} value={email} onChange={(e) => setEmail(e.target.value)} />
-              <input type="password" placeholder={t.auth.password} required minLength={8} className={cn("w-full rounded-2xl border p-4 text-sm outline-none focus:ring-2 focus:ring-indigo-500 transition-colors", theme === 'dark' ? 'border-zinc-800 bg-zinc-800 text-white' : 'border-zinc-200 bg-zinc-50 text-zinc-900')} value={password} onChange={(e) => setPassword(e.target.value)} />
+              
+              <div className="relative">
+                <input type={showPassword ? "text" : "password"} placeholder={t.auth.password} required minLength={8} className={cn("w-full rounded-2xl border p-4 pr-12 text-sm outline-none focus:ring-2 focus:ring-indigo-500 transition-colors", theme === 'dark' ? 'border-zinc-800 bg-zinc-800 text-white' : 'border-zinc-200 bg-zinc-50 text-zinc-900')} value={password} onChange={(e) => setPassword(e.target.value)} />
+                <button type="button" className="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 transition-colors" onClick={() => setShowPassword(!showPassword)}>
+                  {showPassword ? <EyeOffIcon className="h-5 w-5" /> : <EyeIcon className="h-5 w-5" />}
+                </button>
+              </div>
             </div>
 
             {error && <div className="text-sm font-medium text-rose-500 bg-rose-500/10 p-3 rounded-xl text-center">{error}</div>}

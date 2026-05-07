@@ -128,6 +128,7 @@ export const api = {
     forgotPassword: (p: { email: string }) => request('/auth/forgot-password', { method: 'POST', body: JSON.stringify(p) }),
     resetPassword: (p: { token: string; new_password: string }) => request('/auth/reset-password', { method: 'POST', body: JSON.stringify(p) }),
     completeOnboarding: () => request<MessageResponse>('/auth/complete-onboarding', { method: 'POST' }),
+    completeFaceOnboarding: () => request<MessageResponse>('/auth/complete-face-onboarding', { method: 'POST' }),
   },
   generation: {
     capabilities: () => request<GenerationCapabilities>('/capabilities', undefined, MOCK_CAPS),
@@ -142,6 +143,7 @@ export const api = {
       form.append('width', String(p.width));
       form.append('height', String(p.height));
       if (p.project_id) form.append('project_id', p.project_id);
+      if (p.preserve_face !== undefined) form.append('preserve_face', p.preserve_face ? 'true' : 'false');
       (p.style_ids.length ? p.style_ids : ['none']).forEach((id) => {
         form.append('style_ids', id);
       });
