@@ -21,6 +21,17 @@ import { styleBackgroundForStyle } from '../lib/gradients';
 import { GalleryModal } from './GalleryModal'
 import { Onboarding } from './Onboarding';
 
+const MAIN_ONBOARDING_STEPS =[
+  { targetId: 'onb-prompt', title: 'Шаг 1. Промпт', description: 'Опишите, что хотите создать. Или нажмите 🎤 для голосового ввода.', offset: { y: 8 } },
+  { targetId: 'onb-styles', title: 'Шаг 2. Стили и размер', description: 'Выберите художественный стиль и формат изображения.', offset: { x: -20 } },
+  { targetId: 'onb-project', title: 'Шаг 3. Проекты', description: 'Выберите проект, в котором сохранится фото или оставьте по умолчанию.', offset: { y: -4 } },
+  { targetId: 'onb-generate', title: 'Шаг 4. Генерация', description: 'Нажмите кнопку, и нейросеть создаст изображение.', offset: { x: -70 } },
+];
+
+const FACE_ONBOARDING_STEPS =[
+  { targetId: 'onb-face', title: 'Важная настройка', description: 'Оставьте эту галочку включённой, если вы загрузили фото человека. Нейросеть сохранит сходство лица!', offset: { y: 8 } },
+];
+
 // Функция для сжатия картинок на клиенте перед отправкой
 const resizeImageFile = (file: File, maxSide = 1024): Promise<File> => {
   return new Promise((resolve) => {
@@ -104,6 +115,17 @@ export const Generator: React.FC = () => {
   const [galleryOpen, setGalleryOpen] = useState(false);
   const [projectToDelete, setProjectToDelete] = useState<{id: string, name: string} | null>(null);
   const showOnboarding = Boolean(user && !user.onboarding_completed);
+  const [preserveFace, setPreserveFace] = useState(true);
+  const [showFaceOnboarding, setShowFaceOnboarding] = useState(false);
+
+  useEffect(() => {
+    // Показываем подсказку, если есть фото, юзер залогинен и обучение не пройдено
+    if (uploadedPhotos.length > 0 && user && !user.face_onboarding_completed) {
+      setShowFaceOnboarding(true);
+    } else {
+      setShowFaceOnboarding(false);
+    }
+  }, [uploadedPhotos.length, user]);
 
   const handleOnboardingComplete = async () => {
     try {
@@ -113,6 +135,15 @@ export const Generator: React.FC = () => {
         await refresh();
     } catch (e) {
         console.error("Failed to save onboarding status", e);
+    }
+  };
+
+  const handleFaceOnboardingComplete = async () => {
+    try {
+        await api.auth.completeFaceOnboarding();
+        await refresh(); // Обновляем сессию пользователя, чтобы скрыть тултип
+    } catch (e) {
+        console.error("Failed to save face onboarding status", e);
     }
   };
 
@@ -467,6 +498,7 @@ export const Generator: React.FC = () => {
           ? await api.generation.generateWithPhotos({
               ...payload,
               photos: uploadedPhotos.slice(0, maxPhotos),
+              preserve_face: preserveFace,
             })
           : await api.generation.generate(payload);
       setCurrentJobId(job_id);
@@ -719,6 +751,28 @@ export const Generator: React.FC = () => {
                   ))}
                 </div>
               )}
+              {/* ГАЛОЧКА: Сохранение лица */}
+              {uploadedPhotos.length > 0 && (
+                <div id="onb-face" className="mt-4 flex items-start gap-3 relative animate-in fade-in zoom-in-95 duration-300">
+                  <div className="flex items-center h-5">
+                    <input
+                      id="preserve-face"
+                      type="checkbox"
+                      checked={preserveFace}
+                      onChange={(e) => setPreserveFace(e.target.checked)}
+                      className="w-4 h-4 text-indigo-600 bg-zinc-100 border-zinc-300 rounded focus:ring-indigo-500 dark:focus:ring-indigo-600 dark:ring-offset-zinc-900 focus:ring-2 dark:bg-zinc-800 dark:border-zinc-700 cursor-pointer"
+                    />
+                  </div>
+                  <div className="flex flex-col">
+                    <label htmlFor="preserve-face" className={cn("text-xs font-bold uppercase tracking-wider cursor-pointer select-none", theme === 'dark' ? 'text-zinc-300' : 'text-zinc-700')}>
+                      Человек на фото
+                    </label>
+                    <p className={cn("text-[10px] mt-0.5", theme === 'dark' ? 'text-zinc-500' : 'text-zinc-400')}>
+                      Сохранить черты лица (только ретушь)
+                    </p>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -815,6 +869,8 @@ export const Generator: React.FC = () => {
                       setPrompt('');
                       setSelectedStyles([]);
                       setUploadedPhotos([]);
+                      setPhotoPreviews([]);
+                      setPreserveFace(true);
                     }}
                   >
                     <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
@@ -834,31 +890,33 @@ export const Generator: React.FC = () => {
               {user && (
                 <div className="flex items-center justify-between w-full mb-2 px-2 animate-in fade-in slide-in-from-left duration-500">
                   <div className="flex items-center gap-3">
-                    <span className={cn("text-[10px] font-black uppercase tracking-[0.2em]", theme === 'dark' ? 'text-zinc-500' : 'text-zinc-400')}>
-                      Проект:
-                    </span>
-                    <div className="relative group">
-                      <select
-                        value={historyProject}
-                        onChange={(e) => {
-                          setHistoryProject(e.target.value);
-                          loadHistory(1, e.target.value);
-                        }}
-                        className={cn(
-                          "appearance-none pl-4 pr-10 py-2 rounded-full text-xs font-bold uppercase tracking-wider cursor-pointer transition-all border outline-none",
-                          theme === 'dark'
-                            ? "bg-zinc-800/50 border-zinc-700 text-indigo-400 hover:bg-zinc-800 hover:border-indigo-500/50"
-                            : "bg-white border-zinc-200 text-indigo-600 hover:border-indigo-400 shadow-sm"
-                        )}
-                      >
-                        <option value="all">Все генерации</option>
-                        <option value="none">Без проекта</option>
-                        {projects.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
-                      </select>
-                      <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none opacity-50">
-                        <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-                        </svg>
+                    <div className="flex items-center gap-3 justify-between" id="onb-project">
+                      <span className={cn("text-[10px] font-black uppercase tracking-[0.2em]", theme === 'dark' ? 'text-zinc-500' : 'text-zinc-400')}>
+                        Проект:
+                      </span>
+                      <div className="relative group">
+                        <select
+                          value={historyProject}
+                          onChange={(e) => {
+                            setHistoryProject(e.target.value);
+                            loadHistory(1, e.target.value);
+                          }}
+                          className={cn(
+                            "appearance-none pl-4 pr-10 py-2 rounded-full text-xs font-bold uppercase tracking-wider cursor-pointer transition-all border outline-none",
+                            theme === 'dark'
+                              ? "bg-zinc-800/50 border-zinc-700 text-indigo-400 hover:bg-zinc-800 hover:border-indigo-500/50"
+                              : "bg-white border-zinc-200 text-indigo-600 hover:border-indigo-400 shadow-sm"
+                          )}
+                        >
+                          <option value="all">Все генерации</option>
+                          <option value="none">Без проекта</option>
+                          {projects.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+                        </select>
+                        <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none opacity-50">
+                          <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                          </svg>
+                        </div>
                       </div>
                     </div>
 
@@ -1164,7 +1222,15 @@ export const Generator: React.FC = () => {
           </div>
         </div>
       )}
-      {showOnboarding && <Onboarding onComplete={handleOnboardingComplete} />}
+      {/* Обучение интерфейсу (главное) */}
+      {showOnboarding && (
+        <Onboarding steps={MAIN_ONBOARDING_STEPS} onComplete={handleOnboardingComplete} />
+      )}
+      
+      {/* Обучение чекбоксу (запускается, когда фото загружено) */}
+      {!showOnboarding && showFaceOnboarding && (
+        <Onboarding steps={FACE_ONBOARDING_STEPS} onComplete={handleFaceOnboardingComplete} />
+      )}
     </div>
   );
 };

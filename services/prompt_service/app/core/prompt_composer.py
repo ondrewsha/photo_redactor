@@ -50,6 +50,15 @@ class PromptComposer:
         if style_context and not used_llm:
             final_prompt = _join_prompt_parts(enhanced, style_context)
 
+        if getattr(payload, "preserve_face", False):
+            face_hint = (
+                "[CRITICAL REQUIREMENT: Use the attached input image as a STRICT character reference. "
+                "The person in the output MUST be the EXACT same person as in the input image. "
+                "Preserve their face, facial features, identity, and likeness with 100% accuracy. "
+                "Do NOT alter their facial structure.]"
+            )
+            final_prompt = _join_prompt_parts(face_hint, final_prompt)
+
         return ComposePromptResponse(
             style_ids=[s.id for s in styles],
             mode=PromptMode.enhance,

@@ -182,6 +182,7 @@ async def generate_with_image(
     width: int = Form(1024),
     height: int = Form(1024),
     project_id: str | None = Form(None),
+    preserve_face: bool = Form(True),
     user: User = Depends(require_verified_user),
     db: AsyncSession = Depends(get_db_session),
     settings: Settings = Depends(get_settings),
@@ -201,6 +202,7 @@ async def generate_with_image(
                 style_ids=cleaned_style_ids,
                 user_input=user_input,
                 mode=PromptMode.enhance,
+                preserve_face=preserve_face,
             ).model_dump(mode="json"),
         )
         composed.raise_for_status()

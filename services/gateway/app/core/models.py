@@ -29,6 +29,7 @@ class User(Base):
     referral_bonus_granted: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=func.false(), default=False)
     
     onboarding_completed: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=func.false(), default=False)
+    face_onboarding_completed: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=func.false(), default=False)
 
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),

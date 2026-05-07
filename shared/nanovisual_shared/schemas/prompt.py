@@ -17,6 +17,7 @@ class ComposePromptRequest(BaseSchema):
     style_id: str | None = Field(default=None, description="Deprecated. Use style_ids.")
     user_input: str = Field(..., min_length=1)
     mode: PromptMode = PromptMode.enhance
+    preserve_face: bool = Field(False, description="Добавить жесткую инструкцию по сохранению лица")
 
     @model_validator(mode="before")
     @classmethod
