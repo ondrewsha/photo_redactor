@@ -9,7 +9,8 @@ import {
   GenerationCapabilities, 
   JobStatus,
   ImageSizePreset,
-  HistoryItem 
+  HistoryItem, 
+  ProjectItem
 } from '../types';
 import { cn } from '../lib/cn';
 import { StylesLibraryModal } from './StylesLibraryModal';
@@ -17,19 +18,67 @@ import { HistoryModal } from './HistoryModal';
 import { HistoryCard } from './HistoryCard';
 import { useTheme } from '../context/ThemeContext';
 import { styleBackgroundForStyle } from '../lib/gradients';
+import { GalleryModal } from './GalleryModal'
+import { Onboarding } from './Onboarding';
+
+// Функция для сжатия картинок на клиенте перед отправкой
+const resizeImageFile = (file: File, maxSide = 1024): Promise<File> => {
+  return new Promise((resolve) => {
+    if (!file.type.match(/image.*/)) return resolve(file);
+    
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+    
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      let { width, height } = img;
+      
+      if (width > maxSide || height > maxSide) {
+        if (width > height) {
+          height = Math.round((height * maxSide) / width);
+          width = maxSide;
+        } else {
+          width = Math.round((width * maxSide) / height);
+          height = maxSide;
+        }
+      }
+      
+      const canvas = document.createElement('canvas');
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return resolve(file);
+      
+      ctx.drawImage(img, 0, 0, width, height);
+      canvas.toBlob(
+        (blob) => {
+          if (blob) resolve(new File([blob], file.name, { type: 'image/jpeg' }));
+          else resolve(file);
+        },
+        'image/jpeg',
+        0.85 // Качество сжатия (85%)
+      );
+    };
+    img.onerror = () => resolve(file);
+    img.src = url;
+  });
+};
 
 export const Generator: React.FC = () => {
   const { t } = useTranslation();
   const { user, refresh } = useAuth();
   const { theme } = useTheme();
-  const HISTORY_INLINE_LIMIT = 3;
   const HISTORY_PAGE_LIMIT = 12;
   
   const [prompt, setPrompt] = useState('');
+  const [isListening, setIsListening] = useState(false);
+  const [speechSupported, setSpeechSupported] = useState(false);
+  const recognitionRef = useRef<any>(null);
   const [styles, setStyles] = useState<StyleCategoryPublic[]>([]);
   const [caps, setCaps] = useState<GenerationCapabilities | null>(null);
   const [selectedStyles, setSelectedStyles] = useState<string[]>([]);
   const [selectedSizeId, setSelectedSizeId] = useState<string>('');
+  const [selectedRatio, setSelectedRatio] = useState<string>('3:4');
   const [selectedAspectRatio, setSelectedAspectRatio] = useState<string>('');
   const [selectedQuality, setSelectedQuality] = useState<string>('');
   
@@ -40,6 +89,8 @@ export const Generator: React.FC = () => {
   const [history, setHistory] = useState<HistoryItem[]>([]);
   const [historyModalOpen, setHistoryModalOpen] = useState(false);
   const [historyPage, setHistoryPage] = useState(1);
+  const [historyProject, setHistoryProject] = useState('all');
+  const [projects, setProjects] = useState<ProjectItem[]>([]);
   const [historyTotal, setHistoryTotal] = useState(0);
   const [historyLoading, setHistoryLoading] = useState(false);
   const [libraryOpen, setLibraryOpen] = useState(false);
@@ -50,6 +101,27 @@ export const Generator: React.FC = () => {
   const [currentJobId, setCurrentJobId] = useState<string | null>(null);
   const [fullscreenItem, setFullscreenItem] = useState<HistoryItem | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const [galleryOpen, setGalleryOpen] = useState(false);
+  const [projectToDelete, setProjectToDelete] = useState<{id: string, name: string} | null>(null);
+  const showOnboarding = Boolean(user && !user.onboarding_completed);
+
+  const handleOnboardingComplete = async () => {
+    try {
+        // 1. Сохраняем в БД
+        await api.auth.completeOnboarding();
+        // 2. Обновляем данные пользователя (чтобы флаг onboarding_completed стал true)
+        await refresh();
+    } catch (e) {
+        console.error("Failed to save onboarding status", e);
+    }
+  };
+
+  const ASPECT_RATIOS =[
+    { id: '1:1', label: 'Квадрат (1:1)', width: 2048, height: 2048, icon: 'M4 4h16v16H4z' },
+    { id: '3:4', label: 'Маркетплейсы (3:4)', width: 2000, height: 2656, icon: 'M6 2h12v20H6z' },
+    { id: '16:9', label: 'Пейзаж (16:9)', width: 2560, height: 1440, icon: 'M2 6h20v12H2z' },
+    { id: '9:16', label: 'Сториз (9:16)', width: 1440, height: 2560, icon: 'M6 2h12v20H6z' },
+  ];
 
   const lightPanelShadow = "shadow-[0_30px_70px_rgba(15,23,42,0.08)]";
   const lightPromptShadow = "shadow-[0_35px_75px_rgba(15,23,42,0.1)]";
@@ -95,6 +167,20 @@ export const Generator: React.FC = () => {
     [styleLabelMap]
   );
 
+  const confirmDeleteProject = async () => {
+    if (!projectToDelete) return;
+    try {
+      await api.projects.delete(projectToDelete.id);
+      setHistoryProject('none');
+      await loadProjects();
+      loadHistory(1, 'none');
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setProjectToDelete(null);
+    }
+  };
+
   const historyStyleLabels = useCallback(
     (entry: HistoryItem) => {
       const ids = Array.isArray(entry.style_ids) ? entry.style_ids : [];
@@ -137,6 +223,33 @@ export const Generator: React.FC = () => {
   }, [caps]);
 
   useEffect(() => {
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (SpeechRecognition) {
+      setSpeechSupported(true);
+      const recognition = new SpeechRecognition();
+      recognition.lang = 'ru-RU';
+      recognition.continuous = false;
+      recognition.interimResults = false;
+      recognition.onresult = (event: any) => {
+        const transcript = event.results[0][0].transcript;
+        setPrompt(prev => prev ? `${prev.trim()} ${transcript}`.trim() : transcript);
+      };
+      recognition.onend = () => setIsListening(false);
+      recognition.onerror = () => setIsListening(false);
+      recognitionRef.current = recognition;
+    }
+  }, []);
+
+  const toggleListening = () => {
+    if (!recognitionRef.current) return;
+    if (isListening) recognitionRef.current.stop();
+    else {
+      recognitionRef.current.start();
+      setIsListening(true);
+    }
+  };
+
+  useEffect(() => {
     if (!caps) return;
     if (caps.image_provider === 'gemini') {
       if (geminiAspectRatioOptions.length) {
@@ -159,25 +272,35 @@ export const Generator: React.FC = () => {
     }
   }, [caps, geminiAspectRatioOptions, geminiQualityOptions]);
 
-  const loadHistory = useCallback(async (page = 1) => {
-    if (!user) {
-      setHistory([]);
-      setHistoryTotal(0);
-      setHistoryPage(1);
-      return;
+  const loadProjects = useCallback(async () => {
+    if (!user) return;
+    try {
+      const res = await api.projects.list();
+      setProjects(res.items);
+    } catch (e) {
+      console.error(e);
     }
+  }, [user]);
+
+  // Чтобы загрузить проекты при входе:
+  useEffect(() => {
+    loadProjects();
+  }, [loadProjects]);
+
+  const loadHistory = useCallback(async (page = 1, projectId = historyProject) => {
+    if (!user) return;
     setHistoryLoading(true);
     try {
-      const data = await api.history.list(HISTORY_PAGE_LIMIT, page);
+      const data = await api.history.list(HISTORY_PAGE_LIMIT, page, projectId);
       setHistory(data.items);
       setHistoryTotal(data.total);
       setHistoryPage(data.page);
     } catch (err) {
-      console.error('Не удалось загрузить историю генераций', err);
+      console.error(err);
     } finally {
       setHistoryLoading(false);
     }
-  }, [user]);
+  }, [user, historyProject]);
 
   const handleHistoryPageChange = useCallback((newPage: number) => {
     if (!newPage) return;
@@ -300,11 +423,12 @@ export const Generator: React.FC = () => {
   const canUploadPhotos = Boolean(caps?.supports_source_images);
   const photoLimitText = t.generator.photoLimit.replace('{limit}', String(maxPhotos));
 
-  const handlePhotoSelection = (event: ChangeEvent<HTMLInputElement>) => {
+  const handlePhotoSelection = async (event: ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files ? Array.from(event.target.files) : [];
     if (!files.length) return;
+    const resizedFiles = await Promise.all(files.map(f => resizeImageFile(f, 1024)));
     setUploadedPhotos((prev) => {
-      const merged = [...prev, ...files];
+      const merged = [...prev, ...resizedFiles];
       return merged.slice(0, maxPhotos);
     });
     event.target.value = '';
@@ -327,13 +451,16 @@ export const Generator: React.FC = () => {
     setResultUrl(null);
 
     try {
+      const selectedSetting = ASPECT_RATIOS.find(r => r.id === selectedRatio) || ASPECT_RATIOS[1];
       const preset = selectedPreset;
       const styleIds = selectedStyles.length ? selectedStyles : ['none'];
+      const actualProjectId = (historyProject === 'all' || historyProject === 'none') ? null : historyProject;
       const payload = {
         style_ids: styleIds,
         user_input: prompt,
-        width: preset?.width || 1024,
-        height: preset?.height || 1024
+        width: selectedSetting.width,
+        height: selectedSetting.height,
+        project_id: actualProjectId,
       };
       const { job_id } =
         uploadedPhotos.length > 0 && canUploadPhotos
@@ -353,7 +480,7 @@ export const Generator: React.FC = () => {
           if (status.status === 'completed') {
             if (status.result) {
               setRawResultPath(status.result.image_url);
-              setResultUrl(resolveAssetUrl(status.result.image_url));
+              setResultUrl(resolveAssetUrl(status.result.image_url) || null);
               void loadHistory();
             } else {
               setError('No image result');
@@ -466,7 +593,7 @@ export const Generator: React.FC = () => {
       <div className="grid grid-cols-1 gap-12 lg:grid-cols-12">
         
         <div className="lg:col-span-4 space-y-8">
-          <div className={sidePanelClasses}>
+          <div className={sidePanelClasses} id="onb-styles">
             <h3 className={cn("text-sm font-bold uppercase tracking-widest mb-6 flex items-center gap-2", mutedTone)}>
               <svg className="h-4 w-4 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" /></svg>
               {t.generator.styles}
@@ -505,58 +632,35 @@ export const Generator: React.FC = () => {
                <svg className="h-4 w-4 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" /></svg>
                {t.generator.size}
             </h3>
-            {isGemini ? (
-              <div className="grid gap-4 md:grid-cols-2">
-                <div className="space-y-3">
-                  <p className="text-[11px] uppercase tracking-[0.45em] text-zinc-400">{t.generator.aspectRatio}</p>
-                  <div className="space-y-2">
-                    {geminiAspectRatioOptions.map((ratio) => (
-                      <button
-                        key={`ratio-${ratio}`}
-                        onClick={() => setSelectedAspectRatio(ratio)}
-                        className={optionButtonClass(selectedAspectRatio === ratio)}
-                      >
-                        <span className="block leading-snug">{ratio}</span>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-                <div className="space-y-3">
-                  <p className="text-[11px] uppercase tracking-[0.45em] text-zinc-400">{t.generator.quality}</p>
-                  <div className="space-y-2">
-                    {geminiQualityOptions.map((quality) => (
-                      <button
-                        key={`quality-${quality}`}
-                        onClick={() => setSelectedQuality(quality)}
-                        className={optionButtonClass(selectedQuality === quality)}
-                      >
-                        <span className="block leading-snug">{quality}</span>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-                {selectedPreset && (
-                  <p className={selectedPresetLabelClass}>
-                    {getPresetLabel(selectedPreset)} • {selectedPreset.width}×{selectedPreset.height}
-                  </p>
-                )}
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 gap-2">
-                {caps?.size_presets.map((p) => (
+            {/* Блок выбора соотношения сторон */}
+            <div className="grid grid-cols-2 gap-3 mt-4">
+              {ASPECT_RATIOS.map((ratio) => {
+                const isSelected = selectedRatio === ratio.id;
+                return (
                   <button
-                    key={p.id}
-                    onClick={() => setSelectedSizeId(p.id)}
-                    className={sizeButtonClass(selectedSizeId === p.id)}
+                    key={ratio.id}
+                    onClick={() => setSelectedRatio(ratio.id)}
+                    className={cn(
+                      "flex flex-col items-center justify-center p-4 rounded-2xl border transition-all gap-2",
+                      isSelected
+                        ? theme === 'dark'
+                          ? "border-indigo-500 bg-indigo-500/20 text-indigo-300"
+                          : "border-indigo-600 bg-indigo-50 text-indigo-700 shadow-md"
+                        : theme === 'dark'
+                          ? "border-zinc-800 text-zinc-400 hover:bg-zinc-800/50"
+                          : "border-zinc-200 text-zinc-500 hover:bg-zinc-50"
+                    )}
                   >
-                    <span className="font-bold uppercase tracking-tight">{getPresetLabel(p)}</span>
-                    <span className="text-[10px] opacity-60 font-mono">
-                      {p.width}×{p.height}
-                    </span>
+                    <svg className="h-6 w-6 opacity-80" fill="currentColor" viewBox="0 0 24 24">
+                      <path d={ratio.icon} />
+                    </svg>
+                    <div className="text-xs font-bold uppercase tracking-tight text-center">
+                      {ratio.label}
+                    </div>
                   </button>
-                ))}
-              </div>
-            )}
+                );
+              })}
+            </div>
             <div className="mt-10 space-y-3">
               <h3 className={cn("text-sm font-bold uppercase tracking-widest flex items-center gap-2", mutedTone)}>
                 <svg className="h-4 w-4 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M12 4C7.029 4 3 8.029 3 13c0 4.971 4.029 9 9 9s9-4.029 9-9c0-4.971-4.029-9-9-9zM12 6.5v.01M12 11.25a1.25 1.25 0 110 2.5 1.25 1.25 0 010-2.5z" /></svg>
@@ -667,31 +771,56 @@ export const Generator: React.FC = () => {
                 )}
               >
                 <img src={resultUrl} className="h-full w-full object-contain" alt="Generated" />
-                <div className="absolute top-6 right-6 flex flex-col gap-3 opacity-0 group-hover:opacity-100 transition-all transform translate-x-4 group-hover:translate-x-0">
-                {downloadHref && (
-                  <button
-                    type="button"
-                    className={actionButtonClasses('save')}
-                    disabled={!currentJobId}
+                
+                {/* ОБНОВЛЕННЫЙ БЛОК С КНОПКАМИ */}
+                <div className="absolute top-6 right-6 flex flex-col items-end gap-3 opacity-0 group-hover:opacity-100 transition-all transform translate-x-4 group-hover:translate-x-0">
+                  
+                  {/* Кнопка "Скачать" с текстом */}
+                  {downloadHref && (
+                    <button
+                      type="button"
+                      className={cn(
+                        "h-12 px-5 rounded-2xl flex items-center gap-2 shadow-xl transition-colors font-bold text-sm",
+                        theme === 'dark'
+                          ? 'bg-white text-zinc-900 hover:bg-indigo-500 hover:text-white'
+                          : 'bg-white text-zinc-900 hover:bg-indigo-600 hover:text-white'
+                      )}
+                      disabled={!currentJobId}
+                      onClick={() => {
+                        if (!currentJobId) return;
+                        void downloadResource(downloadHref, currentJobId);
+                      }}
+                      aria-label={t.history.download}
+                    >
+                      <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a2 2 0 002 2h12a2 2 0 002-2v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                      </svg>
+                      {t.common.download}
+                    </button>
+                  )}
+
+                  {/* Новая кнопка "Новая генерация" вместо корзины */}
+                  <button 
+                    className={cn(
+                      "h-12 px-5 rounded-2xl flex items-center gap-2 shadow-xl transition-colors font-bold text-sm",
+                      theme === 'dark'
+                        ? 'bg-zinc-900 text-white hover:bg-zinc-800 border border-zinc-700'
+                        : 'bg-white text-zinc-900 hover:bg-zinc-50 border border-zinc-200'
+                    )}
                     onClick={() => {
-                      if (!currentJobId) return;
-                      void downloadResource(downloadHref, currentJobId);
+                      setResultUrl(null);
+                      setPhase('idle');
+                      setProgress(0);
+                      setRawResultPath(null);
+                      setPrompt('');
+                      setSelectedStyles([]);
+                      setUploadedPhotos([]);
                     }}
-                    aria-label={t.history.download}
                   >
-                    <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a2 2 0 002 2h12a2 2 0 002-2v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
-                  </button>
-                )}
-              <button 
-                className={actionButtonClasses('cancel')}
-                onClick={() => {
-                  setResultUrl(null);
-                  setPhase('idle');
-                  setProgress(0);
-                  setRawResultPath(null);
-                }}
-              >
-                    <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                    <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                    </svg>
+                    {t.generator.newGeneration}
                   </button>
                 </div>
               </div>
@@ -699,32 +828,128 @@ export const Generator: React.FC = () => {
           </div>
 
           <div className="mt-8 relative flex gap-4 items-end">
-            <div className="flex-1 relative">
-              <textarea
-                className={cn(
-                  "w-full min-h-[140px] rounded-[2.5rem] p-8 pr-12 text-lg font-medium outline-none focus:ring-4 focus:ring-indigo-500/10 transition-all resize-none",
-                  theme === 'dark'
-                    ? 'border-zinc-800 bg-zinc-900 text-white shadow-2xl'
-                    : `border-zinc-200 bg-white text-zinc-900 ${lightPromptShadow}`
+            <div className="flex-1 flex flex-col gap-3 relative">
+              
+              {/* ВЫБОР ПРОЕКТА */}
+              {user && (
+                <div className="flex items-center justify-between w-full mb-2 px-2 animate-in fade-in slide-in-from-left duration-500">
+                  <div className="flex items-center gap-3">
+                    <span className={cn("text-[10px] font-black uppercase tracking-[0.2em]", theme === 'dark' ? 'text-zinc-500' : 'text-zinc-400')}>
+                      Проект:
+                    </span>
+                    <div className="relative group">
+                      <select
+                        value={historyProject}
+                        onChange={(e) => {
+                          setHistoryProject(e.target.value);
+                          loadHistory(1, e.target.value);
+                        }}
+                        className={cn(
+                          "appearance-none pl-4 pr-10 py-2 rounded-full text-xs font-bold uppercase tracking-wider cursor-pointer transition-all border outline-none",
+                          theme === 'dark'
+                            ? "bg-zinc-800/50 border-zinc-700 text-indigo-400 hover:bg-zinc-800 hover:border-indigo-500/50"
+                            : "bg-white border-zinc-200 text-indigo-600 hover:border-indigo-400 shadow-sm"
+                        )}
+                      >
+                        <option value="all">Все генерации</option>
+                        <option value="none">Без проекта</option>
+                        {projects.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+                      </select>
+                      <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none opacity-50">
+                        <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                        </svg>
+                      </div>
+                    </div>
+
+                    {/* КНОПКА УДАЛЕНИЯ ПРОЕКТА (показывается только если выбран конкретный проект) */}
+                    {historyProject !== 'all' && historyProject !== 'none' && (
+                      <button 
+                        onClick={() => {
+                          const proj = projects.find(p => p.id === historyProject);
+                          if (proj) setProjectToDelete({ id: proj.id, name: proj.name });
+                        }}
+                        className="p-2 rounded-full border border-red-200 text-red-500 hover:bg-red-50 dark:border-red-900/30 dark:hover:bg-red-900/20 transition-colors"
+                        title="Удалить проект"
+                      >
+                        <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        </svg>
+                      </button>
+                    )}
+
+                    {/* Быстрая кнопка создания проекта прямо здесь (опционально) */}
+                    <button 
+                      onClick={() => setHistoryModalOpen(true)}
+                      className={cn(
+                        "p-2 rounded-full border transition-colors",
+                        theme === 'dark' ? "border-zinc-800 text-zinc-500 hover:text-white" : "border-zinc-200 text-zinc-400 hover:text-indigo-600"
+                      )}
+                      title="Управление проектами"
+                    >
+                      <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+                      </svg>
+                    </button>
+                  </div>
+
+                  {/* КНОПКА ГАЛЕРЕИ ПРОМПТОВ */}
+                  <Button variant="ghost" size="sm" onClick={() => setGalleryOpen(true)} className="text-indigo-500 hover:text-indigo-600 gap-2">
+                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" /></svg>
+                    Примеры и Идеи
+                  </Button>
+                </div>
+              )}
+
+              {/* ПОЛЕ ВВОДА ПРОМПТА */}
+              <div className="relative flex-1 flex flex-col gap-3" id="onb-prompt">
+                <textarea
+                  className={cn(
+                    "w-full min-h-[140px] rounded-[2.5rem] p-8 pr-16 text-lg font-medium outline-none focus:ring-4 focus:ring-indigo-500/10 transition-all resize-none ",
+                    theme === 'dark' ? 'border-zinc-800 bg-zinc-900 text-white shadow-2xl' : `border-zinc-200 bg-white text-zinc-900 ${lightPromptShadow}`
+                  )}
+                  placeholder={t.generator.promptPlaceholder}
+                  value={prompt}
+                  onChange={(e) => setPrompt(e.target.value)}
+                  disabled={phase === 'pending' || phase === 'processing'}
+                />
+                
+                {speechSupported && (
+                  <button
+                    type="button"
+                    onClick={toggleListening}
+                    disabled={phase === 'pending' || phase === 'processing'}
+                    className={cn(
+                      "absolute right-4 top-4 p-3 rounded-2xl border transition-all",
+                      isListening
+                        ? "bg-rose-500 text-white border-rose-500 animate-pulse shadow-lg"
+                        : theme === 'dark' ? "border-zinc-700 text-zinc-400 hover:text-white hover:bg-zinc-800" : "border-zinc-200 text-zinc-500 hover:text-zinc-900 hover:bg-zinc-50"
+                    )}
+                    title="Голосовой ввод"
+                  >
+                    <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M19 10v2a7 7 0 01-14 0v-2" />
+                      <line x1="12" y1="19" x2="12" y2="23" />
+                      <line x1="8" y1="23" x2="16" y2="23" />
+                    </svg>
+                  </button>
                 )}
-                placeholder={t.generator.promptPlaceholder}
-                value={prompt}
-                onChange={(e) => setPrompt(e.target.value)}
-                disabled={phase === 'pending' || phase === 'processing'}
-              />
+              </div>
+            </div>
+            <div className="flex flex-col gap-2 shrink-0">
+                <Button 
+                  id="onb-generate"
+                  className={generateButtonClass}
+                  onClick={handleGenerate}
+                  isLoading={phase === 'pending' || phase === 'processing'}
+                  disabled={!prompt.trim() || (user?.balance ? user?.balance <= 0 : false)}
+                  size="icon"
+                >
+                  <svg className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M13 5l7 7-7 7M5 5l7 7-7 7" /></svg>
+                </Button>
+            </div>
           </div>
-          <div className="flex flex-col gap-2 shrink-0">
-              <Button 
-                className={generateButtonClass}
-                onClick={handleGenerate}
-                isLoading={phase === 'pending' || phase === 'processing'}
-                disabled={!prompt.trim() || user.balance <= 0}
-                size="icon"
-              >
-                <svg className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M13 5l7 7-7 7M5 5l7 7-7 7" /></svg>
-              </Button>
-          </div>
-        </div>
         {user && (
           <div className="mt-6">
             <div className={historyPanelClass}>
@@ -732,17 +957,15 @@ export const Generator: React.FC = () => {
                 <h4 className={cn("text-sm font-bold uppercase tracking-[0.4em]", theme === 'dark' ? 'text-zinc-300' : 'text-zinc-500')}>
                   {t.history.title}
                 </h4>
-                {history.length > HISTORY_INLINE_LIMIT && (
-                  <Button variant="ghost" size="sm" className="uppercase tracking-[0.3em]" onClick={() => setHistoryModalOpen(true)}>
-                    {t.history.showMore}
-                  </Button>
-                )}
+                <Button variant="ghost" size="sm" className="uppercase tracking-[0.3em]" onClick={() => setHistoryModalOpen(true)}>
+                  {t.history.showMore}
+                </Button>
               </div>
               {history.length === 0 ? (
                 <p className={cn("text-sm", historyLabelClass)}>{t.history.empty}</p>
               ) : (
                 <div className="mt-3 grid grid-cols-1 gap-4 md:grid-cols-3 justify-center">
-                  {history.slice(0, HISTORY_INLINE_LIMIT).map((entry) => (
+                  {history.slice(0, 3).map((entry) => (
                     <HistoryCard
                       key={entry.job_id}
                       item={entry}
@@ -758,7 +981,7 @@ export const Generator: React.FC = () => {
             </div>
           </div>
         )}
-        {user.balance <= 0 && (
+        {(user?.balance ? user?.balance <= 0 : false) && (
            <div className={outOfBalanceClass}>
               {t.generator.outOfBalance}
            </div>
@@ -766,6 +989,12 @@ export const Generator: React.FC = () => {
         </div>
       </div>
 
+      <GalleryModal 
+        isOpen={galleryOpen} 
+        onClose={() => setGalleryOpen(false)} 
+        onCopyPrompt={(p) => setPrompt(p)} 
+        getStyleLabel={getStyleLabelById}
+      />
       <StylesLibraryModal 
         isOpen={libraryOpen} 
         onClose={() => setLibraryOpen(false)}
@@ -773,6 +1002,26 @@ export const Generator: React.FC = () => {
         selectedStyleIds={selectedStyles}
         onToggleStyle={toggleStyle}
       />
+      {/* МОДАЛКА УДАЛЕНИЯ ПРОЕКТА ИЗ ГЕНЕРАТОРА */}
+      {projectToDelete && (
+        <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" onClick={() => setProjectToDelete(null)}>
+          <div className={cn("w-full max-w-sm rounded-3xl p-6 shadow-2xl border", theme === 'dark' ? 'bg-zinc-900 border-zinc-800 text-white' : 'bg-white border-zinc-200 text-zinc-900')} onClick={e => e.stopPropagation()}>
+            <div className="w-12 h-12 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center mb-4 text-red-500">
+              <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+            </div>
+            <h3 className="text-xl font-bold mb-2">Удалить проект?</h3>
+            <p className="text-sm mb-6 text-zinc-500 dark:text-zinc-400">
+              Проект <b>«{projectToDelete.name}»</b> будет удалён навсегда. Все изображения из него будут сохранены и перемещены в папку «Без проекта».
+            </p>
+            <div className="flex justify-end gap-3">
+              <Button variant="ghost" onClick={() => setProjectToDelete(null)}>Отмена</Button>
+              <Button variant="danger" onClick={confirmDeleteProject}>Удалить</Button>
+            </div>
+          </div>
+        </div>
+      )}
       <HistoryModal
         isOpen={historyModalOpen}
         onClose={() => setHistoryModalOpen(false)}
@@ -781,108 +1030,141 @@ export const Generator: React.FC = () => {
         page={historyPage}
         total={historyTotal}
         limit={HISTORY_PAGE_LIMIT}
-        onPageChange={handleHistoryPageChange}
+        onPageChange={(p) => loadHistory(p, historyProject)}
         loading={historyLoading}
         onDownload={handleHistoryDownload}
         onDelete={handleHistoryDelete}
         onOpen={handleHistoryOpen}
+        projects={projects}
+        onRefreshProjects={loadProjects}
+        selectedProjectId={historyProject}
+        onChangeProject={(id) => {
+          setHistoryProject(id);
+          loadHistory(1, id);
+        }}
+        onRefreshHistory={() => loadHistory(historyPage, historyProject)}
       />
+      {/* ПОЛНОЭКРАННЫЙ ПРОСМОТР КАРТИНКИ ИЗ ИСТОРИИ */}
       {fullscreenItem && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center px-4 py-6">
+        <div className="fixed inset-0 z-[80] flex items-center justify-center px-4 py-6">
+          {/* Темный фон */}
           <div
             className="absolute inset-0 bg-black/70 backdrop-blur-sm"
             onClick={closeFullscreen}
           />
+          
+          {/* Контейнер модалки. max-h-[90vh] не дает вылезти за экран, а flex-col позволяет скроллить внутри */}
           <div
             className={cn(
-              "relative w-full max-w-4xl overflow-hidden rounded-[2rem] border shadow-2xl transition-colors",
+              "relative w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden rounded-[2rem] border shadow-2xl transition-colors",
               theme === 'dark'
                 ? 'border-zinc-800 bg-zinc-900 text-white'
                 : 'border-zinc-200 bg-white text-zinc-900'
             )}
+            onClick={e => e.stopPropagation()}
           >
-          <div className="relative h-96 overflow-hidden pt-4">
-              <img
-                src={resolveAssetUrl(fullscreenItem.image_url)}
-                alt={t.history.promptLabel}
-                className="h-full w-full object-contain"
-              />
-              <button
-                type="button"
-                className={cn(
-                  "absolute top-4 right-4 h-12 w-12 rounded-2xl flex items-center justify-center border transition-colors",
-                  theme === 'dark'
-                    ? 'border-white/30 bg-black/30 text-white hover:border-white hover:bg-white/10'
-                    : 'border-zinc-200 bg-white text-zinc-900 hover:border-indigo-500 hover:bg-indigo-50'
-                )}
-                onClick={closeFullscreen}
-                aria-label={t.common.close}
-              >
-                <svg className="h-6 w-6" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} fill="none">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
-            <div className="space-y-4 p-6">
-              <p className="text-[10px] uppercase tracking-[0.45em] text-zinc-400">{t.history.promptLabel}</p>
-              <p className="text-lg font-semibold leading-snug">{fullscreenItem.user_prompt}</p>
-              <div className="flex flex-wrap gap-2">
-                {historyStyleLabels(fullscreenItem).map((name) => (
-                  <span
-                    key={name}
-                    className="rounded-full border border-current px-3 py-1 text-[11px] uppercase tracking-[0.3em]"
-                  >
-                    {name}
-                  </span>
-                ))}
+            {/* Блок, который скроллится (overflow-y-auto) */}
+            <div className="flex-1 overflow-y-auto">
+              
+              {/* Блок с картинкой */}
+              <div className="relative bg-black/5 dark:bg-black/40 p-4 flex justify-center border-b border-zinc-200 dark:border-zinc-800/50">
+                <img
+                  src={resolveAssetUrl(fullscreenItem.image_url) || undefined}
+                  alt={t.history.promptLabel}
+                  className="max-h-[55vh] w-auto object-contain rounded-xl shadow-lg"
+                />
+                
+                {/* Кнопка закрыть */}
+                <button
+                  type="button"
+                  className={cn(
+                    "absolute top-4 right-4 h-10 w-10 rounded-xl flex items-center justify-center border transition-colors",
+                    "bg-black/50 text-white hover:bg-black/70 border-white/20 z-10 backdrop-blur-md"
+                  )}
+                  onClick={closeFullscreen}
+                  title={t.common.close}
+                >
+                  <svg className="h-5 w-5" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5} fill="none">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
               </div>
-              <div className="flex items-center justify-between">
-                <p className="text-[11px] uppercase tracking-[0.4em] text-zinc-400">
-                  {new Date(fullscreenItem.created_at).toLocaleString()}
-                </p>
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    className={cn(
-                      "h-10 w-10 rounded-2xl flex items-center justify-center border transition-colors",
-                      theme === 'dark'
-                        ? 'border-white/30 bg-black/30 text-white hover:border-white hover:bg-white/10'
-                        : 'border-zinc-200 bg-white text-zinc-900 hover:border-indigo-500 hover:bg-indigo-50'
-                    )}
-                    onClick={() => handleHistoryDownload(fullscreenItem)}
-                    aria-label={t.history.download}
-                  >
-                    <svg className="h-5 w-5" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} fill="none">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a2 2 0 002 2h12a2 2 0 002-2v-1" />
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M7 10l5 5 5-5" />
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 15V4" />
-                    </svg>
-                  </button>
-                  <button
-                    type="button"
-                    className={cn(
-                      "h-10 w-10 rounded-2xl flex items-center justify-center border transition-colors",
-                      theme === 'dark'
-                        ? 'border-white/30 bg-black/30 text-white hover:border-white hover:bg-white/10'
-                        : 'border-zinc-200 bg-white text-zinc-900 hover:border-rose-500 hover:bg-rose-50'
-                    )}
-                    onClick={() => handleHistoryDelete(fullscreenItem)}
-                    aria-label={t.history.delete}
-                  >
-                    <svg className="h-5 w-5" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} fill="none">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M6 7h12" />
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M11 11v6" />
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M15 11v6" />
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 7l1 12a2 2 0 002 2h8a2 2 0 002-2l1-12" />
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 7V5a2 2 0 012-2h2a2 2 0 012 2v2" />
-                    </svg>
-                  </button>
+
+              {/* Блок с текстами (промпт полностью, без обрезки) */}
+              <div className="space-y-4 p-6">
+                <div>
+                  <p className="text-[10px] uppercase tracking-[0.45em] text-zinc-400 mb-1">{t.history.promptLabel}</p>
+                  <p className="text-lg font-semibold leading-relaxed whitespace-pre-wrap">
+                    {fullscreenItem.user_prompt || fullscreenItem.final_prompt}
+                  </p>
+                </div>
+                
+                {historyStyleLabels(fullscreenItem).length > 0 && (
+                  <div>
+                    <p className="text-[10px] uppercase tracking-[0.45em] text-zinc-400 mb-2">{t.history.stylesLabel}</p>
+                    <div className="flex flex-wrap gap-2">
+                      {historyStyleLabels(fullscreenItem).map((name) => (
+                        <span
+                          key={name}
+                          className="rounded-full border border-current px-3 py-1 text-[11px] uppercase tracking-[0.3em]"
+                        >
+                          {name}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                
+                {/* Подвал с датой и кнопками действий */}
+                <div className="flex items-center justify-between mt-6 pt-4 border-t border-zinc-200 dark:border-zinc-800">
+                  <p className="text-[11px] uppercase tracking-[0.4em] text-zinc-400">
+                    {new Date(fullscreenItem.created_at).toLocaleString()}
+                  </p>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      className={cn(
+                        "h-10 w-10 rounded-2xl flex items-center justify-center border transition-colors",
+                        theme === 'dark'
+                          ? 'border-white/30 bg-black/30 text-white hover:border-white hover:bg-white/10'
+                          : 'border-zinc-200 bg-white text-zinc-900 hover:border-indigo-500 hover:bg-indigo-50'
+                      )}
+                      onClick={() => handleHistoryDownload(fullscreenItem)}
+                      title={t.history.download}
+                    >
+                      <svg className="h-5 w-5" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} fill="none">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a2 2 0 002 2h12a2 2 0 002-2v-1" />
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M7 10l5 5 5-5" />
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 15V4" />
+                      </svg>
+                    </button>
+                    <button
+                      type="button"
+                      className={cn(
+                        "h-10 w-10 rounded-2xl flex items-center justify-center border transition-colors",
+                        theme === 'dark'
+                          ? 'border-white/30 bg-black/30 text-white hover:border-white hover:bg-white/10'
+                          : 'border-zinc-200 bg-white text-zinc-900 hover:border-rose-500 hover:bg-rose-50'
+                      )}
+                      onClick={() => handleHistoryDelete(fullscreenItem)}
+                      title={t.history.delete}
+                    >
+                      <svg className="h-5 w-5" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} fill="none">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M6 7h12" />
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M11 11v6" />
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M15 11v6" />
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 7l1 12a2 2 0 002 2h8a2 2 0 002-2l1-12" />
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M9 7V5a2 2 0 012-2h2a2 2 0 012 2v2" />
+                      </svg>
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
         </div>
       )}
+      {showOnboarding && <Onboarding onComplete={handleOnboardingComplete} />}
     </div>
   );
 };

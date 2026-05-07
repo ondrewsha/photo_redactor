@@ -41,7 +41,7 @@ export const ru: TranslationSchema = {
     step3Desc: "Скачивайте свои творения в высоком разрешении и делитесь ими с миром.",
   },
   generator: {
-    promptPlaceholder: "Кот в космическом скафандре, парящий в неоновой туманности...",
+    promptPlaceholder: "Введите тут свое описание того, что должно получиться, например: 'Стильный женский рюкзак из черной кожи, стоит на мраморном подиуме, студийный свет, оставить место для текста сверху'...",
     helperText: "Опиши то, что хочешь увидеть, простыми словами.",
     styles: "Стили",
     size: "Размер",
@@ -61,6 +61,7 @@ export const ru: TranslationSchema = {
     searchStyles: "Поиск стилей...",
     noStylesFound: "Стили не найдены",
     defaultStyle: "Без стиля",
+    newGeneration: "Новая генерация",
     styleNames: ruStyleNames,
     sizeLabels: ruSizeLabels
   },
@@ -78,7 +79,13 @@ export const ru: TranslationSchema = {
     download: "Скачать",
     delete: "Удалить",
     open: "Развернуть",
-    deleteConfirm: "Удалить запись из истории?"
+    deleteConfirm: "Удалить запись из истории?",
+    projectsTitle: "Проекты",
+    allGenerations: "Все картинки",
+    unsorted: "Без проекта",
+    newProject: "Новый проект...",
+    moveTo: "Переместить",
+    create: "Создать"
   },
   profile: {
     balance: "Баланс",

@@ -44,7 +44,7 @@ export const de: TranslationSchema = {
     step3Desc: "Laden Sie Ihre Kreation in hoher Auflösung herunter und teilen Sie sie mit der Welt.",
   },
   generator: {
-    promptPlaceholder: "Eine Katze im Raumanzug, die in einem Neon-Nebel schwebt...",
+    promptPlaceholder: "Geben Sie hier Ihre Beschreibung dessen ein, was Sie sehen möchten, zum Beispiel: „Stilvoller Damenrucksack aus schwarzem Leder, auf einem Marmorpodest platziert, Studiobeleuchtung, Platz für Text oben lassen“ …",
     helperText: "Beschreibe in einfachen Worten, was du sehen möchtest.",
     styles: "Stile",
     size: "Größe",
@@ -65,6 +65,7 @@ export const de: TranslationSchema = {
     searchStyles: "Stile suchen...",
     noStylesFound: "Keine Stile gefunden",
     defaultStyle: "Kein Stil",
+    newGeneration: "Neue Generation",
     styleNames: deStyleNames,
     sizeLabels: deSizeLabels
   },
@@ -82,7 +83,13 @@ export const de: TranslationSchema = {
     download: "Herunterladen",
     delete: "Löschen",
     open: "Öffnen",
-    deleteConfirm: "Eintrag aus der Historie entfernen?"
+    deleteConfirm: "Eintrag aus der Historie entfernen?",
+    projectsTitle: "Projekte",
+    allGenerations: "Alle Generationen",
+    unsorted: "Ohne Projekt",
+    newProject: "Neues Projekt...",
+    moveTo: "Verschieben nach",
+    create: "Erstellen"
   },
   profile: {
     balance: "Guthaben",

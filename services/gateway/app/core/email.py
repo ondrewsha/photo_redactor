@@ -38,6 +38,7 @@ async def send_email(
         hostname=settings.smtp_host,
         port=settings.smtp_port,
         start_tls=settings.smtp_use_tls,
+        use_tls=settings.smtp_use_ssl,
         timeout=20,
     )
     await smtp.connect()

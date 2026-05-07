@@ -21,11 +21,6 @@ Imagen модели (text-to-image):
 
 OpenAI модель по умолчанию: `gpt-image-1` (`GEN_SERVICE_OPENAI_MODEL`).
 
-## Proxy
-
-Опционально: `GEN_SERVICE_GEMINI_PROXY_URL` — HTTP(S) proxy для запросов к Gemini (пример: `http://user:pass@host:port`).
-Опционально: `GEN_SERVICE_OPENAI_PROXY_URL` — HTTP(S) proxy для запросов к OpenAI (пример: `http://user:pass@host:port`).
-
 ## Output optimization (Step 5)
 
 По умолчанию результат конвертируется в `webp` (качество `85`) и ограничивается по длинной стороне до `1280`.

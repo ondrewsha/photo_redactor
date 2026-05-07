@@ -89,12 +89,34 @@ export const StylesLibraryModal: React.FC<Props> = ({ isOpen, onClose, styles, s
           {categories.length === 0 && (
             <div className="text-center py-12 text-zinc-500 font-bold uppercase tracking-widest">{t.generator.noStylesFound}</div>
           )}
-          {categories.map(([cat, items]) => (
-            <div key={cat} className="space-y-4">
-              <h3 className="text-sm font-bold uppercase tracking-widest text-zinc-400">{cat}</h3>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-                    {items.map(s => (
-                      <button
+          {categories.map(([cat, items]) => {
+            const isMarketplace = cat === "Карточки для маркетплейсов";
+
+            return (
+              <div key={cat}
+                className={cn(
+                  "space-y-4 p-4 rounded-3xl transition-colors",
+                  isMarketplace 
+                    ? (theme === 'dark' ? 'bg-zinc-800/50 border border-zinc-700' : 'bg-slate-100 border border-slate-200')
+                    : ""
+                )}
+              >
+                <div className="flex items-center gap-3">
+                  <h3 className={cn(
+                    "text-sm font-bold uppercase tracking-widest",
+                    isMarketplace ? "text-indigo-500" : "text-zinc-400"
+                  )}>
+                    {cat}
+                  </h3>
+                  {isMarketplace && (
+                    <span className="px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest bg-indigo-500 text-white rounded-full">
+                      Хит
+                    </span>
+                  )}
+                </div>
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                  {items.map(s => (
+                    <button
                         key={s.id}
                         onClick={() => onToggleStyle(s.id)}
                         className={cn(
@@ -116,7 +138,8 @@ export const StylesLibraryModal: React.FC<Props> = ({ isOpen, onClose, styles, s
                     ))}
                   </div>
             </div>
-          ))}
+            )}
+          )}
         </div>
 
         <div className={cn(

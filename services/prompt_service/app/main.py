@@ -18,39 +18,10 @@ from app.core.settings import Settings
 logger = logging.getLogger(__name__)
 
 
-def _redact_proxy_url(proxy_url: str) -> str:
-    parsed = urlparse(proxy_url)
-    if parsed.username or parsed.password:
-        host = parsed.hostname or ""
-        if parsed.port is not None:
-            host = f"{host}:{parsed.port}"
-        return parsed._replace(netloc=host).geturl()
-    return proxy_url
-
-
-def _is_proxy_reachable(proxy_url: str, *, timeout_s: float = 1.5) -> bool:
-    parsed = urlparse(proxy_url)
-    host = parsed.hostname
-    if not host:
-        return False
-    port = parsed.port
-    if port is None:
-        port = 443 if parsed.scheme == "https" else 80
-    try:
-        with socket.create_connection((host, port), timeout=timeout_s):
-            return True
-    except OSError:
-        return False
-
-
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     settings = Settings()
     app.state.settings = settings
-    proxy = settings.openai_proxy_url if settings.openai_proxy_enabled else None
-    if proxy and not _is_proxy_reachable(proxy):
-        logger.warning("OpenAI proxy is not reachable, disabling proxy: %s", _redact_proxy_url(proxy))
-        proxy = None
 
     timeout = httpx.Timeout(
         connect=min(5.0, settings.http_timeout_s),
@@ -58,7 +29,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         write=settings.http_timeout_s,
         pool=settings.http_timeout_s,
     )
-    app.state.http = httpx.AsyncClient(timeout=timeout, proxy=proxy)
+    app.state.http = httpx.AsyncClient(timeout=timeout)
     try:
         yield
     finally:

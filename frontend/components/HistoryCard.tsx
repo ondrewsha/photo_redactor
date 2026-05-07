@@ -13,6 +13,7 @@ interface HistoryCardProps {
   onDelete: (item: HistoryItem) => void;
   onOpen: (item: HistoryItem) => void;
   className?: string;
+  onMove?: () => void;
 }
 
 export const HistoryCard: React.FC<HistoryCardProps> = ({
@@ -22,15 +23,16 @@ export const HistoryCard: React.FC<HistoryCardProps> = ({
   onDelete,
   onOpen,
   className,
+  onMove,
 }) => {
   const { theme } = useTheme();
   const { t } = useTranslation();
 
   const historyCardRoot = cn(
-    "flex flex-col overflow-hidden rounded-[1.75rem] border shadow-lg transition-colors bg-white",
+    "flex flex-col overflow-hidden rounded-[1.75rem] border shadow-lg transition-colors",
     theme === 'dark'
       ? 'border-zinc-800 bg-zinc-900 text-white'
-      : 'border-zinc-200 text-zinc-900',
+      : 'border-zinc-200 bg-white text-zinc-900',
     className,
   );
 
@@ -46,6 +48,11 @@ export const HistoryCard: React.FC<HistoryCardProps> = ({
       ? 'linear-gradient(135deg, rgba(15,23,42,0.9), rgba(59,56,72,0.95))'
       : 'linear-gradient(135deg, rgba(248,250,252,0.9), rgba(226,232,240,0.9))';
 
+  // Логика обрезки стилей (показываем максимум 2, остальные прячем за счетчиком)
+  const MAX_STYLES = 2;
+  const visibleStyles = styleNames.slice(0, MAX_STYLES);
+  const hiddenStylesCount = styleNames.length - MAX_STYLES;
+
   return (
     <div className={historyCardRoot}>
       <div
@@ -53,7 +60,7 @@ export const HistoryCard: React.FC<HistoryCardProps> = ({
         style={{ background: gradientBg }}
       >
         <img
-          src={resolveAssetUrl(item.image_url)}
+          src={resolveAssetUrl(item.image_url) || undefined}
           alt={t.history.promptLabel}
           className="max-h-full max-w-full object-contain"
         />
@@ -62,7 +69,7 @@ export const HistoryCard: React.FC<HistoryCardProps> = ({
             type="button"
             className={iconButtonClass}
             onClick={() => onDownload(item)}
-            aria-label={t.history.download}
+            title={t.history.download}
           >
             <svg className="h-5 w-5" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} fill="none">
               <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a2 2 0 002 2h12a2 2 0 002-2v-1" />
@@ -74,7 +81,7 @@ export const HistoryCard: React.FC<HistoryCardProps> = ({
             type="button"
             className={iconButtonClass}
             onClick={() => onDelete(item)}
-            aria-label={t.history.delete}
+            title={t.history.delete}
           >
             <svg className="h-5 w-5" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} fill="none">
               <path strokeLinecap="round" strokeLinejoin="round" d="M6 7h12" />
@@ -84,11 +91,23 @@ export const HistoryCard: React.FC<HistoryCardProps> = ({
               <path strokeLinecap="round" strokeLinejoin="round" d="M9 7V5a2 2 0 012-2h2a2 2 0 012 2v2" />
             </svg>
           </button>
+          {onMove && (
+            <button
+              type="button"
+              className={iconButtonClass}
+              onClick={() => onMove()}
+              title="В папку"
+            >
+              <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
+              </svg>
+            </button>
+          )}
           <button
             type="button"
             className={iconButtonClass}
             onClick={() => onOpen(item)}
-            aria-label={t.history.open}
+            title={t.history.open}
           >
             <svg className="h-5 w-5" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} fill="none">
               <path strokeLinecap="round" strokeLinejoin="round" d="M4 12h3m7 0h3m-5-5V4m0 16v-3" />
@@ -102,21 +121,40 @@ export const HistoryCard: React.FC<HistoryCardProps> = ({
       </div>
       <div className="flex flex-col gap-2 p-4 flex-1">
         <p className="text-[10px] uppercase tracking-[0.45em] text-zinc-400">{t.history.promptLabel}</p>
-        <p className="text-sm font-semibold leading-snug break-words">{item.user_prompt || item.final_prompt || '—'}</p>
+        
+        {/* Добавили line-clamp-2 для обрезки длинного промпта */}
+        <p 
+          className="text-sm font-semibold leading-snug break-words line-clamp-2" 
+          title={item.user_prompt || item.final_prompt || '—'}
+        >
+          {item.user_prompt || item.final_prompt || '—'}
+        </p>
+        
         {styleNames.length > 0 && (
-          <div className="flex flex-col gap-2">
+          <div className="flex flex-col gap-2 mt-auto pt-2">
             <p className="text-[10px] uppercase tracking-[0.45em] text-zinc-400">
               {t.history.stylesLabel}
             </p>
             <div className="flex flex-wrap gap-2">
-              {styleNames.map((name) => (
+              {/* Показываем только первые MAX_STYLES */}
+              {visibleStyles.map((name) => (
                 <span
                   key={name}
-                  className="rounded-full border border-current px-3 py-1 text-[11px] uppercase tracking-[0.3em]"
+                  title={name}
+                  className="rounded-full border border-current px-3 py-1 text-[11px] uppercase tracking-[0.3em] truncate max-w-[140px]"
                 >
                   {name}
                 </span>
               ))}
+              {/* Показываем "+X", если есть скрытые стили */}
+              {hiddenStylesCount > 0 && (
+                <span
+                  className="rounded-full border border-current px-3 py-1 text-[11px] uppercase tracking-[0.3em] cursor-help"
+                  title={styleNames.slice(MAX_STYLES).join(', ')}
+                >
+                  +{hiddenStylesCount}
+                </span>
+              )}
             </div>
           </div>
         )}

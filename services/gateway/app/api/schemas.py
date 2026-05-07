@@ -17,11 +17,13 @@ class AuthMeResponse(BaseSchema):
     email_verified: bool
     balance: int = Field(..., ge=0)
     role: str
+    onboarding_completed: bool = Field(default=False)
 
 
 class RegisterRequest(BaseSchema):
     email: str = Field(..., min_length=3, max_length=320)
     password: str = Field(..., min_length=8, max_length=200)
+    referral_code: str | None = None
 
 
 class LoginRequest(BaseSchema):
@@ -41,6 +43,7 @@ class GenerateImageRequest(BaseSchema):
     user_input: str = Field(..., min_length=1)
     width: int = Field(1024, ge=64, le=4096)
     height: int = Field(1024, ge=64, le=4096)
+    project_id: str | None = Field(default=None, description="ID проекта для сохранения")
 
     @model_validator(mode="before")
     @classmethod
@@ -109,6 +112,7 @@ class HistoryItem(BaseSchema):
     width: int
     height: int
     created_at: datetime
+    project_id: str | None = None
 
 
 class HistoryListResponse(BaseSchema):
@@ -193,3 +197,54 @@ class AdminMetricsResponse(BaseSchema):
     webhooks: dict[str, int] = Field(default_factory=dict)
     api_errors: int
     failure_rate: float
+
+class ProjectItem(BaseSchema):
+    id: str
+    name: str
+    created_at: datetime
+
+class ProjectListResponse(BaseSchema):
+    items: list[ProjectItem] = Field(default_factory=list)
+
+class CreateProjectRequest(BaseSchema):
+    name: str = Field(..., min_length=1, max_length=100)
+
+class MoveHistoryRequest(BaseSchema):
+    project_id: str | None = Field(default=None, description="ID проекта или null для удаления из проекта")
+
+class GalleryItem(BaseSchema):
+    id: str
+    prompt: str
+    style_ids: list[str] = Field(default_factory=list)
+    result_images: list[str] = Field(default_factory=list)
+    input_images: list[str] = Field(default_factory=list)
+    created_at: datetime
+
+class GalleryListResponse(BaseSchema):
+    items: list[GalleryItem] = Field(default_factory=list)
+
+class AdminCreateGalleryRequest(BaseSchema):
+    prompt: str
+    style_ids: list[str] = Field(default_factory=list)
+    result_images: list[str] = Field(default_factory=list)
+    input_images: list[str] = Field(default_factory=list)
+
+class AdminUpdateGalleryRequest(BaseSchema):
+    prompt: str
+    style_ids: list[str] = Field(default_factory=list)
+    result_images: list[str] = Field(default_factory=list)
+    input_images: list[str] = Field(default_factory=list)
+
+class ReferralItem(BaseSchema):
+    email: str
+    registered_at: datetime
+    bonus_granted: bool
+
+class ReferralResponse(BaseSchema):
+    referral_code: str
+    referral_link: str
+    invited_by: str | None = None
+    items: list[ReferralItem] = Field(default_factory=list)
+    total: int
+    page: int
+    limit: int

@@ -4,6 +4,7 @@ import asyncio
 from typing import Annotated
 from pathlib import Path
 from uuid import UUID
+import uuid
 
 import redis.asyncio as redis
 from fastapi import APIRouter, Depends, File, Form, UploadFile
@@ -126,3 +127,15 @@ async def get_job_status(
     settings: Annotated[Settings, Depends(get_settings)],
 ) -> JobStatusResponse:
     return await get_job_status_response(db=db, job_id=job_id, public_base_url=settings.public_base_url)
+
+@router.post("/admin/upload", dependencies=[Depends(require_internal_token)])
+async def admin_upload(
+    file: UploadFile = File(...),
+    settings: Settings = Depends(get_settings)
+):
+    ext = file.filename.split(".")[-1] if file.filename else "jpg"
+    file_name = f"gallery_{uuid.uuid4().hex}.{ext}"
+    path = Path(settings.media_root) / file_name
+    content = await file.read()
+    await asyncio.to_thread(path.write_bytes, content)
+    return {"file_name": file_name}

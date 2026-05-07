@@ -7,9 +7,12 @@ from fastapi import APIRouter, Depends, Request
 
 from nanovisual_shared.schemas import GenerationCapabilities, HealthResponse, StyleCategoryPublic
 
-from app.api.deps import get_http, get_settings
+from app.api.deps import get_http, get_settings, get_gallery_collection
 from app.api.upstream import forward_headers
 from app.core.settings import Settings
+
+from motor.motor_asyncio import AsyncIOMotorCollection
+from app.api.schemas import GalleryItem, GalleryListResponse
 
 router = APIRouter()
 
@@ -45,3 +48,24 @@ async def capabilities(
     )
     resp.raise_for_status()
     return GenerationCapabilities.model_validate(resp.json())
+
+@router.get("/gallery", response_model=GalleryListResponse)
+async def get_gallery(
+    gallery_collection: AsyncIOMotorCollection = Depends(get_gallery_collection)
+):
+    cursor = gallery_collection.find().sort("created_at", -1)
+    items =[]
+    async for doc in cursor:
+        in_imgs = doc.get("input_images",[])
+        if not in_imgs and doc.get("input_image"):
+            in_imgs = [doc["input_image"]]
+
+        items.append(GalleryItem(
+            id=str(doc["_id"]),
+            prompt=doc["prompt"],
+            style_ids=doc.get("style_ids",[]),
+            result_images=doc.get("result_images",[]),
+            input_images=in_imgs, # Изменили
+            created_at=doc["created_at"]
+        ))
+    return GalleryListResponse(items=items)

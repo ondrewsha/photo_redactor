@@ -41,7 +41,7 @@ export const ja: TranslationSchema = {
     step3Desc: "高解像度で作品をダウンロードして、世界と共有しましょう。",
   },
   generator: {
-    promptPlaceholder: "ネオンの星雲の中を漂う宇宙服を着た猫...",
+    promptPlaceholder: "ここに、表示したい内容の説明を入力してください。例えば、「大理石の台座の上に置かれた、スタイリッシュな黒革製の女性用バックパック。スタジオ照明を使用し、上部にテキスト用のスペースを空けてください」など。",
     helperText: "見たいものをシンプルな言葉で説明してください。",
     styles: "スタイル",
     size: "サイズ",
@@ -61,6 +61,7 @@ export const ja: TranslationSchema = {
     searchStyles: "スタイルを検索...",
     noStylesFound: "スタイルが見つかりません",
     defaultStyle: "スタイルなし",
+    newGeneration: "新しい生成",
     styleNames: jaStyleNames,
     sizeLabels: jaSizeLabels
   },
@@ -78,7 +79,13 @@ export const ja: TranslationSchema = {
     download: "ダウンロード",
     delete: "削除",
     open: "拡大",
-    deleteConfirm: "この履歴を削除しますか？"
+    deleteConfirm: "この履歴を削除しますか？",
+    projectsTitle: "プロジェクト",
+    allGenerations: "すべての生成",
+    unsorted: "未分類",
+    newProject: "新しいプロジェクト...",
+    moveTo: "移動先",
+    create: "作成"
   },
   profile: {
     balance: "残高",

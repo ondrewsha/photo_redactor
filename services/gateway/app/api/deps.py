@@ -37,3 +37,6 @@ def get_redis(request: Request) -> redis.Redis:
 
 def get_history_collection(request: Request) -> AsyncIOMotorCollection:
     return request.app.state.history_collection
+
+def get_gallery_collection(request: Request) -> AsyncIOMotorCollection:
+    return request.app.state.mongo_client[request.app.state.settings.mongo_database]["prompt_gallery"]

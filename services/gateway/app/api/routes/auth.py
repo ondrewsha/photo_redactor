@@ -1,13 +1,17 @@
 from __future__ import annotations
 
 from datetime import datetime, timedelta, timezone
+import time
 from typing import Annotated
+import secrets
+import jwt as pyjwt
+import uuid
 
 import redis.asyncio as redis
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response, status
 from fastapi.responses import JSONResponse
 from fastapi.responses import RedirectResponse
-from sqlalchemy import select
+from sqlalchemy import select, func
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -19,6 +23,8 @@ from app.api.schemas import (
     LoginRequest,
     MessageResponse,
     RegisterRequest,
+    ReferralItem,
+    ReferralResponse,
 )
 from app.core.cookies import clear_session_cookies, set_session_cookies
 from app.core.email import EmailConfigurationError, send_email
@@ -112,15 +118,35 @@ async def register(
 
     email = _normalize_email(payload.email)
     password_hash_value = hash_password(payload.password)
-    user = User(email=email, password_hash=password_hash_value, email_verified=False)
+
+    ref_user_id = None
+    if payload.referral_code:
+        res_ref = await db.execute(select(User).where(User.referral_code == payload.referral_code))
+        ref_user = res_ref.scalar_one_or_none()
+        if ref_user:
+            ref_user_id = ref_user.id
+            
+    new_ref_code = secrets.token_hex(4)
+    
+    user = User(
+        email=email, 
+        password_hash=password_hash_value, 
+        email_verified=False,
+        referral_code=new_ref_code,
+        referred_by=ref_user_id
+    )
     try:
-        async with db.begin():
-            db.add(user)
-            await db.flush()
-            db.add(Wallet(user_id=user.id, balance=0, trial_granted=False))
+        db.add(user)
+        await db.flush() # Получаем ID пользователя для кошелька
+        db.add(Wallet(user_id=user.id, balance=0, trial_granted=False))
+        
+        await db.commit() # Явно подтверждаем транзакцию
     except IntegrityError:
-        await db.rollback()
+        await db.rollback() # В случае ошибки откатываем
         raise HTTPException(status_code=409, detail="Эта почта уже зарегистрирована.") from None
+    except Exception as exc:
+        await db.rollback()
+        raise HTTPException(status_code=500, detail=f"Ошибка БД: {str(exc)}")
 
     await db.refresh(user)
 
@@ -184,6 +210,7 @@ async def me(
         email_verified=user.email_verified,
         balance=wallet.balance,
         role=user.role,
+        onboarding_completed=user.onboarding_completed,
     )
 
 
@@ -288,3 +315,128 @@ async def change_password(
     user.password_hash = hash_password(payload.new_password)
     await db.commit()
     return MessageResponse(message="Пароль обновлён.")
+
+@router.get("/referrals", response_model=ReferralResponse)
+async def get_referrals(
+    request: Request,
+    user: Annotated[User, Depends(require_user)],
+    db: Annotated[AsyncSession, Depends(get_db_session)],
+    settings: Annotated[Settings, Depends(get_settings)],
+    limit: int = Query(10, ge=1, le=100),
+    page: int = Query(1, ge=1),
+) -> ReferralResponse:
+    import secrets
+    # Если это старый юзер и у него нет кода, сгенерируем на лету
+    if not user.referral_code:
+        user.referral_code = secrets.token_hex(4)
+        await db.commit()
+
+    invited_by_email = None
+    if user.referred_by:
+        res_inviter = await db.execute(select(User.email).where(User.id == user.referred_by))
+        email_raw = res_inviter.scalar_one_or_none()
+        if email_raw:
+            parts = email_raw.split("@")
+            invited_by_email = f"{parts[0][:2]}***@{parts[1]}" if len(parts[0]) > 2 else "*@*"
+
+    offset = (page - 1) * limit
+    res_items = await db.execute(
+        select(User).where(User.referred_by == user.id).order_by(User.created_at.desc()).offset(offset).limit(limit)
+    )
+    users_invited = res_items.scalars().all()
+    
+    total_res = await db.execute(select(func.count()).select_from(select(User).where(User.referred_by == user.id).subquery()))
+    total = total_res.scalar_one()
+
+    items =[]
+    for u in users_invited:
+        parts = u.email.split("@")
+        masked = f"{parts[0][:2]}***@{parts[1]}" if len(parts[0]) > 2 else "*@*"
+        items.append(ReferralItem(email=masked, registered_at=u.created_at, bonus_granted=u.referral_bonus_granted))
+
+    base = settings.frontend_base_url.rstrip("/")
+    link = f"{base}/?ref={user.referral_code}"
+
+    return ReferralResponse(
+        referral_code=user.referral_code,
+        referral_link=link,
+        invited_by=invited_by_email,
+        items=items,
+        total=total,
+        page=page,
+        limit=limit
+    )
+
+@router.post("/forgot-password")
+async def forgot_password(
+    payload: dict,
+    db: Annotated[AsyncSession, Depends(get_db_session)],
+    settings: Annotated[Settings, Depends(get_settings)],
+):
+    email = payload.get("email", "").strip().lower()
+    if not email:
+        raise HTTPException(status_code=400, detail="Email обязателен")
+    
+    res = await db.execute(select(User).where(User.email == email))
+    user = res.scalar_one_or_none()
+    if not user:
+        # Не раскрываем наличие почты для безопасности
+        return MessageResponse(message="Если почта найдена, мы отправили инструкцию.")
+
+    # Генерируем токен на 30 минут
+    reset_token = pyjwt.encode(
+        {"sub": str(user.id), "purpose": "reset", "exp": int(time.time()) + 1800},
+        settings.jwt_secret,
+        algorithm="HS256"
+    )
+    
+    # Формируем ссылку. Предполагаем, что фронт откроет модалку по query ?reset=1&token=...
+    reset_url = f"{settings.frontend_base_url.rstrip('/')}/?reset=1&token={reset_token}"
+    
+    subject = "Восстановление пароля NanoVisual"
+    text = f"Перейдите по ссылке для сброса пароля: {reset_url}\n\nСсылка действует 30 минут."
+    html = f"""<div style="font-family:system-ui"><h2>Сброс пароля</h2><p><a href="{reset_url}" style="display:inline-block;padding:10px 14px;border-radius:10px;background:#4f46e5;color:#fff;text-decoration:none">Сменить пароль</a></p><p style="color:#6b7280;font-size:12px;margin-top:16px">Ссылка действует 30 минут.</p></div>"""
+    
+    try:
+        await send_email(settings=settings, to_email=email, subject=subject, text=text, html=html)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail="Ошибка отправки письма")
+
+    return MessageResponse(message="Если почта найдена, мы отправили инструкцию.")
+
+@router.post("/reset-password")
+async def reset_password(
+    payload: dict,
+    db: Annotated[AsyncSession, Depends(get_db_session)],
+    settings: Annotated[Settings, Depends(get_settings)],
+):
+    token = payload.get("token")
+    new_pw = payload.get("new_password")
+    if not token or not new_pw or len(new_pw) < 8:
+        raise HTTPException(status_code=400, detail="Некорректный запрос")
+    
+    try:
+        data = pyjwt.decode(token, settings.jwt_secret, algorithms=["HS256"])
+        if data.get("purpose") != "reset":
+            raise ValueError
+        user_id = uuid.UUID(data["sub"])
+    except Exception:
+        raise HTTPException(status_code=401, detail="Ссылка устарела или недействительна")
+
+    res = await db.execute(select(User).where(User.id == user_id))
+    user = res.scalar_one_or_none()
+    if not user:
+        raise HTTPException(status_code=404, detail="Пользователь не найден")
+
+    user.password_hash = hash_password(new_pw)
+    await db.commit()
+    return MessageResponse(message="Пароль успешно обновлён. Теперь войдите в аккаунт.")
+
+@router.post("/complete-onboarding", response_model=MessageResponse, dependencies=[Depends(require_csrf)])
+async def complete_onboarding(
+    user: Annotated[User, Depends(require_user)],
+    db: Annotated[AsyncSession, Depends(get_db_session)],
+) -> MessageResponse:
+    user.onboarding_completed = True
+    await db.commit()
+    return MessageResponse(message="Онбординг завершен")

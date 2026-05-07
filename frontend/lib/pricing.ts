@@ -1,6 +1,6 @@
-const MAX_UNIT_PRICE = 35;
-const MIN_UNIT_PRICE = 13;
-const DISCOUNT_FACTOR = 4;
+const MAX_UNIT_PRICE = 37.77;
+const MIN_UNIT_PRICE = 20;
+const DISCOUNT_FACTOR = 4.0;
 
 export const calculateUnitPrice = (count: number): number => {
   if (count <= 0) {

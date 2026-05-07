@@ -32,6 +32,7 @@ export type GenerateImageRequest = {
   user_input: string;
   width: number;
   height: number;
+  project_id?: string | null;
 };
 
 export type GenerateImageWithPhotosRequest = GenerateImageRequest & {
@@ -64,6 +65,7 @@ export type HistoryItem = {
   width: number;
   height: number;
   created_at: string;
+  project_id?: string | null;
 };
 
 export type HistoryListResponse = {
@@ -82,6 +84,7 @@ export type AuthMeResponse = {
   email_verified: boolean;
   balance: number;
   role: string;
+  onboarding_completed: boolean;
 };
 
 export type BillingHistoryItem = {
@@ -210,6 +213,7 @@ export interface TranslationSchema {
     searchStyles: string;
     noStylesFound: string;
     defaultStyle: string;
+    newGeneration: string;
     styleNames: Record<string, string>;
     sizeLabels: Record<string, string>;
   };
@@ -228,6 +232,12 @@ export interface TranslationSchema {
     pageLabel: string;
     prev: string;
     next: string;
+    projectsTitle?: string;
+    allGenerations?: string;
+    unsorted?: string;
+    newProject?: string;
+    moveTo?: string;
+    create?: string;
   };
   promo: {
     tagline: string;
@@ -373,3 +383,39 @@ export interface TranslationSchema {
     };
   };
 }
+
+export type ProjectItem = {
+  id: string;
+  name: string;
+  created_at: string;
+};
+
+export type ProjectListResponse = {
+  items: ProjectItem[];
+};
+
+export type GalleryItem = {
+  id: string;
+  prompt: string;
+  style_ids: string[];
+  result_images: string[];
+  input_images: string[];
+  created_at: string;
+};
+export type GalleryListResponse = { items: GalleryItem[] };
+
+export type ReferralItem = {
+  email: string;
+  registered_at: string;
+  bonus_granted: boolean;
+};
+
+export type ReferralResponse = {
+  referral_code: string;
+  referral_link: string;
+  invited_by: string | null;
+  items: ReferralItem[];
+  total: number;
+  page: number;
+  limit: number;
+};

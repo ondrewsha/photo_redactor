@@ -2,27 +2,19 @@ from __future__ import annotations
 
 import re
 
-import httpx
+from openai import AsyncOpenAI
 
 from app.core.settings import Settings
 from app.core.llm.errors import LLMConfigurationError, LLMUpstreamResponseError
 
 
 class OpenAILLMClient:
-    def __init__(self, http: httpx.AsyncClient, settings: Settings) -> None:
+    def __init__(self, *, settings: Settings) -> None:
         self._settings = settings
-        try:
-            from openai import AsyncOpenAI
-        except Exception as exc:  # noqa: BLE001
-            raise LLMConfigurationError(
-                "Не установлена библиотека openai. Добавьте зависимость `openai` и пересоберите prompt_service."
-            ) from exc
 
         self._client = AsyncOpenAI(
             api_key=settings.openai_api_key,
             base_url=settings.openai_base_url,
-            http_client=http,
-            max_retries=0,
             timeout=settings.http_timeout_s,
         )
 

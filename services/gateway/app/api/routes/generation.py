@@ -9,6 +9,7 @@ from fastapi.responses import Response, StreamingResponse
 from redis.asyncio import Redis
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+from motor.motor_asyncio import AsyncIOMotorCollection
 
 from nanovisual_shared.schemas import ComposePromptRequest, ComposePromptResponse, CreateJobRequest, CreateJobResponse, JobStatusResponse, PromptMode
 
@@ -163,6 +164,7 @@ async def generate(
             style_ids=style_ids,
             width=payload.width,
             height=payload.height,
+            project_id=payload.project_id,
         )
         await _link_job_to_reservation(db, reservation_id=reservation_id, job_id=uuid.UUID(str(job_data.job_id)))
         return GenerateImageResponse(job_id=str(job_data.job_id), status=job_data.status)
@@ -179,6 +181,7 @@ async def generate_with_image(
     style_ids: list[str] | None = Form(None),
     width: int = Form(1024),
     height: int = Form(1024),
+    project_id: str | None = Form(None),
     user: User = Depends(require_verified_user),
     db: AsyncSession = Depends(get_db_session),
     settings: Settings = Depends(get_settings),
@@ -235,6 +238,7 @@ async def generate_with_image(
             style_ids=cleaned_style_ids,
             width=width,
             height=height,
+            project_id=project_id,
         )
         await _link_job_to_reservation(db, reservation_id=reservation_id, job_id=uuid.UUID(str(job_data.job_id)))
         return GenerateImageResponse(job_id=str(job_data.job_id), status=job_data.status)
@@ -304,18 +308,20 @@ async def media_proxy(
 ) -> Response:
     file_name = path.rsplit("/", 1)[-1]
     stem = file_name.split(".", 1)[0]
-    try:
-        job_uuid = parse_uuid(stem)
-    except HTTPException:
-        raise HTTPException(status_code=404, detail="Файл не найден.") from None
-    res = await db.execute(
-        select(UserJobReservation.id).where(
-            UserJobReservation.user_id == user.id,
-            UserJobReservation.job_id == job_uuid,
+
+    if not stem.startswith("gallery_"):
+        try:
+            job_uuid = parse_uuid(stem)
+        except HTTPException:
+            raise HTTPException(status_code=404, detail="Файл не найден.") from None
+        res = await db.execute(
+            select(UserJobReservation.id).where(
+                UserJobReservation.user_id == user.id,
+                UserJobReservation.job_id == job_uuid,
+            )
         )
-    )
-    if res.scalar_one_or_none() is None:
-        raise HTTPException(status_code=404, detail="Файл не найден.")
+        if res.scalar_one_or_none() is None:
+            raise HTTPException(status_code=404, detail="Файл не найден.")
 
     upstream = f"{settings.generation_service_url.rstrip('/')}/media/{path}"
     upstream_stream = http.stream("GET", upstream, headers=forward_headers(request, settings))

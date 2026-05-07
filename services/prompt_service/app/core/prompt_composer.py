@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 from nanovisual_shared.schemas import ComposePromptRequest, ComposePromptResponse, PromptMode
 
 from app.core.errors import StyleNotFoundError
@@ -7,6 +8,7 @@ from app.core.llm.base import LLMClient
 from app.core.llm.errors import LLMConfigurationError, LLMUpstreamResponseError
 from app.core.styles_registry import StyleRegistry
 
+logger = logging.getLogger(__name__)
 
 def _join_prompt_parts(*parts: str) -> str:
     cleaned = [p.strip() for p in parts if p and p.strip()]
@@ -39,7 +41,8 @@ class PromptComposer:
         used_llm = True
         try:
             enhanced = await self._llm.enhance(payload.user_input, style_context=style_context)
-        except (LLMConfigurationError, LLMUpstreamResponseError):
+        except Exception as exc:
+            logger.error(f"LLM Enhancement failed: {exc}", exc_info=True)
             used_llm = False
             enhanced = payload.user_input
 

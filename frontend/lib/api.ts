@@ -9,6 +9,10 @@ import {
   GenerationCapabilities,
   HistoryListResponse,
   MessageResponse,
+  ProjectItem,
+  ProjectListResponse,
+  GalleryListResponse,
+  ReferralResponse,
 } from '../types';
 
 const BASE_URL = import.meta.env.VITE_GATEWAY_URL || '/api';
@@ -54,6 +58,10 @@ async function request<T>(path: string, options?: RequestInit, mockFallback?: T)
     if (!response.ok) {
       // Если есть мок на случай ошибки сервера (например 404/500), возвращаем его
       if (mockFallback !== undefined) return mockFallback;
+
+      if (response.status === 413) {
+        throw new Error("Размер загружаемых файлов превышает лимит сервера (413).");
+      }
       
       let errorMessage = `Error: ${response.status} ${response.statusText}`;
       try {
@@ -110,12 +118,16 @@ export const api = {
     me: () => request<AuthMeResponse>('/auth/me'),
     login: (p: any) => request<any>('/auth/login', { method: 'POST', body: JSON.stringify(p) }),
     register: (p: any) => request<any>('/auth/register', { method: 'POST', body: JSON.stringify(p) }),
+    referrals: (page = 1) => request<ReferralResponse>(`/auth/referrals?page=${page}&limit=10`),
     logout: () => request<any>('/auth/logout', { method: 'POST' }),
     changePassword: (payload: { current_password: string; new_password: string }) =>
       request<MessageResponse>('/auth/change-password', {
         method: 'POST',
         body: JSON.stringify(payload),
       }),
+    forgotPassword: (p: { email: string }) => request('/auth/forgot-password', { method: 'POST', body: JSON.stringify(p) }),
+    resetPassword: (p: { token: string; new_password: string }) => request('/auth/reset-password', { method: 'POST', body: JSON.stringify(p) }),
+    completeOnboarding: () => request<MessageResponse>('/auth/complete-onboarding', { method: 'POST' }),
   },
   generation: {
     capabilities: () => request<GenerationCapabilities>('/capabilities', undefined, MOCK_CAPS),
@@ -129,6 +141,7 @@ export const api = {
       form.append('user_input', p.user_input);
       form.append('width', String(p.width));
       form.append('height', String(p.height));
+      if (p.project_id) form.append('project_id', p.project_id);
       (p.style_ids.length ? p.style_ids : ['none']).forEach((id) => {
         form.append('style_ids', id);
       });
@@ -143,12 +156,23 @@ export const api = {
     status: (id: string) => request<JobStatusResponse>(`/jobs/${id}`),
   },
   history: {
-    list: (limit = 12, page = 1) => request<HistoryListResponse>(`/history?limit=${limit}&page=${page}`),
+    list: (limit = 12, page = 1, projectId = "all") => 
+      request<HistoryListResponse>(`/history?limit=${limit}&page=${page}&project_id=${projectId}`),
     delete: (jobId: string) => request<MessageResponse>(`/history/${jobId}`, { method: 'DELETE' }),
+    moveToProject: (jobId: string, projectId: string | null) => 
+      request<MessageResponse>(`/history/${jobId}/project`, { method: 'PUT', body: JSON.stringify({ project_id: projectId }) }),
   },
   billing: {
     quote: (count: number) => request<any>(`/billing/quote?count=${count}`),
     pay: (p: any) => request<any>('/billing/pay', { method: 'POST', body: JSON.stringify(p) }),
     history: (limit = 20, page = 1) => request<BillingHistoryResponse>(`/billing/history?limit=${limit}&page=${page}`),
+  },
+  projects: {
+    list: () => request<ProjectListResponse>('/projects'),
+    create: (name: string) => request<ProjectItem>('/projects', { method: 'POST', body: JSON.stringify({ name }) }),
+    delete: (id: string) => request<MessageResponse>(`/projects/${id}`, { method: 'DELETE' }),
+  },
+  gallery: {
+    list: () => request<GalleryListResponse>('/gallery'),
   },
 };

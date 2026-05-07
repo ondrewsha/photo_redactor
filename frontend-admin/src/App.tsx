@@ -16,8 +16,12 @@ import {
   Spin,
   message,
   Divider,
+  Tabs,
+  Upload,
+  Select,
+  Image,
 } from 'antd';
-import { LogoutOutlined, UserOutlined, DollarOutlined } from '@ant-design/icons';
+import { LogoutOutlined, UserOutlined, DollarOutlined, UploadOutlined } from '@ant-design/icons';
 import {
   adminApi,
   JobSummary,
@@ -33,6 +37,36 @@ const { Title } = Typography;
 type LoginPayload = {
   email: string;
   password: string;
+};
+
+const resizeGalleryImage = (file: File): Promise<File> => {
+  return new Promise((resolve) => {
+    const img = new window.Image();
+    img.src = URL.createObjectURL(file);
+    img.onload = () => {
+      URL.revokeObjectURL(img.src);
+      const MAX_SIDE = 1600; // Для галереи 1600px более чем достаточно
+      let { width, height } = img;
+      if (width > MAX_SIDE || height > MAX_SIDE) {
+        if (width > height) {
+          height = (height * MAX_SIDE) / width;
+          width = MAX_SIDE;
+        } else {
+          width = (width * MAX_SIDE) / height;
+          height = MAX_SIDE;
+        }
+      }
+      const canvas = document.createElement('canvas');
+      canvas.width = width;
+      canvas.height = height;
+      canvas.getContext('2d')?.drawImage(img, 0, 0, width, height);
+      canvas.toBlob((blob) => {
+        if (blob) resolve(new File([blob], file.name, { type: 'image/jpeg' }));
+        else resolve(file);
+      }, 'image/jpeg', 0.85);
+    };
+    img.onerror = () => resolve(file);
+  });
 };
 
 const LoginForm: React.FC<{ onLogin: (data: LoginPayload) => Promise<void>; error?: string }> = ({
@@ -318,6 +352,229 @@ const AdjustModal: React.FC<{
   );
 };
 
+const GallerySection: React.FC = () => {
+  const [items, setItems] = useState<any[]>([]);
+  const [stylesList, setStylesList] = useState<any[]>([]);
+  const [open, setOpen] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [form] = Form.useForm();
+  const [uploading, setUploading] = useState(false);
+
+  const load = () => {
+    adminApi.fetchGallery().then(r => setItems(r.items)).catch(console.error);
+    adminApi.fetchCategories().then(res => setStylesList(res)).catch(console.error);
+  };
+  useEffect(() => { load(); },[]);
+
+  const handleUpload = async (options: any) => {
+    try {
+      const resized = await resizeGalleryImage(options.file);
+      const res = await adminApi.uploadGalleryImage(options.file);
+      options.onSuccess(res, resized);
+    } catch (err) {
+      message.error("Ошибка при загрузке файла");
+      options.onError(err);
+    }
+  };
+
+  const normFile = (e: any) => {
+    if (Array.isArray(e)) return e;
+    return e?.fileList;
+  };
+
+  const openForCreate = () => {
+    setEditingId(null);
+    form.resetFields();
+    setOpen(true);
+  };
+
+  const openForEdit = (record: any) => {
+    setEditingId(record.id);
+    
+    // Форматируем URL картинок в объекты FileList для Antd Upload
+    const formatFiles = (urls: string[]) => urls?.map((url, idx) => ({
+      uid: `-${idx}`,
+      name: url.split('/').pop(),
+      status: 'done',
+      url: `/api${url}` // добавляем /api для предпросмотра
+    })) ||[];
+
+    form.setFieldsValue({
+      prompt: record.prompt,
+      style_ids: record.style_ids,
+      input_images_upload: formatFiles(record.input_images),
+      result_images_upload: formatFiles(record.result_images)
+    });
+    setOpen(true);
+  };
+
+  const handleClose = () => {
+    setOpen(false);
+    setEditingId(null);
+    form.resetFields();
+  };
+
+  const handleAddOrEdit = async (vals: any) => {
+    setUploading(true);
+    try {
+      // Функция для парсинга картинок (старых и новых)
+      const parseUrls = (fileList: any[]) => {
+        return (fileList ||[]).map((f: any) => {
+          if (f.url) return f.url.replace(/^\/api/, ''); // Если это старая картинка (уже была на сервере)
+          if (f.response?.file_name) return `/media/${f.response.file_name}`; // Если это новая только что загруженная картинка
+          return null;
+        }).filter(Boolean);
+      };
+
+      const inputUrls = parseUrls(vals.input_images_upload);
+      const resultUrls = parseUrls(vals.result_images_upload);
+
+      if (resultUrls.length === 0) {
+        message.error('Загрузите хотя бы одно фото-результат!');
+        setUploading(false);
+        return;
+      }
+
+      const payload = {
+        prompt: vals.prompt,
+        style_ids: vals.style_ids ||[],
+        result_images: resultUrls,
+        input_images: inputUrls
+      };
+
+      if (editingId) {
+        await adminApi.updateGalleryItem(editingId, payload);
+        message.success('Пример обновлен');
+      } else {
+        await adminApi.createGalleryItem(payload);
+        message.success('Пример добавлен');
+      }
+      
+      handleClose();
+      load();
+    } catch (err) {
+      message.error('Ошибка сохранения');
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleDelete = async (id: string) => {
+    if (window.confirm('Удалить этот пример из галереи?')) {
+      await adminApi.deleteGalleryItem(id);
+      load();
+    }
+  };
+
+  return (
+    <Card title="Галерея промптов" extra={<Button type="primary" onClick={openForCreate}>Добавить пример</Button>}>
+      <Table 
+        rowKey="id" 
+        dataSource={items} 
+        columns={[
+          { title: 'Промпт', dataIndex: 'prompt', width: '40%' },
+          {
+            title: 'Стили',
+            dataIndex: 'style_ids',
+            render: (ids: string[]) => (
+              <div className="flex gap-1 flex-wrap">
+                {ids?.length > 0 ? ids.map(id => {
+                  const styleName = stylesList.find(s => s.id === id)?.display_name || id;
+                  return <span key={id} className="text-xs bg-slate-100 border border-slate-200 px-2 py-1 rounded text-slate-600">{styleName}</span>;
+                }) : <span className="text-gray-400 text-xs">Нет</span>}
+              </div>
+            )
+          },
+          { 
+            title: 'Исходники', 
+            dataIndex: 'input_images', 
+            render: (imgs: string[]) => (
+              <div className="flex gap-2 flex-wrap">
+                {imgs?.length > 0 ? imgs.map((img, i) => (
+                  <Image key={i} width={40} height={40} src={`/api${img}`} className="object-cover rounded" />
+                )) : <span className="text-gray-400 text-xs">Нет</span>}
+              </div>
+            ) 
+          },
+          { 
+            title: 'Результаты', 
+            dataIndex: 'result_images', 
+            render: (imgs: string[]) => (
+              <div className="flex gap-2 flex-wrap">
+                {imgs?.map((img, i) => (
+                  <Image key={i} width={50} height={50} src={`/api${img}`} className="object-cover rounded" />
+                ))}
+              </div>
+            ) 
+          },
+          { 
+            title: 'Действия', 
+            render: (_, r) => (
+              <div className="flex gap-2">
+                <Button size="small" onClick={() => openForEdit(r)}>Редактировать</Button>
+                <Button size="small" danger onClick={() => handleDelete(r.id)}>Удалить</Button>
+              </div>
+            ) 
+          }
+        ]} 
+      />
+      <Modal 
+        title={editingId ? "Редактировать пример" : "Новый пример для галереи"} 
+        open={open} 
+        onCancel={handleClose} 
+        onOk={() => form.submit()} 
+        width={700}
+        okText="Сохранить"
+        cancelText="Отмена"
+        confirmLoading={uploading}
+        maskClosable={false}
+      >
+        <Form form={form} layout="vertical" onFinish={handleAddOrEdit}>
+          <Form.Item name="prompt" label="Промпт (описание, которое увидит пользователь)" rules={[{ required: true, message: 'Введите промпт' }]}>
+            <Input.TextArea rows={3} placeholder="Пример: Студийная съемка, макро..." />
+          </Form.Item>
+
+          <div className="p-4 border rounded-xl bg-slate-50 mb-6">
+            <Form.Item 
+              name="input_images_upload" 
+              label={<b>1. Исходные фото (Опционально. Максимум 4 шт.)</b>} 
+              valuePropName="fileList" 
+              getValueFromEvent={normFile}
+            >
+              <Upload customRequest={handleUpload} listType="picture-card" multiple maxCount={4}>
+                <div><UploadOutlined /><div style={{ marginTop: 8 }}>Загрузить</div></div>
+              </Upload>
+            </Form.Item>
+
+            <Form.Item 
+              name="result_images_upload" 
+              label={<b>2. Результат генерации (Обязательно. То, что выдала нейронка)</b>} 
+              valuePropName="fileList" 
+              getValueFromEvent={normFile} 
+              rules={[{ required: true, message: 'Загрузите хотя бы одно фото' }]}
+              className="mb-0"
+            >
+              <Upload customRequest={handleUpload} listType="picture-card" multiple>
+                <div><UploadOutlined /><div style={{ marginTop: 8 }}>Загрузить</div></div>
+              </Upload>
+            </Form.Item>
+          </div>
+
+          <Form.Item name="style_ids" label="Примененный стиль (Опционально)">
+            <Select
+              mode="multiple"
+              showSearch
+              placeholder="Выберите стиль (можно вписать поиск)"
+              optionFilterProp="label"
+              options={stylesList.map(s => ({ value: s.id, label: s.display_name }))}
+            />
+          </Form.Item>
+        </Form>
+      </Modal>
+    </Card>
+  );
+};
+
 const App: React.FC = () => {
   const [adminUser, setAdminUser] = useState<{ email: string } | null>(null);
   const [authError, setAuthError] = useState<string | undefined>();
@@ -494,14 +751,7 @@ const App: React.FC = () => {
   return (
     <Layout className="min-h-screen">
       <Content className="p-6">
-        <div
-          style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            flexWrap: 'wrap',
-          }}
-        >
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', marginBottom: '24px' }}>
           <Title level={3} style={{ margin: 0 }}>
             Панель администратора
           </Title>
@@ -509,101 +759,75 @@ const App: React.FC = () => {
             Выйти ({adminUser.email})
           </Button>
         </div>
-        <section className="mt-6">
-          <Title level={4}>Общее состояние</Title>
-          <AdminStats metrics={metrics} />
-        </section>
-        <section className="mt-6 space-y-6">
-          <UsersSection
-            users={users}
-            loading={usersLoading}
-            page={usersPage}
-            total={usersTotal}
-            onPageChange={(page) => loadUsers(page)}
-            onRefresh={() => loadUsers(usersPage)}
-            onAdjust={(user) => setAdjustModalUser(user)}
-            onToggle={handleToggleStatus}
-          />
-          <TransactionsSection
-            data={transactions}
-            loading={transactionsLoading}
-            onRefresh={loadTransactions}
-          />
-          <Card title="Задачи">
-            <Form layout="inline" className="mb-4">
-              <Form.Item label="Статус">
-                <Input
-                  placeholder="status"
-                  value={jobStatusFilter}
-                  onChange={(event) => setJobStatusFilter(event.target.value)}
-                />
-              </Form.Item>
-              <Form.Item>
-                <Button type="primary" onClick={() => loadJobs(1, jobStatusFilter)}>
-                  Подобрать
-                </Button>
-              </Form.Item>
-              <Form.Item>
-                <Button onClick={() => { setJobStatusFilter(''); loadJobs(); }}>
-                  Сбросить
-                </Button>
-              </Form.Item>
-            </Form>
-            <Table
-              rowKey="reservation_id"
-              dataSource={jobs}
-              loading={jobsLoading}
-              pagination={{
-                current: jobsPage,
-                total: jobsTotal,
-                pageSize: 20,
-                onChange: (page) => loadJobs(page, jobStatusFilter || undefined),
-              }}
-              columns={[
-                {
-                  title: 'Job / Reservation',
-                  dataIndex: 'job_id',
-                  key: 'job',
-                  render: (_: string | null, record: JobSummary) => (
-                    <span>{record.job_id ?? record.reservation_id}</span>
-                  ),
-                },
-                { title: 'Статус', dataIndex: 'status', key: 'status' },
-                { title: 'Пользователь', dataIndex: 'user_email', key: 'user' },
-                {
-                  title: 'Дата обновления',
-                  dataIndex: 'updated_at',
-                  key: 'updated',
-                  render: (value: string) => new Date(value).toLocaleString(),
-                },
-                {
-                  title: 'Действия',
-                  key: 'actions',
-                  render: (_: unknown, record: JobSummary) => (
-                    <div className="flex gap-2">
-                      <Button size="small" onClick={() => handleRerun(record.job_id ?? record.reservation_id)}>
-                        Повторить
-                      </Button>
-                      <Button
-                        size="small"
-                        danger
-                        onClick={() => handleCancel(record.job_id ?? record.reservation_id)}
-                      >
-                        Отменить
-                      </Button>
-                    </div>
-                  ),
-                },
-              ]}
-            />
-          </Card>
-        </section>
-        <AdjustModal
-          user={adjustModalUser}
-          open={Boolean(adjustModalUser)}
-          onClose={() => setAdjustModalUser(null)}
-          onSubmit={handleAdjust}
+
+        <Tabs
+          defaultActiveKey="1"
+          items={[
+            {
+              key: '1',
+              label: 'Пользователи и Финансы',
+              children: (
+                <div className="space-y-6 mt-4">
+                  <section>
+                    <Title level={4}>Общее состояние</Title>
+                    <AdminStats metrics={metrics} />
+                  </section>
+                  <UsersSection
+                    users={users} loading={usersLoading} page={usersPage} total={usersTotal}
+                    onPageChange={(page) => loadUsers(page)} onRefresh={() => loadUsers(usersPage)}
+                    onAdjust={(user) => setAdjustModalUser(user)} onToggle={handleToggleStatus}
+                  />
+                  <TransactionsSection data={transactions} loading={transactionsLoading} onRefresh={loadTransactions} />
+                </div>
+              ),
+            },
+            {
+              key: '2',
+              label: 'Задачи',
+              children: (
+                <div className="mt-4">
+                  <Card title="Задачи">
+                    <Form layout="inline" className="mb-4">
+                      <Form.Item label="Статус">
+                        <Input placeholder="status" value={jobStatusFilter} onChange={(event) => setJobStatusFilter(event.target.value)} />
+                      </Form.Item>
+                      <Form.Item><Button type="primary" onClick={() => loadJobs(1, jobStatusFilter)}>Подобрать</Button></Form.Item>
+                      <Form.Item><Button onClick={() => { setJobStatusFilter(''); loadJobs(); }}>Сбросить</Button></Form.Item>
+                    </Form>
+                    <Table
+                      rowKey="reservation_id" dataSource={jobs} loading={jobsLoading}
+                      pagination={{ current: jobsPage, total: jobsTotal, pageSize: 20, onChange: (page) => loadJobs(page, jobStatusFilter || undefined) }}
+                      columns={[
+                        { title: 'Job / Reservation', dataIndex: 'job_id', key: 'job', render: (_: string | null, record: JobSummary) => (<span>{record.job_id ?? record.reservation_id}</span>) },
+                        { title: 'Статус', dataIndex: 'status', key: 'status' },
+                        { title: 'Пользователь', dataIndex: 'user_email', key: 'user' },
+                        { title: 'Дата обновления', dataIndex: 'updated_at', key: 'updated', render: (value: string) => new Date(value).toLocaleString() },
+                        { title: 'Действия', key: 'actions', render: (_: unknown, record: JobSummary) => (
+                            <div className="flex gap-2">
+                              <Button size="small" onClick={() => handleRerun(record.job_id ?? record.reservation_id)}>Повторить</Button>
+                              <Button size="small" danger onClick={() => handleCancel(record.job_id ?? record.reservation_id)}>Отменить</Button>
+                            </div>
+                          )
+                        },
+                      ]}
+                    />
+                  </Card>
+                </div>
+              ),
+            },
+            {
+              key: '3',
+              label: 'Галерея промптов',
+              children: (
+                <div className="mt-4">
+                  <GallerySection />
+                </div>
+              ),
+            },
+          ]}
         />
+
+        <AdjustModal user={adjustModalUser} open={Boolean(adjustModalUser)} onClose={() => setAdjustModalUser(null)} onSubmit={handleAdjust} />
       </Content>
       <Footer className="text-center">© 2025 NanoVisual Admin</Footer>
     </Layout>

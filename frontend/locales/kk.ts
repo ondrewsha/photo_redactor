@@ -44,7 +44,7 @@ export const kk: TranslationSchema = {
     step3Desc: "Туындыңызды жоғары ажыратымдылықта жүктеп алып, әлеммен бөлісіңіз.",
   },
   generator: {
-    promptPlaceholder: "Неон тұмандығында қалықтап жүрген ғарыш костюміндегі мысық...",
+    promptPlaceholder: "Мұнда көргіңіз келетін нәрсенің сипаттамасын енгізіңіз, мысалы: 'Мәрмәр подиумға қойылған, қара былғарыдан жасалған стильді әйелдер рюкзактары, студияның жарығы, жоғарғы жағында мәтінге орын қалдырыңыз'...",
     helperText: "Көргіңіз келетін нәрсені қарапайым сөздермен сипаттаңыз.",
     styles: "Стильдер",
     size: "Өлшем",
@@ -65,6 +65,7 @@ export const kk: TranslationSchema = {
     searchStyles: "Стильдерді іздеу...",
     noStylesFound: "Стильдер табылмады",
     defaultStyle: "Стиль жоқ",
+    newGeneration: "Жаңа генерация",
     styleNames: kkStyleNames,
     sizeLabels: kkSizeLabels
   },
@@ -82,7 +83,13 @@ export const kk: TranslationSchema = {
     download: "Жүктеу",
     delete: "Өшіру",
     open: "Толық ашу",
-    deleteConfirm: "Бұл жазбаны тарихтан алып тастау керек пе?"
+    deleteConfirm: "Бұл жазбаны тарихтан алып тастау керек пе?",
+    projectsTitle: "Жобалар",
+    allGenerations: "Барлық генерациялар",
+    unsorted: "Жобасыз",
+    newProject: "Жаңа жоба...",
+    moveTo: "Қозғалыс",
+    create: "Жасау"
   },
   profile: {
     balance: "Баланс",
